@@ -1,0 +1,7 @@
+{
+  "gradle.nestedProjects": false,
+  "java.configuration.updateBuildConfiguration": "interactive",
+  "jdk.format.options": {
+    
+  }
+}

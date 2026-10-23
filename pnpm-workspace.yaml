@@ -1,0 +1,9 @@
+packages:
+  - "apps/*"
+  - "infra"
+
+onlyBuiltDependencies:
+  - "@parcel/watcher"
+  - "@swc/core"
+  - esbuild
+  - unrs-resolver
