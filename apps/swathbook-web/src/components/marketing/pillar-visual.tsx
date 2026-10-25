@@ -10,7 +10,7 @@ export function PillarVisual({ kicker }: { kicker: string }) {
         <p className="label-tag text-ink-faint">Your booking link</p>
         <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-line bg-paper px-4 py-3">
           <span className="truncate font-mono text-sm">
-            {siteConfig.bookingHost}/<strong>shine-on</strong>
+            {siteConfig.bookingLinkPrefix}<strong>shine-on</strong>
           </span>
           <Copy className="size-4 shrink-0 text-ink-faint" aria-hidden="true" />
         </div>

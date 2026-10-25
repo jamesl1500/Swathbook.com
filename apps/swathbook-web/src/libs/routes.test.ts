@@ -42,3 +42,10 @@ describe("matchesPath", () => {
         expect(matchesPath(routes.verifyEmail, guestOnlyPaths)).toBe(false);
     });
 });
+
+describe("businessPagePath", () => {
+    it("puts booking links under /l/ so they never shadow a page", async () => {
+        const { businessPagePath } = await import("./routes");
+        expect(businessPagePath("shine-on")).toBe("/l/shine-on");
+    });
+});

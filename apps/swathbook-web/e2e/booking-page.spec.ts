@@ -15,7 +15,7 @@ test.describe("public booking page", () => {
         });
         const email = uniqueEmail("customer");
 
-        await page.goto(`/${business.slug}`);
+        await page.goto(`/l/${business.slug}`);
         await expect(page.getByRole("heading", { level: 1, name: "Northside Leaf & Lawn" })).toBeVisible();
         await expect(page).toHaveTitle("Book Northside Leaf & Lawn online · Lawn mowing");
         // Search engines get the business as structured data.
@@ -64,7 +64,7 @@ test.describe("public booking page", () => {
         const owner = await createUser();
         const business = await createBusiness(owner.id, { openEveryDay: true });
 
-        await page.goto(`/${business.slug}`);
+        await page.goto(`/l/${business.slug}`);
         await page.getByRole("checkbox", { name: /Weekly mow/ }).check();
         await page.getByRole("button", { name: "Continue" }).click();
         await page.getByRole("button", { name: /^\d{1,2}:\d{2} [AP]M$/ }).first().click();
@@ -79,15 +79,24 @@ test.describe("public booking page", () => {
     // With partial prerendering the shell streams before the lookup finishes, so
     // the status stays 200; Next marks the page noindex instead.
     test("an unknown link shows a not-found page", async ({ page }) => {
-        await page.goto(`/${uniqueSlug("nobody")}`);
+        await page.goto(`/l/${uniqueSlug("nobody")}`);
         await expect(page.getByRole("heading", { name: "This page took a wrong turn." })).toBeVisible();
         await expect(page.locator('meta[name="robots"]').first()).toHaveAttribute("content", /noindex/);
+    });
+
+    test("booking links live under /l/, never at the site root", async ({ page }) => {
+        const owner = await createUser();
+        const business = await createBusiness(owner.id, { name: "Root Probe Cleaning" });
+        await page.goto(`/${business.slug}`);
+        await expect(page.getByRole("heading", { name: "This page took a wrong turn." })).toBeVisible();
+        await page.goto(`/l/${business.slug}`);
+        await expect(page.getByRole("heading", { level: 1, name: "Root Probe Cleaning" })).toBeVisible();
     });
 
     test("a paused business says it isn't taking bookings", async ({ page }) => {
         const owner = await createUser();
         const business = await createBusiness(owner.id, { name: "Paused Pools", published: false });
-        await page.goto(`/${business.slug}`);
+        await page.goto(`/l/${business.slug}`);
         await expect(page.getByRole("heading", { name: "Paused Pools isn't taking online bookings right now" })).toBeVisible();
     });
 

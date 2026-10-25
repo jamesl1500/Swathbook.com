@@ -72,7 +72,7 @@ function ClaimedSlug({ fallback }: { fallback?: string }) {
     <div className="flex items-center gap-3 rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm">
       <Link2 className="size-4 shrink-0 text-brand-600" aria-hidden="true" />
       <span className="min-w-0">
-        Saving <strong className="font-mono">{siteConfig.bookingHost}/{slug}</strong> for you
+        Saving <strong className="font-mono">{siteConfig.bookingLinkPrefix}{slug}</strong> for you
       </span>
       <input type="hidden" name="slug" value={slug} />
     </div>

@@ -10,6 +10,7 @@
 
 import type { Metadata } from "next";
 import { siteConfig } from "./globals/site";
+import { businessPagePath } from "./routes";
 import { faqs, pricingTiers } from "./marketing/content";
 
 export const ogImage = {
@@ -155,7 +156,7 @@ export function businessJsonLd({
     logoUrl: string | null;
     tradeName?: string;
 }) {
-    const url = `${siteConfig.url}/${business.slug}`;
+    const url = `${siteConfig.url}${businessPagePath(business.slug)}`;
     const currency = business.currency.toUpperCase();
     return {
         "@context": "https://schema.org",

@@ -58,7 +58,7 @@ async function Overview() {
     ]);
 
   const stats = (overview ?? {}) as Partial<Overview>;
-  const link = `${siteConfig.bookingHost}/${business.slug}`;
+  const link = `${siteConfig.bookingLinkPrefix}${business.slug}`;
   const liveCount = businesses.filter((item) => item.onboarding_completed_at).length;
 
   const checklist = [

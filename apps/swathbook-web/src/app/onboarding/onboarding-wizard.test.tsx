@@ -120,7 +120,7 @@ describe("OnboardingWizard", () => {
         await next();
 
         await screen.findByRole("heading", { name: /Look good/ });
-        expect(screen.getByText("swathbook.com/green-acres-lawn")).toBeInTheDocument();
+        expect(screen.getByText("swathbook.com/l/green-acres-lawn")).toBeInTheDocument();
         expect(screen.getByText("3 services")).toBeInTheDocument();
 
         await user.click(screen.getByRole("button", { name: /Launch my booking page/ }));

@@ -10,11 +10,17 @@
 
 import { z } from "zod";
 
-/** Paths a booking link can't use because the app (or common sense) needs them. */
-const RESERVED_SLUGS = new Set([
-    "about", "admin", "api", "app", "auth", "billing", "blog", "book", "careers", "contact", "dashboard",
-    "features", "help", "industries", "legal", "login", "logout", "onboarding", "pricing", "privacy",
-    "settings", "signup", "support", "swathbook", "terms", "www",
+/**
+ * Links that would look official (or like a site page) if a business took them.
+ * Booking links live under /l/, so these can't collide with real pages; this keeps
+ * anyone from posing as Swathbook. Mirrored in the database (private.is_reserved_slug).
+ */
+export const RESERVED_SLUGS = new Set([
+    "about", "account", "admin", "administrator", "api", "app", "auth", "billing", "blog", "book", "booking",
+    "bookings", "careers", "contact", "dashboard", "features", "help", "industries", "legal", "login",
+    "logout", "official", "onboarding", "pay", "payment", "payments", "pricing", "privacy", "root",
+    "security", "settings", "signup", "staff", "stripe", "support", "swathbook", "system", "team", "terms",
+    "verify", "www",
 ]);
 
 export const slugField = z

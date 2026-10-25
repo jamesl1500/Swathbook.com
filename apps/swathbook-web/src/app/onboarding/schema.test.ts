@@ -1,5 +1,8 @@
+// @vitest-environment node
+import { readdirSync, readFileSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { onboardingSchema, slugField, type OnboardingInput } from "./schema";
+import { RESERVED_SLUGS, onboardingSchema, slugField, type OnboardingInput } from "./schema";
 
 const valid: OnboardingInput = {
     businessName: "Green Acres",
@@ -66,5 +69,23 @@ describe("onboardingSchema", () => {
 
     it("requires a trade and an address", () => {
         expect(issuesAt({ ...valid, trade: "", baseAddress: "" })).toEqual(expect.arrayContaining(["trade", "baseAddress"]));
+    });
+});
+
+describe("reserved booking links", () => {
+    it("blocks names that would look official", () => {
+        for (const slug of ["support", "admin", "swathbook", "Billing"]) {
+            expect(slugField.safeParse(slug).success, slug).toBe(false);
+        }
+        expect(slugField.safeParse("support-squad").success).toBe(true);
+    });
+
+    it("matches the database's list exactly", () => {
+        const migrations = path.resolve(__dirname, "../../../../../supabase/migrations");
+        const file = readdirSync(migrations).find((name) => name.endsWith("_booking_link_prefix.sql"))!;
+        const sql = readFileSync(path.join(migrations, file), "utf8");
+        const body = sql.slice(sql.indexOf("any(array["), sql.indexOf("]);", sql.indexOf("any(array[")));
+        const inDatabase = [...body.matchAll(/'([a-z0-9-]+)'/g)].map((match) => match[1]).sort();
+        expect(inDatabase).toEqual([...RESERVED_SLUGS].sort());
     });
 });

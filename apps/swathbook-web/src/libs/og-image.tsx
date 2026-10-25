@@ -126,7 +126,7 @@ export function renderBusinessOgImage({
 
                 <div style={{ display: "flex", flexDirection: "column" }}>
                     <div style={{ fontSize: name.length > 28 ? 72 : 92, fontWeight: 800, lineHeight: 1.02, letterSpacing: -2 }}>{name}</div>
-                    <div style={{ marginTop: 24, fontSize: 36, opacity: 0.9 }}>{`Book online · ${siteConfig.bookingHost}/${slug}`}</div>
+                    <div style={{ marginTop: 24, fontSize: 36, opacity: 0.9 }}>{`Book online · ${siteConfig.bookingLinkPrefix}${slug}`}</div>
                 </div>
             </div>
         ),

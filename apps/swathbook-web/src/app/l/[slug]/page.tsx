@@ -9,7 +9,7 @@ import { loadBookingPage, loadPausedBusinessName, type BookingPageData } from "@
 import { siteConfig } from "@/libs/globals/site";
 import { hasGoogleMaps } from "@/libs/google/maps";
 import { findTrade } from "@/libs/marketing/content";
-import { routes } from "@/libs/routes";
+import { businessPagePath, routes } from "@/libs/routes";
 import { businessJsonLd, metaDescription } from "@/libs/seo";
 import { publicAssetUrl } from "@/libs/supabase/storage";
 import { formatTimeKey, todayKey } from "@/libs/time";
@@ -19,7 +19,7 @@ import { PhotoGallery } from "./photo-gallery";
 
 const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-export async function generateMetadata({ params }: PageProps<"/[slug]">): Promise<Metadata> {
+export async function generateMetadata({ params }: PageProps<"/l/[slug]">): Promise<Metadata> {
   const { slug } = await params;
   const page = await loadBookingPage(slug);
   // Paused or unknown pages stay out of search results.
@@ -37,14 +37,14 @@ export async function generateMetadata({ params }: PageProps<"/[slug]">): Promis
   return {
     title: { absolute: tradeName ? `${title} · ${tradeName}` : title },
     description,
-    alternates: { canonical: `/${business.slug}` },
+    alternates: { canonical: businessPagePath(business.slug) },
     // The share image comes from ./opengraph-image.tsx.
-    openGraph: { type: "website", siteName: siteConfig.name, title, description, url: `/${business.slug}` },
+    openGraph: { type: "website", siteName: siteConfig.name, title, description, url: businessPagePath(business.slug) },
     twitter: { card: "summary_large_image", title, description },
   };
 }
 
-export default function BusinessBookingPage({ params }: PageProps<"/[slug]">) {
+export default function BusinessBookingPage({ params }: PageProps<"/l/[slug]">) {
   return (
     <Suspense fallback={<PageSkeleton />}>
       <BookingPageContent params={params} />
@@ -52,7 +52,7 @@ export default function BusinessBookingPage({ params }: PageProps<"/[slug]">) {
   );
 }
 
-async function BookingPageContent({ params }: { params: PageProps<"/[slug]">["params"] }) {
+async function BookingPageContent({ params }: { params: PageProps<"/l/[slug]">["params"] }) {
   const { slug } = await params;
   const page = await loadBookingPage(slug);
   if (!page) {

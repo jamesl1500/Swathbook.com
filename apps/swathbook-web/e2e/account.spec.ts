@@ -117,7 +117,7 @@ test.describe("account settings", () => {
         expect(authUser.user).toBeNull();
 
         // The booking link is gone and the old login no longer works.
-        const response = await page.request.get(`/${business.slug}`);
+        const response = await page.request.get(`/l/${business.slug}`);
         expect(await response.text()).toContain("This page took a wrong turn.");
         await logIn(page, user.email, PASSWORD);
         await expect(formAlert(page, /don't match/)).toBeVisible();

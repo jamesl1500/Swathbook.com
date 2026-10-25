@@ -50,7 +50,7 @@ export const customerPath = (id: string) => `${routes.customers}/${id}`;
 /** The customer's own page for a booking (status, pay deposit/balance). */
 export const customerBookingPath = (token: string) => `/booking/${token}`;
 /** A business's public booking page. */
-export const businessPagePath = (slug: string) => `/${slug}`;
+export const businessPagePath = (slug: string) => `/l/${slug}`;
 
 /** Signed-out visitors are sent to log in. */
 export const protectedPaths = [routes.onboarding, routes.dashboard];

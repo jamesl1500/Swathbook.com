@@ -88,7 +88,7 @@ describe("SignupForm", () => {
         const user = userEvent.setup();
         render(<SignupForm />);
 
-        expect(screen.getByText(/Saving/)).toHaveTextContent("Saving swathbook.com/green-acres for you");
+        expect(screen.getByText(/Saving/)).toHaveTextContent("Saving swathbook.com/l/green-acres for you");
 
         await user.type(screen.getByLabelText("Your name"), "Dana Field");
         await user.type(screen.getByLabelText("Email"), "dana@example.com");

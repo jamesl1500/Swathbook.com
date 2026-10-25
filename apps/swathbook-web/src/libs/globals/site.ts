@@ -23,6 +23,8 @@ export const siteConfig = {
     backgroundColor: "#f6f3ee",
     url: "https://www.swathbook.com",
 
-    // Public booking links live at swathbook.com/<slug>
     bookingHost: "swathbook.com",
+    // Public booking links live under /l/ so a business name can never collide
+    // with (or pose as) a page of the site itself: swathbook.com/l/<slug>
+    bookingLinkPrefix: "swathbook.com/l/",
 };

@@ -44,7 +44,7 @@ export function ProfileForm({
         error={errors.slug?.[0]}
       >
         <div className={cn(inputStyles, "flex items-center p-0 focus-within:border-brand-500 focus-within:ring-3 focus-within:ring-brand-200")}>
-          <span className="shrink-0 border-r border-line py-2.5 pl-3.5 pr-2 font-mono text-sm text-ink-faint">{siteConfig.bookingHost}/</span>
+          <span className="shrink-0 border-r border-line py-2.5 pl-3.5 pr-2 font-mono text-sm text-ink-faint">{siteConfig.bookingLinkPrefix}</span>
           <input
             id="slug"
             name="slug"

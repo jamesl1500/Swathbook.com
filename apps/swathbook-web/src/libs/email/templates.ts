@@ -10,6 +10,7 @@
  */
 
 import { siteConfig } from "@/libs/globals/site";
+import { businessPagePath } from "@/libs/routes";
 import { formatDateLong, formatTime, toDateKey } from "@/libs/time";
 import { formatCents } from "@/libs/utils";
 import { renderEmail, type EmailContent } from "./layout";
@@ -76,7 +77,7 @@ function bookingUrl(context: BookingEmailContext) {
 }
 
 function businessPageUrl(context: BookingEmailContext) {
-    return `${context.baseUrl}/${context.business.slug}`;
+    return `${context.baseUrl}${businessPagePath(context.business.slug)}`;
 }
 
 function contactLine(context: BookingEmailContext) {

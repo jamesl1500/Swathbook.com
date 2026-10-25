@@ -60,7 +60,7 @@ export function BookingCard({
         <span className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full bg-card px-3 py-1 font-mono text-[0.7rem] text-ink-soft">
           <Lock className="size-3 shrink-0 text-brand-500" aria-hidden="true" />
           <span className="truncate">
-            {siteConfig.bookingHost}/<span className="font-semibold text-ink">{slug || "your-business"}</span>
+            {siteConfig.bookingLinkPrefix}<span className="font-semibold text-ink">{slug || "your-business"}</span>
           </span>
         </span>
       </div>

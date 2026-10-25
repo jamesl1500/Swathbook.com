@@ -11,11 +11,11 @@ test.describe("sign up", () => {
 
         await page.goto("/");
         // The hero form; the closing section has a second one.
-        await page.getByLabel("swathbook.com/").first().fill(slug);
+        await page.getByLabel("swathbook.com/l/").first().fill(slug);
         await page.getByRole("button", { name: "Claim it" }).first().click();
 
         await expectOnPath(page, "/auth/signup");
-        await expect(page.getByText(`Saving swathbook.com/${slug} for you`)).toBeVisible();
+        await expect(page.getByText(`Saving swathbook.com/l/${slug} for you`)).toBeVisible();
 
         await page.getByLabel("Your name").fill("Dana Field");
         await page.getByLabel("Email").fill(email);

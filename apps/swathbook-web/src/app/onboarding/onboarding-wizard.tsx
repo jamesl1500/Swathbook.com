@@ -221,7 +221,7 @@ export function OnboardingWizard({ defaults }: { defaults: OnboardingDefaults })
                     )}
                   >
                     <span className="shrink-0 border-r border-line py-2.5 pl-3.5 pr-2 font-mono text-sm text-ink-faint">
-                      {siteConfig.bookingHost}/
+                      {siteConfig.bookingLinkPrefix}
                     </span>
                     <input
                       id="slug"
@@ -448,7 +448,7 @@ export function OnboardingWizard({ defaults }: { defaults: OnboardingDefaults })
                 </ReviewRow>
                 <ReviewRow title="Booking link" onEdit={() => goTo(1)}>
                   <span className="font-mono">
-                    {siteConfig.bookingHost}/{preview.slug}
+                    {siteConfig.bookingLinkPrefix}{preview.slug}
                   </span>
                 </ReviewRow>
                 <ReviewRow title={`${preview.services?.length ?? 0} services`} onEdit={() => goTo(2)}>

@@ -29,10 +29,10 @@ describe("businessJsonLd", () => {
         expect(data).toMatchObject({
             "@type": "LocalBusiness",
             name: "Green Acres",
-            url: "https://www.swathbook.com/green-acres",
+            url: "https://www.swathbook.com/l/green-acres",
             telephone: "512-555-0100",
             openingHoursSpecification: [{ dayOfWeek: "https://schema.org/Monday", opens: "08:00", closes: "17:00" }],
-            potentialAction: { "@type": "ReserveAction", target: { urlTemplate: "https://www.swathbook.com/green-acres" } },
+            potentialAction: { "@type": "ReserveAction", target: { urlTemplate: "https://www.swathbook.com/l/green-acres" } },
         });
         expect(data).not.toHaveProperty("hasOfferCatalog");
         expect(data).not.toHaveProperty("logo");

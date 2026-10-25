@@ -28,7 +28,7 @@ export function ClaimLinkForm({
       )}
     >
       <label htmlFor={id} className="shrink-0 font-mono text-sm text-ink-faint">
-        {siteConfig.bookingHost}/
+        {siteConfig.bookingLinkPrefix}
       </label>
       <input
         id={id}

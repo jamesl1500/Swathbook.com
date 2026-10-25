@@ -19,7 +19,7 @@ test.describe("booking emails", () => {
         const business = await createBusiness(owner.id, { name: "Bright Nest Cleaning", openEveryDay: true });
         const customerEmail = uniqueEmail("customer");
 
-        await page.goto(`/${business.slug}`);
+        await page.goto(`/l/${business.slug}`);
         await page.getByRole("checkbox", { name: /Weekly mow/ }).check();
         await page.getByRole("button", { name: "Continue" }).click();
         await page.getByRole("button", { name: /^\d{1,2}:\d{2} [AP]M$/ }).first().click();
@@ -77,7 +77,7 @@ test.describe("unpaid deposits", () => {
         await admin.from("bookings").update({ hold_expires_at: new Date(Date.now() - 1000).toISOString() }).eq("id", booking.booking_id);
         expect((await runCron()).released).toBe(1);
         const released = await waitForEmail(customerEmail, /Your hold with Shine On Detailing expired/);
-        expect(new URL(linkIn(released, new RegExp(`^/${business.slug}$`))).pathname).toBe(`/${business.slug}`);
+        expect(new URL(linkIn(released, new RegExp(`^/l/${business.slug}$`))).pathname).toBe(`/l/${business.slug}`);
 
         await page.reload();
         await expect(page.getByTestId("cancel-reason")).toContainText("the deposit wasn't paid within 30 minutes");
@@ -97,7 +97,7 @@ test.describe("billing", () => {
         await expect(page.getByTestId("billing-banner")).toContainText("Your booking page is paused");
         await page.goto("/dashboard/billing");
         await expect(page.getByTestId("billing-status")).toContainText("Your free trial has ended");
-        await page.goto(`/${business.slug}`);
+        await page.goto(`/l/${business.slug}`);
         await expect(page.getByRole("heading", { name: /isn't taking online bookings/ })).toBeVisible();
 
         // A plan (as the Stripe webhook would record it) reopens everything.
@@ -113,7 +113,7 @@ test.describe("billing", () => {
         await expect(page.getByTestId("billing-status")).toContainText("Crew plan is active");
         await expect(page.getByTestId("billing-banner")).toHaveCount(0);
         await expect(page.getByTestId("plan-crew")).toContainText("Current plan");
-        await page.goto(`/${business.slug}`);
+        await page.goto(`/l/${business.slug}`);
         await expect(page.getByRole("heading", { level: 1, name: "Shine On Detailing" })).toBeVisible();
     });
 

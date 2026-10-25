@@ -76,7 +76,7 @@ test.describe("public pages", () => {
   test("a business page in the default colors is readable", async ({ page }) => {
     const owner = await createUser();
     const business = await createBusiness(owner.id, { name: "Shine On Mobile Detailing", openEveryDay: true });
-    await audit(page, `/${business.slug}`);
+    await audit(page, `/l/${business.slug}`);
   });
 
   for (const color of ["#f2b705", "#ffffff", "#a7f3d0"]) {
@@ -84,7 +84,7 @@ test.describe("public pages", () => {
       const owner = await createUser();
       const business = await createBusiness(owner.id, { name: "Bright Nest Cleaning", openEveryDay: true });
       await admin.from("businesses").update({ brand_color: color, description: "Homes, move-outs and deep cleans." }).eq("id", business.id);
-      await audit(page, `/${business.slug}`);
+      await audit(page, `/l/${business.slug}`);
     });
   }
 

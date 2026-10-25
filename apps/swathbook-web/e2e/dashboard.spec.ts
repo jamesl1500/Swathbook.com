@@ -47,21 +47,21 @@ test.describe("booking link", () => {
         await page.goto("/dashboard/link");
 
         await expect(page.getByRole("img", { name: /QR code/ })).toBeVisible();
-        await expect(page.getByTestId("share-url")).toHaveText(`swathbook.com/${business.slug}`);
+        await expect(page.getByTestId("share-url")).toHaveText(`swathbook.com/l/${business.slug}`);
 
         await page.getByLabel("About your business").fill("Mobile detailing that comes to your driveway.");
         await page.getByLabel("Booking link").fill(newSlug);
         await page.getByRole("button", { name: "Save booking page" }).click();
         await expect(page.getByText(/Your link changed/)).toBeVisible();
-        await expect(page.getByTestId("share-url")).toHaveText(`swathbook.com/${newSlug}`);
+        await expect(page.getByTestId("share-url")).toHaveText(`swathbook.com/l/${newSlug}`);
 
-        await page.goto(`/${newSlug}`);
+        await page.goto(`/l/${newSlug}`);
         await expect(page.getByText("Mobile detailing that comes to your driveway.")).toBeVisible();
 
         await page.goto("/dashboard/link");
         await page.getByRole("switch", { name: "Taking bookings" }).click();
         await expect(page.getByRole("switch", { name: "Bookings paused" })).toBeVisible();
-        await page.goto(`/${newSlug}`);
+        await page.goto(`/l/${newSlug}`);
         await expect(page.getByRole("heading", { name: /isn't taking online bookings/ })).toBeVisible();
     });
 
@@ -98,7 +98,7 @@ test.describe("booking link", () => {
         expect(stored![0].storage_path).toMatch(new RegExp(`^${business.id}/photos/.+\\.(webp|jpg)$`));
 
         // The public page shows the cover and the gallery, and photos open full screen.
-        await page.goto(`/${business.slug}`);
+        await page.goto(`/l/${business.slug}`);
         await expect(page.getByRole("heading", { name: "Our work" })).toBeVisible();
         await page.getByRole("button", { name: /Before the wash/ }).click();
         const viewer = page.getByRole("dialog", { name: "Shine On Detail photos" });

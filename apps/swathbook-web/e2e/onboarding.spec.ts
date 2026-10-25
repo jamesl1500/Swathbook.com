@@ -67,13 +67,13 @@ test.describe("onboarding", () => {
 
         // Step 5: review
         await expect(page.getByRole("heading", { name: "Look good? Let's go live." })).toBeVisible();
-        await expect(page.locator("form").getByText(`swathbook.com/${slug}`)).toBeVisible();
+        await expect(page.locator("form").getByText(`swathbook.com/l/${slug}`)).toBeVisible();
         await expect(page.getByText("3 services")).toBeVisible();
         await page.getByRole("button", { name: /Launch my booking page/ }).click();
 
         await expectOnPath(page, "/dashboard");
         await expect(page.getByRole("heading", { name: "Green Acres Lawn is ready for bookings" })).toBeVisible();
-        await expect(page.getByTestId("booking-link")).toHaveText(`swathbook.com/${slug}`);
+        await expect(page.getByTestId("booking-link")).toHaveText(`swathbook.com/l/${slug}`);
 
         // What actually landed in the database.
         const saved = await getBusinessBySlug(slug);
@@ -153,7 +153,7 @@ test.describe("multiple businesses", () => {
 
         await menu.getByRole("menuitemradio", { name: /First Lawn Co/ }).click();
         await expect(page.getByRole("heading", { name: "First Lawn Co is ready for bookings" })).toBeVisible();
-        await expect(page.getByTestId("booking-link")).toHaveText(`swathbook.com/${first.slug}`);
+        await expect(page.getByTestId("booking-link")).toHaveText(`swathbook.com/l/${first.slug}`);
 
         // The choice sticks across visits.
         await page.reload();

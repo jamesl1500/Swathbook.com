@@ -67,7 +67,7 @@ export function BusinessMenu({ active, businesses }: { active: { id: string; nam
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-semibold">{business.name}</span>
                       <span className="block truncate font-mono text-xs text-ink-faint">
-                        {siteConfig.bookingHost}/{business.slug}
+                        {siteConfig.bookingLinkPrefix}{business.slug}
                       </span>
                     </span>
                     {business.id === active.id ? (

@@ -65,7 +65,7 @@ async function BookingLink() {
         <div className="min-w-0 space-y-6">
           <ShareTools
             url={url}
-            displayUrl={`${siteConfig.bookingHost}/${business.slug}`}
+            displayUrl={`${siteConfig.bookingLinkPrefix}${business.slug}`}
             businessName={business.name}
             qrSvg={qrSvg}
             qrPng={qrPng}
