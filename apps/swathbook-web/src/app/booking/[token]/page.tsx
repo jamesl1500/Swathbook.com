@@ -4,14 +4,15 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { CalendarPlus, CircleCheck, Clock, MapPin, Phone, TriangleAlert } from "lucide-react";
 import { LogoMark } from "@/components/brand/logo";
-import { loadCustomerBooking, type CustomerBooking } from "@/libs/customer-booking";
+import { loadBookingOptions, loadCustomerBooking, type BookingOptions, type CustomerBooking } from "@/libs/customer-booking";
 import { siteConfig } from "@/libs/globals/site";
 import { businessPagePath, routes } from "@/libs/routes";
 import { noIndex } from "@/libs/seo";
 import { hasStripe } from "@/libs/stripe/server";
-import { formatDateLong, formatTime, toDateKey } from "@/libs/time";
+import { formatDateLong, formatTime, toDateKey, todayKey } from "@/libs/time";
 import { brandTextColor, formatCents } from "@/libs/utils";
 import { PayButton } from "./pay-button";
+import { ManageBooking } from "./manage-booking";
 
 export const metadata: Metadata = { title: "Your booking", robots: noIndex };
 
@@ -31,9 +32,9 @@ async function BookingDetails({
   searchParams: PageProps<"/booking/[token]">["searchParams"];
 }) {
   const [{ token }, { paid }] = await Promise.all([params, searchParams]);
-  const booking = await loadCustomerBooking(token);
+  const [booking, options] = await Promise.all([loadCustomerBooking(token), loadBookingOptions(token)]);
   if (!booking || !booking.businesses) notFound();
-  return <BookingView booking={booking} justPaid={paid === "1"} paymentsEnabled={hasStripe()} />;
+  return <BookingView booking={booking} options={options} justPaid={paid === "1"} paymentsEnabled={hasStripe()} />;
 }
 
 function statusBanner(booking: CustomerBooking, justPaid: boolean) {
@@ -51,6 +52,9 @@ function statusBanner(booking: CustomerBooking, justPaid: boolean) {
     case "requested":
       return { tone: "info", title: "Request sent", body: "The business will confirm your appointment soon. We'll email you." } as const;
     case "confirmed":
+      if (booking.cancel_requested_at) {
+        return { tone: "info", title: "Cancellation requested", body: "The business will confirm by email. Until then, your booking stays on the calendar." } as const;
+      }
       return { tone: "success", title: "You're booked!", body: "We've emailed your confirmation. See you then." } as const;
     case "in_progress":
       return { tone: "success", title: "Work in progress", body: "Your crew is on the job." } as const;
@@ -63,7 +67,17 @@ function statusBanner(booking: CustomerBooking, justPaid: boolean) {
   }
 }
 
-function BookingView({ booking, justPaid, paymentsEnabled }: { booking: CustomerBooking; justPaid: boolean; paymentsEnabled: boolean }) {
+function BookingView({
+  booking,
+  options,
+  justPaid,
+  paymentsEnabled,
+}: {
+  booking: CustomerBooking;
+  options: BookingOptions | null;
+  justPaid: boolean;
+  paymentsEnabled: boolean;
+}) {
   const business = booking.businesses!;
   const brand = business.brand_color ?? "#1c3d70";
   const timeZone = business.timezone;
@@ -201,7 +215,20 @@ function BookingView({ booking, justPaid, paymentsEnabled }: { booking: Customer
           ) : null}
         </section>
 
-        {business.cancellation_window_hours > 0 && ["confirmed", "requested"].includes(booking.status) ? (
+        {options ? (
+          <ManageBooking
+            token={booking.public_token}
+            options={options}
+            timeZone={timeZone}
+            today={todayKey(timeZone)}
+            brandColor={brand}
+            businessName={business.name}
+            contact={business.phone ?? business.email}
+            depositPaid={booking.deposit_paid_cents > 0}
+          />
+        ) : null}
+
+        {!options?.can_reschedule && !options?.can_cancel && business.cancellation_window_hours > 0 && ["confirmed", "requested"].includes(booking.status) ? (
           <p className="text-sm text-ink-faint">
             Need to change or cancel? Contact {business.name} at least {business.cancellation_window_hours} hours ahead
             {business.email ? (

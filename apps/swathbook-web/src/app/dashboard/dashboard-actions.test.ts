@@ -10,6 +10,10 @@ const state = vi.hoisted(() => ({
 }));
 
 vi.mock("next/cache", () => ({ refresh: vi.fn() }));
+vi.mock("@/libs/email/worker", () => ({ sendQueuedEmailsSoon: vi.fn() }));
+const stripe = vi.hoisted(() => ({ refunds: { create: vi.fn(async () => ({ id: "re_1", amount: 4500, status: "succeeded" })) } }));
+vi.mock("@/libs/stripe/server", () => ({ hasStripe: () => true, getStripe: () => stripe }));
+vi.mock("@/libs/supabase/admin", () => ({ createAdminClient: () => createSupabaseMock().client }));
 vi.mock("next/navigation", async () => ({ redirect: (await import("@/test/next-mocks")).mockRedirect }));
 vi.mock("@/libs/supabase/server", () => ({ createClient: vi.fn(async () => state.supabase.client) }));
 vi.mock("@/libs/dashboard", () => ({
@@ -20,7 +24,7 @@ vi.mock("@/libs/dashboard", () => ({
 import { authorizeBusiness } from "@/libs/dashboard";
 import { saveService } from "./services/actions";
 import { updateBookingPage } from "./link/actions";
-import { rescheduleBooking, saveHours, updateJobStatus } from "./schedule/actions";
+import { rescheduleBooking, resolveCancellation, saveHours, updateJobStatus } from "./schedule/actions";
 
 function form(fields: Record<string, string>) {
     const data = new FormData();
@@ -156,5 +160,33 @@ describe("schedule actions", () => {
         expect(state.supabase.callsTo("business_hours", "insert")[0].values).toEqual([
             { business_id: BUSINESS_ID, weekday: 1, opens_at: "08:00", closes_at: "17:00" },
         ]);
+    });
+});
+
+describe("resolveCancellation", () => {
+    it("approves and refunds what was paid", async () => {
+        state.supabase.respond("payments.select", { data: [{ id: "pay_1" }] }, {
+            data: { id: "pay_1", business_id: BUSINESS_ID, amount_cents: 4500, amount_refunded_cents: 0, stripe_payment_intent_id: "pi_1", stripe_account_id: "acct_1", status: "succeeded" },
+        });
+        const result = await resolveCancellation(form({ bookingId: "bk_1", approve: "1", refund: "on" }));
+        expect(state.supabase.rpc).toHaveBeenCalledWith("resolve_cancel_request", { p_booking_id: "bk_1", p_approve: true, p_note: undefined });
+        expect(stripe.refunds.create).toHaveBeenCalledWith(
+            expect.objectContaining({ payment_intent: "pi_1", amount: 4500 }),
+            expect.objectContaining({ stripeAccount: "acct_1" }),
+        );
+        expect(result.success).toBe("Booking cancelled. The customer has been emailed. Refund started.");
+    });
+
+    it("declines with a note and refunds nothing", async () => {
+        stripe.refunds.create.mockClear();
+        const result = await resolveCancellation(form({ bookingId: "bk_1", approve: "0", note: "Let's move it instead" }));
+        expect(state.supabase.rpc).toHaveBeenCalledWith("resolve_cancel_request", { p_booking_id: "bk_1", p_approve: false, p_note: "Let's move it instead" });
+        expect(stripe.refunds.create).not.toHaveBeenCalled();
+        expect(result.success).toMatch(/declined/);
+    });
+
+    it("says when someone already answered", async () => {
+        state.supabase.rpc.mockResolvedValueOnce({ data: null, error: { message: "no_cancel_request" } });
+        expect((await resolveCancellation(form({ bookingId: "bk_1", approve: "1" }))).error).toBe("That request was already answered.");
     });
 });

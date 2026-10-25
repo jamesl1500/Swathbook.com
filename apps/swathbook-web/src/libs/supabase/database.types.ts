@@ -73,14 +73,14 @@ isOneToOne: false
                   ]
                 },"bookings": {
                   Row: {
-                    "address_id": string | null,"amount_paid_cents": number,"amount_refunded_cents": number,"assigned_member_id": string | null,"balance_due_cents": number | null,"business_id": string,"cancellation_reason": string | null,"cancelled_at": string | null,"completed_at": string | null,"confirmed_at": string | null,"created_at": string,"created_by": string | null,"currency": string,"customer_id": string,"customer_notes": string | null,"deposit_due_cents": number,"deposit_paid_cents": number,"discount_cents": number,"hold_expires_at": string | null,"id": string,"internal_notes": string | null,"public_token": string,"recurring_series_id": string | null,"reference": string,"scheduled_end": string,"scheduled_range": unknown,"scheduled_start": string,"source": Database["public"]['Enums']["booking_source"],"started_at": string | null,"status": Database["public"]['Enums']["booking_status"],"subtotal_cents": number,"tax_cents": number,"tip_cents": number,"total_cents": number | null,"updated_at": string
+                    "address_id": string | null,"amount_paid_cents": number,"amount_refunded_cents": number,"assigned_member_id": string | null,"balance_due_cents": number | null,"business_id": string,"cancel_request_reason": string | null,"cancel_requested_at": string | null,"cancellation_reason": string | null,"cancelled_at": string | null,"completed_at": string | null,"confirmed_at": string | null,"created_at": string,"created_by": string | null,"currency": string,"customer_id": string,"customer_notes": string | null,"customer_reschedule_count": number,"deposit_due_cents": number,"deposit_paid_cents": number,"discount_cents": number,"hold_expires_at": string | null,"id": string,"internal_notes": string | null,"public_token": string,"recurring_series_id": string | null,"reference": string,"scheduled_end": string,"scheduled_range": unknown,"scheduled_start": string,"source": Database["public"]['Enums']["booking_source"],"started_at": string | null,"status": Database["public"]['Enums']["booking_status"],"subtotal_cents": number,"tax_cents": number,"tip_cents": number,"total_cents": number | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "address_id"?: string | null,"amount_paid_cents"?: number,"amount_refunded_cents"?: number,"assigned_member_id"?: string | null,"balance_due_cents"?: never,"business_id": string,"cancellation_reason"?: string | null,"cancelled_at"?: string | null,"completed_at"?: string | null,"confirmed_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"customer_id": string,"customer_notes"?: string | null,"deposit_due_cents"?: number,"deposit_paid_cents"?: number,"discount_cents"?: number,"hold_expires_at"?: string | null,"id"?: string,"internal_notes"?: string | null,"public_token"?: string,"recurring_series_id"?: string | null,"reference"?: string,"scheduled_end": string,"scheduled_range"?: never,"scheduled_start": string,"source"?: Database["public"]['Enums']["booking_source"],"started_at"?: string | null,"status"?: Database["public"]['Enums']["booking_status"],"subtotal_cents"?: number,"tax_cents"?: number,"tip_cents"?: number,"total_cents"?: never,"updated_at"?: string
+                    "address_id"?: string | null,"amount_paid_cents"?: number,"amount_refunded_cents"?: number,"assigned_member_id"?: string | null,"balance_due_cents"?: never,"business_id": string,"cancel_request_reason"?: string | null,"cancel_requested_at"?: string | null,"cancellation_reason"?: string | null,"cancelled_at"?: string | null,"completed_at"?: string | null,"confirmed_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"customer_id": string,"customer_notes"?: string | null,"customer_reschedule_count"?: number,"deposit_due_cents"?: number,"deposit_paid_cents"?: number,"discount_cents"?: number,"hold_expires_at"?: string | null,"id"?: string,"internal_notes"?: string | null,"public_token"?: string,"recurring_series_id"?: string | null,"reference"?: string,"scheduled_end": string,"scheduled_range"?: never,"scheduled_start": string,"source"?: Database["public"]['Enums']["booking_source"],"started_at"?: string | null,"status"?: Database["public"]['Enums']["booking_status"],"subtotal_cents"?: number,"tax_cents"?: number,"tip_cents"?: number,"total_cents"?: never,"updated_at"?: string
                   }
                   Update: {
-                    "address_id"?: string | null,"amount_paid_cents"?: number,"amount_refunded_cents"?: number,"assigned_member_id"?: string | null,"balance_due_cents"?: never,"business_id"?: string,"cancellation_reason"?: string | null,"cancelled_at"?: string | null,"completed_at"?: string | null,"confirmed_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"customer_id"?: string,"customer_notes"?: string | null,"deposit_due_cents"?: number,"deposit_paid_cents"?: number,"discount_cents"?: number,"hold_expires_at"?: string | null,"id"?: string,"internal_notes"?: string | null,"public_token"?: string,"recurring_series_id"?: string | null,"reference"?: string,"scheduled_end"?: string,"scheduled_range"?: never,"scheduled_start"?: string,"source"?: Database["public"]['Enums']["booking_source"],"started_at"?: string | null,"status"?: Database["public"]['Enums']["booking_status"],"subtotal_cents"?: number,"tax_cents"?: number,"tip_cents"?: number,"total_cents"?: never,"updated_at"?: string
+                    "address_id"?: string | null,"amount_paid_cents"?: number,"amount_refunded_cents"?: number,"assigned_member_id"?: string | null,"balance_due_cents"?: never,"business_id"?: string,"cancel_request_reason"?: string | null,"cancel_requested_at"?: string | null,"cancellation_reason"?: string | null,"cancelled_at"?: string | null,"completed_at"?: string | null,"confirmed_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"customer_id"?: string,"customer_notes"?: string | null,"customer_reschedule_count"?: number,"deposit_due_cents"?: number,"deposit_paid_cents"?: number,"discount_cents"?: number,"hold_expires_at"?: string | null,"id"?: string,"internal_notes"?: string | null,"public_token"?: string,"recurring_series_id"?: string | null,"reference"?: string,"scheduled_end"?: string,"scheduled_range"?: never,"scheduled_start"?: string,"source"?: Database["public"]['Enums']["booking_source"],"started_at"?: string | null,"status"?: Database["public"]['Enums']["booking_status"],"subtotal_cents"?: number,"tax_cents"?: number,"tip_cents"?: number,"total_cents"?: never,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -197,14 +197,14 @@ isOneToOne: false
                   ]
                 },"businesses": {
                   Row: {
-                    "arrival_window_minutes": number,"auto_confirm": boolean,"base_address": string | null,"base_lat": number | null,"base_lng": number | null,"booking_lead_time_minutes": number,"booking_window_days": number,"brand_color": string | null,"buffer_minutes": number,"cancellation_window_hours": number,"cover_path": string | null,"created_at": string,"currency": string,"deposit_refund_policy": Database["public"]['Enums']["refund_policy"],"description": string | null,"email": string | null,"email_reminders_enabled": boolean,"id": string,"is_published": boolean,"logo_path": string | null,"name": string,"next_invoice_number": number,"onboarding_completed_at": string | null,"owner_id": string,"phone": string | null,"reminder_hours_before": number,"service_radius_miles": number | null,"slot_interval_minutes": number,"slug": string,"sms_reminders_enabled": boolean,"stripe_customer_id": string | null,"timezone": string,"trade": string,"trial_ends_at": string | null,"updated_at": string,"website_url": string | null
+                    "allow_customer_reschedule": boolean,"arrival_window_minutes": number,"auto_confirm": boolean,"base_address": string | null,"base_lat": number | null,"base_lng": number | null,"booking_lead_time_minutes": number,"booking_window_days": number,"brand_color": string | null,"buffer_minutes": number,"cancellation_window_hours": number,"cover_path": string | null,"created_at": string,"currency": string,"deposit_refund_policy": Database["public"]['Enums']["refund_policy"],"description": string | null,"email": string | null,"email_reminders_enabled": boolean,"id": string,"is_published": boolean,"logo_path": string | null,"name": string,"next_invoice_number": number,"onboarding_completed_at": string | null,"owner_id": string,"phone": string | null,"reminder_hours_before": number,"service_radius_miles": number | null,"slot_interval_minutes": number,"slug": string,"sms_reminders_enabled": boolean,"stripe_customer_id": string | null,"timezone": string,"trade": string,"trial_ends_at": string | null,"updated_at": string,"website_url": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "arrival_window_minutes"?: number,"auto_confirm"?: boolean,"base_address"?: string | null,"base_lat"?: number | null,"base_lng"?: number | null,"booking_lead_time_minutes"?: number,"booking_window_days"?: number,"brand_color"?: string | null,"buffer_minutes"?: number,"cancellation_window_hours"?: number,"cover_path"?: string | null,"created_at"?: string,"currency"?: string,"deposit_refund_policy"?: Database["public"]['Enums']["refund_policy"],"description"?: string | null,"email"?: string | null,"email_reminders_enabled"?: boolean,"id"?: string,"is_published"?: boolean,"logo_path"?: string | null,"name": string,"next_invoice_number"?: number,"onboarding_completed_at"?: string | null,"owner_id": string,"phone"?: string | null,"reminder_hours_before"?: number,"service_radius_miles"?: number | null,"slot_interval_minutes"?: number,"slug": string,"sms_reminders_enabled"?: boolean,"stripe_customer_id"?: string | null,"timezone"?: string,"trade": string,"trial_ends_at"?: string | null,"updated_at"?: string,"website_url"?: string | null
+                    "allow_customer_reschedule"?: boolean,"arrival_window_minutes"?: number,"auto_confirm"?: boolean,"base_address"?: string | null,"base_lat"?: number | null,"base_lng"?: number | null,"booking_lead_time_minutes"?: number,"booking_window_days"?: number,"brand_color"?: string | null,"buffer_minutes"?: number,"cancellation_window_hours"?: number,"cover_path"?: string | null,"created_at"?: string,"currency"?: string,"deposit_refund_policy"?: Database["public"]['Enums']["refund_policy"],"description"?: string | null,"email"?: string | null,"email_reminders_enabled"?: boolean,"id"?: string,"is_published"?: boolean,"logo_path"?: string | null,"name": string,"next_invoice_number"?: number,"onboarding_completed_at"?: string | null,"owner_id": string,"phone"?: string | null,"reminder_hours_before"?: number,"service_radius_miles"?: number | null,"slot_interval_minutes"?: number,"slug": string,"sms_reminders_enabled"?: boolean,"stripe_customer_id"?: string | null,"timezone"?: string,"trade": string,"trial_ends_at"?: string | null,"updated_at"?: string,"website_url"?: string | null
                   }
                   Update: {
-                    "arrival_window_minutes"?: number,"auto_confirm"?: boolean,"base_address"?: string | null,"base_lat"?: number | null,"base_lng"?: number | null,"booking_lead_time_minutes"?: number,"booking_window_days"?: number,"brand_color"?: string | null,"buffer_minutes"?: number,"cancellation_window_hours"?: number,"cover_path"?: string | null,"created_at"?: string,"currency"?: string,"deposit_refund_policy"?: Database["public"]['Enums']["refund_policy"],"description"?: string | null,"email"?: string | null,"email_reminders_enabled"?: boolean,"id"?: string,"is_published"?: boolean,"logo_path"?: string | null,"name"?: string,"next_invoice_number"?: number,"onboarding_completed_at"?: string | null,"owner_id"?: string,"phone"?: string | null,"reminder_hours_before"?: number,"service_radius_miles"?: number | null,"slot_interval_minutes"?: number,"slug"?: string,"sms_reminders_enabled"?: boolean,"stripe_customer_id"?: string | null,"timezone"?: string,"trade"?: string,"trial_ends_at"?: string | null,"updated_at"?: string,"website_url"?: string | null
+                    "allow_customer_reschedule"?: boolean,"arrival_window_minutes"?: number,"auto_confirm"?: boolean,"base_address"?: string | null,"base_lat"?: number | null,"base_lng"?: number | null,"booking_lead_time_minutes"?: number,"booking_window_days"?: number,"brand_color"?: string | null,"buffer_minutes"?: number,"cancellation_window_hours"?: number,"cover_path"?: string | null,"created_at"?: string,"currency"?: string,"deposit_refund_policy"?: Database["public"]['Enums']["refund_policy"],"description"?: string | null,"email"?: string | null,"email_reminders_enabled"?: boolean,"id"?: string,"is_published"?: boolean,"logo_path"?: string | null,"name"?: string,"next_invoice_number"?: number,"onboarding_completed_at"?: string | null,"owner_id"?: string,"phone"?: string | null,"reminder_hours_before"?: number,"service_radius_miles"?: number | null,"slot_interval_minutes"?: number,"slug"?: string,"sms_reminders_enabled"?: boolean,"stripe_customer_id"?: string | null,"timezone"?: string,"trade"?: string,"trial_ends_at"?: string | null,"updated_at"?: string,"website_url"?: string | null
                   }
                   Relationships: [
                     
@@ -593,6 +593,14 @@ isOneToOne: false
 "accept_invitation":
 { Args: { "p_invitation_id": string }; Returns: string
                            },
+"booking_counts":
+{ Args: { "p_business_id": string }; Returns: Json
+                           },
+"booking_list":
+{ Args: { "p_business_id": string,"p_cancel_requests"?: boolean,"p_from"?: string,"p_limit"?: number,"p_member_id"?: string,"p_newest_first"?: boolean,"p_offset"?: number,"p_search"?: string,"p_statuses"?: (Database["public"]['Enums']["booking_status"])[],"p_to"?: string,"p_unassigned"?: boolean }; Returns: {
+              "assigned_member_id": string,"balance_due_cents": number,"cancel_request_reason": string,"cancel_requested_at": string,"currency": string,"customer_email": string,"customer_id": string,"customer_name": string,"customer_phone": string,"deposit_due_cents": number,"deposit_paid_cents": number,"hold_expires_at": string,"id": string,"reference": string,"scheduled_end": string,"scheduled_start": string,"services": string,"source": Database["public"]['Enums']["booking_source"],"status": Database["public"]['Enums']["booking_status"],"total_cents": number,"total_count": number
+            }[]
+                           },
 "business_overview":
 { Args: { "p_business_id": string }; Returns: Json
                            },
@@ -630,10 +638,19 @@ isOneToOne: false
 "create_business_invitation":
 { Args: { "p_business_id": string,"p_email": string,"p_role"?: Database["public"]['Enums']["member_role"] }; Returns: string
                            },
+"customer_booking_options":
+{ Args: { "p_token": string }; Returns: Json
+                           },
+"customer_cancel_booking":
+{ Args: { "p_reason"?: string,"p_token": string }; Returns: string
+                           },
 "customer_list":
 { Args: { "p_business_id": string,"p_limit"?: number,"p_offset"?: number,"p_search"?: string }; Returns: {
               "booking_count": number,"created_at": string,"email": string,"full_name": string,"id": string,"last_booking_at": string,"lifetime_paid_cents": number,"next_booking_at": string,"phone": string,"tags": (string)[],"total_count": number
             }[]
+                           },
+"customer_reschedule_booking":
+{ Args: { "p_start": string,"p_token": string }; Returns: string
                            },
 "delete_account":
 { Args: { "p_user_id": string }; Returns: undefined
@@ -645,6 +662,11 @@ isOneToOne: false
                            },
 "get_booking_page":
 { Args: { "p_slug": string }; Returns: Json
+                           },
+"get_reschedule_slots":
+{ Args: { "p_days"?: number,"p_from"?: string,"p_token": string }; Returns: {
+              "slot_end": string,"slot_start": string
+            }[]
                            },
 "invitation_preview":
 { Args: { "p_token": string }; Returns: {
@@ -661,6 +683,9 @@ isOneToOne: false
                            },
 "release_expired_holds":
 { Args: Record<PropertyKey, never>; Returns: number
+                           },
+"resolve_cancel_request":
+{ Args: { "p_approve": boolean,"p_booking_id": string,"p_note"?: string }; Returns: undefined
                            },
 "team_members":
 { Args: { "p_business_id": string }; Returns: {

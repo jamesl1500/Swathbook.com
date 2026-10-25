@@ -42,6 +42,8 @@ export type BookingEmailContext = {
     };
     services: string[];
     address: string | null;
+    /** Why the customer asked to cancel, while a request is open. */
+    cancelRequestReason?: string | null;
     /** From the queued row, e.g. the previous start for a reschedule. */
     payload: Record<string, unknown>;
 };
@@ -194,6 +196,68 @@ export const bookingTemplates: Record<string, Template> = {
             button: { label: "View your booking", url: bookingUrl(context) },
             footer: contactLine(context),
         }),
+
+    "booking.cancel_requested": (context) =>
+        customerEmail(context, `We got your cancellation request · ${context.business.name}`, {
+            preheader: `${context.business.name} will confirm by email.`,
+            heading: "Cancellation requested",
+            paragraphs: [
+                `Hi ${context.customer.name}, we've asked ${context.business.name} to cancel your booking for ${when(context)}.`,
+                "They'll confirm by email. Until then, the booking stays on their calendar.",
+            ],
+            details: bookingDetails(context),
+            button: { label: "View your booking", url: bookingUrl(context) },
+            footer: contactLine(context),
+        }),
+
+    "booking.cancel_declined": (context) => {
+        const note = typeof context.payload.note === "string" ? context.payload.note : null;
+        return customerEmail(context, `Your booking with ${context.business.name} is still on`, {
+            preheader: `${when(context)} is still booked.`,
+            heading: "Your booking is still on",
+            paragraphs: [
+                `Hi ${context.customer.name}, ${context.business.name} couldn't cancel your booking for ${when(context)}, so it's still on.`,
+                ...(note ? [`Their note: "${note}"`] : []),
+            ],
+            details: bookingDetails(context),
+            button: { label: "View your booking", url: bookingUrl(context) },
+            footer: contactLine(context),
+        });
+    },
+
+    "owner.cancel_request": (context) =>
+        ownerEmail(`Cancellation request: ${context.customer.fullName} · ${when(context)}`, {
+            preheader: "Approve or decline it from Bookings.",
+            heading: "A customer asked to cancel",
+            paragraphs: [
+                `${context.customer.fullName} asked to cancel ${when(context)} with ${context.business.name}.`,
+                ...(context.cancelRequestReason ? [`Their reason: "${context.cancelRequestReason}"`] : []),
+            ],
+            details: bookingDetails(context),
+            button: { label: "Approve or decline", url: `${context.baseUrl}/dashboard/schedule/${context.booking.id}` },
+        }),
+
+    "owner.customer_cancelled": (context) =>
+        ownerEmail(`Request withdrawn: ${context.customer.fullName} · ${when(context)}`, {
+            preheader: "The time is open again.",
+            heading: "A customer cancelled their request",
+            paragraphs: [`${context.customer.fullName} cancelled their request for ${when(context)} with ${context.business.name}. The time is open again.`],
+            details: bookingDetails(context),
+            button: { label: "Open bookings", url: `${context.baseUrl}/dashboard/bookings` },
+        }),
+
+    "owner.customer_rescheduled": (context) => {
+        const previous = typeof context.payload.previous_start === "string" ? context.payload.previous_start : null;
+        return ownerEmail(`Rescheduled: ${context.customer.fullName} · now ${when(context)}`, {
+            preheader: previous ? `Moved from ${when(context, previous)}.` : "The customer picked a new time.",
+            heading: "A customer moved their booking",
+            paragraphs: [
+                `${context.customer.fullName} moved their ${context.business.name} booking to ${when(context)}${previous ? ` (was ${when(context, previous)})` : ""}.`,
+            ],
+            details: bookingDetails(context),
+            button: { label: "Open the job", url: `${context.baseUrl}/dashboard/schedule/${context.booking.id}` },
+        });
+    },
 
     "owner.new_booking": (context) =>
         ownerEmail(`New booking: ${context.customer.fullName} · ${when(context)}`, {

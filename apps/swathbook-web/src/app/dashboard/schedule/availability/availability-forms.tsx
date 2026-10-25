@@ -79,6 +79,7 @@ type Rules = {
   cancellation_window_hours: number;
   deposit_refund_policy: string;
   auto_confirm: boolean;
+  allow_customer_reschedule: boolean;
 };
 
 export function RulesForm({ businessId, rules }: { businessId: string; rules: Rules }) {
@@ -155,6 +156,18 @@ export function RulesForm({ businessId, rules }: { businessId: string; rules: Ru
         <input type="checkbox" name="autoConfirm" defaultChecked={rules.auto_confirm} className="mt-0.5 size-4 accent-[var(--color-brand-600)]" />
         <span>
           <strong>Confirm bookings automatically.</strong> Turn off to review each request before it&apos;s confirmed.
+        </span>
+      </label>
+      <label className="flex items-start gap-2.5 text-sm">
+        <input
+          type="checkbox"
+          name="allowCustomerReschedule"
+          defaultChecked={rules.allow_customer_reschedule}
+          className="mt-0.5 size-4 accent-[var(--color-brand-600)]"
+        />
+        <span>
+          <strong>Let customers reschedule online.</strong> They can move to another open time from their booking link, up to 3 times and not inside
+          your cancellation window. Cancellations always come to you as a request.
         </span>
       </label>
       <SubmitButton pendingLabel="Saving…">Save rules</SubmitButton>

@@ -7,6 +7,7 @@ import {
   CalendarDays,
   CircleHelp,
   CircleUser,
+  ClipboardList,
   CreditCard,
   House,
   Link2,
@@ -30,6 +31,7 @@ type NavItem = { href: string; label: string; icon: LucideIcon; managersOnly?: b
 const items: NavItem[] = [
   { href: routes.dashboard, label: "Overview", icon: House },
   { href: routes.schedule, label: "Schedule", icon: CalendarDays },
+  { href: routes.bookings, label: "Bookings", icon: ClipboardList },
   { href: routes.customers, label: "Customers", icon: Users },
   { href: routes.dayRoutes, label: "Routes", icon: Route },
   { href: routes.services, label: "Services", icon: ListChecks, managersOnly: true },
@@ -81,9 +83,11 @@ export function DashboardNav({ canManage, variant }: { canManage: boolean; varia
  */
 function TabBar({ canManage, pathname }: { canManage: boolean; pathname: string }) {
   const sheetRef = useRef<HTMLDialogElement>(null);
+  const byRoute = (href: string) => items.find((item) => item.href === href)!;
+  // Owners get the big "new job" button; crews get one more destination instead.
   const primary = canManage
-    ? [items[0], items[1], null, items[3]]
-    : [items[0], items[1], items[2], items[3]];
+    ? [byRoute(routes.dashboard), byRoute(routes.schedule), null, byRoute(routes.bookings)]
+    : [byRoute(routes.dashboard), byRoute(routes.schedule), byRoute(routes.bookings), byRoute(routes.dayRoutes)];
   const moreItems = items.filter((item) => !primary.includes(item) && (canManage || !item.managersOnly));
   const moreActive = moreItems.some((item) => isActive(pathname, item.href)) || pathname.startsWith(routes.account);
 

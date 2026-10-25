@@ -28,6 +28,7 @@ export const routes = {
     addBusiness: "/onboarding?new=1",
     dashboard: "/dashboard",
     schedule: "/dashboard/schedule",
+    bookings: "/dashboard/bookings",
     newBooking: "/dashboard/schedule/new",
     availability: "/dashboard/schedule/availability",
     customers: "/dashboard/customers",

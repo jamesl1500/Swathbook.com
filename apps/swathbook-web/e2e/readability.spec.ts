@@ -151,6 +151,7 @@ test.describe("signed-in pages", () => {
       "/dashboard/payouts",
       "/dashboard/account",
       "/dashboard/team",
+      "/dashboard/bookings",
       "/dashboard/billing",
     ]) {
       await audit(page, path, main);

@@ -13,6 +13,8 @@ import { createClient } from "@/libs/supabase/server";
 import { loadTeam } from "@/libs/team";
 import { formatDateLong, formatDateTime, formatTime, toDateKey, toTimeKey } from "@/libs/time";
 import { formatCents, formatDuration } from "@/libs/utils";
+import { refundByDefault } from "@/libs/booking-policy";
+import { CancelRequestControls } from "../../bookings/booking-actions";
 import { AssignForm, NotesForm, RefundButton, RescheduleForm, StatusActions } from "../job-actions";
 
 export const metadata: Metadata = { title: "Job" };
@@ -99,6 +101,27 @@ async function BookingDetail({ params }: { params: PageProps<"/dashboard/schedul
           <strong>Waiting for the deposit.</strong> The time is held until {formatTime(booking.hold_expires_at, tz)}. If it isn&apos;t paid by then,
           the time is released and the customer gets an email to pick a new one.
         </p>
+      ) : null}
+      {booking.cancel_requested_at && canManage ? (
+        <section className="mb-6 rounded-2xl border border-clay/40 bg-clay-soft/60 p-4" data-testid="cancel-request" aria-labelledby="cancel-request-heading">
+          <h2 id="cancel-request-heading" className="font-bold">
+            {booking.customers?.full_name ?? "The customer"} asked to cancel
+          </h2>
+          <p className="mt-1 text-sm">
+            Requested {formatDateTime(booking.cancel_requested_at, tz)}.
+            {booking.cancel_request_reason ? <> &ldquo;{booking.cancel_request_reason}&rdquo;</> : null}
+          </p>
+          <div className="mt-3">
+            <CancelRequestControls
+              businessId={business.id}
+              bookingId={booking.id}
+              name={booking.customers?.full_name ?? "the customer"}
+              paidCents={booking.deposit_paid_cents}
+              currency={booking.currency}
+              refundByDefault={refundByDefault(business.deposit_refund_policy, booking.cancel_requested_at, booking.scheduled_start, business.cancellation_window_hours)}
+            />
+          </div>
+        </section>
       ) : null}
       {booking.status === "cancelled" && booking.cancellation_reason ? (
         <p className="mb-6 rounded-2xl border border-line bg-paper-deep/60 px-4 py-3 text-sm" data-testid="cancel-reason">
