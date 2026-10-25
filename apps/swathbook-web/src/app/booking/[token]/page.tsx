@@ -42,7 +42,11 @@ function statusBanner(booking: CustomerBooking, justPaid: boolean) {
     case "pending_payment":
       if (justPaid) return { tone: "info", title: "Payment received", body: "We're confirming it with the bank. This page updates in a moment." } as const;
       return holdActive
-        ? ({ tone: "info", title: "Pay your deposit to confirm", body: "We're holding this time for you for a few more minutes." } as const)
+        ? ({
+            tone: "info",
+            title: "Pay your deposit to confirm",
+            body: `We're holding this time for you until ${formatTime(booking.hold_expires_at!, booking.businesses!.timezone)}. After that it opens up for other customers.`,
+          } as const)
         : ({ tone: "error", title: "This time was released", body: "The deposit wasn't paid in time. Pick a new time to book again." } as const);
     case "requested":
       return { tone: "info", title: "Request sent", body: "The business will confirm your appointment soon. We'll email you." } as const;

@@ -6,6 +6,7 @@ import { isDateKey } from "@/libs/time";
 import { createBookingPayment, type PaymentSession } from "@/libs/stripe/payments";
 import { getStripe, hasStripe } from "@/libs/stripe/server";
 import { createAdminClient } from "@/libs/supabase/admin";
+import { sendQueuedEmailsSoon } from "@/libs/email/worker";
 import { createClient } from "@/libs/supabase/server";
 
 export type Slot = { start: string; end: string };
@@ -146,5 +147,7 @@ export async function submitBooking(input: BookingRequest): Promise<BookingResul
         if ("clientSecret" in session) payment = session;
     }
 
+    // Confirmations (or the owner's request notice) go out right after this response.
+    sendQueuedEmailsSoon(booking.booking_id);
     return { ok: true, token: booking.public_token, payment };
 }

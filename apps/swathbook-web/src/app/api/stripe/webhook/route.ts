@@ -1,6 +1,7 @@
 import { getStripe, hasStripe } from "@/libs/stripe/server";
 import { handleStripeEvent, type ThinEvent } from "@/libs/stripe/webhooks";
 import { createAdminClient } from "@/libs/supabase/admin";
+import { sendQueuedEmailsSoon } from "@/libs/email/worker";
 
 /**
  * Stripe event destinations (thin events). Account events come from the platform
@@ -21,6 +22,8 @@ export async function POST(request: Request) {
 
   try {
     const outcome = await handleStripeEvent(getStripe(), createAdminClient(), event);
+    // A paid deposit confirms the booking, which queues the customer's confirmation.
+    sendQueuedEmailsSoon();
     return Response.json({ received: true, outcome });
   } catch (error) {
     console.error(`[stripe] ${event.type} ${event.id} failed`, error);

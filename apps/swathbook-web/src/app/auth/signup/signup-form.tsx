@@ -9,6 +9,7 @@ import { siteConfig } from "@/libs/globals/site";
 import { slugify } from "@/libs/utils";
 import { signUp, type AuthFormState } from "../actions";
 import { PasswordInput } from "../_components/password-input";
+import { HiddenParamInput } from "../_components/search-params";
 
 export function SignupForm() {
   const [state, formAction] = useActionState<AuthFormState, FormData>(signUp, {});
@@ -18,6 +19,7 @@ export function SignupForm() {
     <form action={formAction} className="space-y-5" noValidate>
       <Suspense>
         <ClaimedSlug fallback={state.values?.slug} />
+        <HiddenParamInput name="next" />
       </Suspense>
 
       <FormMessage>{state.error}</FormMessage>
@@ -35,16 +37,9 @@ export function SignupForm() {
       </Field>
 
       <Field label="Email" htmlFor="email" error={errors.email?.[0]}>
-        <Input
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          required
-          defaultValue={state.values?.email}
-          aria-invalid={Boolean(errors.email) || undefined}
-          aria-describedby={errors.email ? "email-error" : undefined}
-        />
+        <Suspense fallback={<EmailInput defaultValue={state.values?.email} invalid={Boolean(errors.email)} />}>
+          <EmailFromLink fallback={state.values?.email} invalid={Boolean(errors.email)} />
+        </Suspense>
       </Field>
 
       <Field label="Password" htmlFor="password" hint="At least 8 characters." error={errors.password?.[0]}>
@@ -82,4 +77,25 @@ function ClaimedSlug({ fallback }: { fallback?: string }) {
       <input type="hidden" name="slug" value={slug} />
     </div>
   );
+}
+
+function EmailInput({ defaultValue, invalid }: { defaultValue?: string; invalid: boolean }) {
+  return (
+    <Input
+      id="email"
+      name="email"
+      type="email"
+      autoComplete="email"
+      required
+      defaultValue={defaultValue}
+      aria-invalid={invalid || undefined}
+      aria-describedby={invalid ? "email-error" : undefined}
+    />
+  );
+}
+
+/** Team invites link here with ?email=, so the invitee signs up with the invited address. */
+function EmailFromLink({ fallback, invalid }: { fallback?: string; invalid: boolean }) {
+  const fromLink = useSearchParams().get("email") ?? undefined;
+  return <EmailInput defaultValue={fallback ?? fromLink} invalid={invalid} />;
 }

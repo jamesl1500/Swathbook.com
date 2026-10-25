@@ -94,6 +94,17 @@ async function BookingDetail({ params }: { params: PageProps<"/dashboard/schedul
         />
       </div>
 
+      {booking.status === "pending_payment" && booking.hold_expires_at ? (
+        <p className="mb-6 rounded-2xl border border-sun bg-sun-soft px-4 py-3 text-sm" data-testid="hold-notice">
+          <strong>Waiting for the deposit.</strong> The time is held until {formatTime(booking.hold_expires_at, tz)}. If it isn&apos;t paid by then,
+          the time is released and the customer gets an email to pick a new one.
+        </p>
+      ) : null}
+      {booking.status === "cancelled" && booking.cancellation_reason ? (
+        <p className="mb-6 rounded-2xl border border-line bg-paper-deep/60 px-4 py-3 text-sm" data-testid="cancel-reason">
+          <strong>Cancelled:</strong> {booking.cancellation_reason === "Payment hold expired" ? "the deposit wasn't paid within 30 minutes, so the time was released." : booking.cancellation_reason}
+        </p>
+      ) : null}
       <QuickActions phone={booking.customers?.phone ?? null} directionsUrl={address ? directionsUrl(address) : null} />
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">

@@ -65,12 +65,14 @@ export async function signUp(_prev: AuthFormState, formData: FormData): Promise<
     }
 
     const { fullName, email, password, slug } = parsed.data;
+    // e.g. a team invite: after confirming, land back on it instead of onboarding.
+    const next = safeNextPath(text(formData, "next")) ?? routes.onboarding;
     const supabase = await createClient();
     const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-            emailRedirectTo: `${await getSiteUrl()}${routes.authConfirm}?next=${routes.onboarding}`,
+            emailRedirectTo: `${await getSiteUrl()}${routes.authConfirm}?next=${encodeURIComponent(next)}`,
             data: { full_name: fullName, desired_slug: slug || null },
         },
     });
@@ -89,7 +91,7 @@ export async function signUp(_prev: AuthFormState, formData: FormData): Promise<
     }
 
     // Email confirmation off: we already have a session.
-    if (data.session) redirect(routes.onboarding);
+    if (data.session) redirect(next);
 
     redirect(`${routes.verifyEmail}?email=${encodeURIComponent(email)}`);
 }

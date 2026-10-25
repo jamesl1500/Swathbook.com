@@ -68,7 +68,7 @@ export function TradeMosaicAside() {
 
 /** Pricing: what every plan includes. */
 export function PlanIncludesAside() {
-  const included = ["Your own booking link", "Deposits and card payments", "AI route planning", "Email & text reminders", "Customer records"];
+  const included = ["Your own booking link", "Deposits and card payments", "AI route planning", "Email confirmations & reminders", "Customer records"];
   return (
     <div className={cn(card, "-rotate-1")}>
       <p className="label-tag text-ink-faint">Every plan includes</p>

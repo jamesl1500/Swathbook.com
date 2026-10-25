@@ -17,7 +17,9 @@ vi.mock("@/libs/google/maps", () => ({
 }));
 vi.mock("@/libs/stripe/server", () => ({ hasStripe: () => state.stripeConfigured, getStripe: () => ({}) }));
 vi.mock("@/libs/stripe/payments", () => ({ createBookingPayment: vi.fn(async () => state.session) }));
+vi.mock("@/libs/email/worker", () => ({ sendQueuedEmailsSoon: vi.fn() }));
 
+import { sendQueuedEmailsSoon } from "@/libs/email/worker";
 import { createBookingPayment } from "@/libs/stripe/payments";
 import { getAvailability, submitBooking, type BookingRequest } from "./actions";
 
@@ -73,6 +75,7 @@ describe("submitBooking", () => {
         state.admin.rpc.mockResolvedValue({ data: [{ ...created, status: "pending_payment", deposit_due_cents: 1500, stripe_account_id: "acct_1" }], error: null });
         const result = await submitBooking(request);
         expect(result).toEqual({ ok: true, token: "a".repeat(64), payment: state.session });
+        expect(sendQueuedEmailsSoon).toHaveBeenCalled();
         expect(createBookingPayment).toHaveBeenCalledWith(expect.anything(), expect.anything(), { bookingId: "bk1", kind: "deposit" });
     });
 

@@ -10,6 +10,7 @@ import { bookingPath } from "@/libs/routes";
 import { getStripe, hasStripe } from "@/libs/stripe/server";
 import { createAdminClient } from "@/libs/supabase/admin";
 import { createClient } from "@/libs/supabase/server";
+import { sendQueuedEmailsSoon } from "@/libs/email/worker";
 import { isDateKey, zonedToUtc } from "@/libs/time";
 
 const timeKey = z.string().regex(/^\d{2}:\d{2}$/, { error: "Pick a time." });
@@ -43,6 +44,7 @@ export async function updateJobStatus(formData: FormData): Promise<FormState> {
         if (error.message.includes("Invalid booking status change")) return { error: "That job can't move to that status from where it is now." };
         return { error: "We couldn't update the job." };
     }
+    sendQueuedEmailsSoon(text(formData, "bookingId"));
     refresh();
     return { success: "Job updated." };
 }
@@ -65,6 +67,7 @@ export async function rescheduleBooking(_prev: FormState, formData: FormData): P
         .eq("id", text(formData, "bookingId"))
         .eq("business_id", auth.businessId);
     if (error) return { error: overlapMessage(error) ?? "We couldn't reschedule this job." };
+    sendQueuedEmailsSoon(text(formData, "bookingId"));
     refresh();
     return { success: "Rescheduled." };
 }
@@ -305,6 +308,7 @@ export async function createManualBooking(_prev: FormState, formData: FormData):
     );
     if (itemsError) return { error: "The job was created, but its services couldn't be saved. Open it to fix." };
 
+    sendQueuedEmailsSoon(booking.id);
     redirect(bookingPath(booking.id));
 }
 

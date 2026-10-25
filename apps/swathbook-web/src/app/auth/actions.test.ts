@@ -90,7 +90,7 @@ describe("signUp", () => {
             email: "dana@example.com",
             password: "long-enough",
             options: {
-                emailRedirectTo: "http://localhost:3000/auth/confirm?next=/onboarding",
+                emailRedirectTo: "http://localhost:3000/auth/confirm?next=%2Fonboarding",
                 data: { full_name: "Dana Field", desired_slug: "green-acres" },
             },
         });
@@ -107,7 +107,7 @@ describe("signUp", () => {
         state.supabase.auth.signUp.mockResolvedValue({ data: { user: { id: "u1" }, session: null }, error: null });
         await expectRedirect(signUp({}, form(valid)), "/auth/verify_email?email=dana%40example.com");
         expect(state.supabase.auth.signUp.mock.calls[0][0].options.emailRedirectTo).toBe(
-            "https://www.swathbook.com/auth/confirm?next=/onboarding",
+            "https://www.swathbook.com/auth/confirm?next=%2Fonboarding",
         );
     });
 
@@ -116,7 +116,7 @@ describe("signUp", () => {
         state.supabase.auth.signUp.mockResolvedValue({ data: { user: { id: "u1" }, session: null }, error: null });
         await expectRedirect(signUp({}, form(valid)), "/auth/verify_email?email=dana%40example.com");
         expect(state.supabase.auth.signUp.mock.calls[0][0].options.emailRedirectTo).toBe(
-            "https://preview.swathbook.com/auth/confirm?next=/onboarding",
+            "https://preview.swathbook.com/auth/confirm?next=%2Fonboarding",
         );
     });
 

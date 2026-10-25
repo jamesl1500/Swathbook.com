@@ -65,7 +65,7 @@ export function createSupabaseMock() {
             },
         } as Record<string, unknown>;
 
-        for (const filter of ["eq", "neq", "is", "in", "order", "limit", "match", "gte", "lte"]) {
+        for (const filter of ["eq", "neq", "is", "in", "not", "order", "limit", "match", "gte", "lte", "lt", "gt"]) {
             builder[filter] = (...args: unknown[]) => {
                 call.filters.push([filter, ...args]);
                 return builder;

@@ -8,6 +8,7 @@ import { getCurrentUser } from "@/libs/auth";
 import { invalid, text, type FormState } from "@/libs/forms";
 import { routes } from "@/libs/routes";
 import { getSiteUrl } from "@/libs/site-url";
+import { getStripe, hasStripe } from "@/libs/stripe/server";
 import { createAdminClient } from "@/libs/supabase/admin";
 import { createClient } from "@/libs/supabase/server";
 import { changeEmailSchema, changeNameSchema, changePasswordSchema, deleteAccountSchema } from "@/libs/validation/auth";
@@ -133,6 +134,14 @@ export async function deleteAccount(_prev: FormState, formData: FormData): Promi
     const admin = createAdminClient();
     const { data: owned } = await admin.from("businesses").select("id").eq("owner_id", user.id);
     const businessIds = (owned ?? []).map((business) => business.id);
+    // Read before deleting: the subscription rows go with the businesses.
+    const { data: liveSubscriptions } = businessIds.length
+        ? await admin
+              .from("subscriptions")
+              .select("stripe_subscription_id")
+              .in("business_id", businessIds)
+              .not("status", "in", "(canceled,incomplete_expired)")
+        : { data: [] };
 
     const { error } = await admin.rpc("delete_account", { p_user_id: user.id });
     if (error) {
@@ -145,10 +154,24 @@ export async function deleteAccount(_prev: FormState, formData: FormData): Promi
         return { error: "We couldn't delete your account. Please try again or contact support." };
     }
 
+    await cancelPlans((liveSubscriptions ?? []).map((row) => row.stripe_subscription_id));
     await removeBusinessFiles(admin, businessIds);
     await supabase.auth.signOut();
     (await cookies()).delete(ACTIVE_BUSINESS_COOKIE);
     redirect(`${routes.login}?notice=account_deleted`);
+}
+
+/** Stops Swathbook billing for deleted businesses. Best effort; Stripe failures are logged. */
+async function cancelPlans(subscriptionIds: string[]) {
+    if (!subscriptionIds.length || !hasStripe()) return;
+    const stripe = getStripe();
+    for (const id of subscriptionIds) {
+        try {
+            await stripe.subscriptions.cancel(id);
+        } catch (error) {
+            console.error(`[account] couldn't cancel subscription ${id}`, error);
+        }
+    }
 }
 
 const BUSINESS_BUCKETS = ["business-assets", "job-files"] as const;

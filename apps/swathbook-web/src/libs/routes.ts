@@ -37,7 +37,12 @@ export const routes = {
     bookingLink: "/dashboard/link",
     payouts: "/dashboard/payouts",
     account: "/dashboard/account",
+    billing: "/dashboard/billing",
+    team: "/dashboard/team",
 } as const;
+
+/** Where an emailed team invite lands. */
+export const invitePath = (token: string) => `/invite/${token}`;
 
 export const bookingPath = (id: string) => `${routes.schedule}/${id}`;
 export const customerPath = (id: string) => `${routes.customers}/${id}`;

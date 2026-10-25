@@ -7,6 +7,7 @@ import {
   CalendarDays,
   CircleHelp,
   CircleUser,
+  CreditCard,
   House,
   Link2,
   ListChecks,
@@ -15,6 +16,7 @@ import {
   Plus,
   Route,
   Users,
+  UsersRound,
   Wallet,
   X,
   type LucideIcon,
@@ -33,6 +35,8 @@ const items: NavItem[] = [
   { href: routes.services, label: "Services", icon: ListChecks, managersOnly: true },
   { href: routes.bookingLink, label: "Booking link", icon: Link2, managersOnly: true },
   { href: routes.payouts, label: "Payouts", icon: Wallet, managersOnly: true },
+  { href: routes.team, label: "Team", icon: UsersRound, managersOnly: true },
+  { href: routes.billing, label: "Billing", icon: CreditCard, managersOnly: true },
 ];
 
 function isActive(pathname: string, href: string) {

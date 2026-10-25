@@ -3,7 +3,9 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { getDraftBusiness, listMyBusinesses, requireUser } from "@/libs/auth";
 import { routes } from "@/libs/routes";
+import { createClient } from "@/libs/supabase/server";
 import { OnboardingWizard } from "./onboarding-wizard";
+import { PendingInvites } from "./pending-invites";
 
 export const metadata: Metadata = { title: "Set up your business" };
 
@@ -21,20 +23,25 @@ export default function OnboardingPage({ searchParams }: PageProps<"/onboarding"
  * - Unfinished business: resume it.
  * - `?new=1`: start another business.
  * - Otherwise, anyone with a live business goes to the dashboard.
+ * - Team invites waiting for this email show above setup.
  */
 async function OnboardingGate({ searchParams }: { searchParams: PageProps<"/onboarding">["searchParams"] }) {
   const user = await requireUser(routes.onboarding);
-  const [{ new: addingNew }, businesses, draft] = await Promise.all([
+  const supabase = await createClient();
+  const [{ new: addingNew }, businesses, draft, { data: invites }] = await Promise.all([
     searchParams,
     listMyBusinesses(user.id),
     getDraftBusiness(user.id),
+    supabase.rpc("my_pending_invitations"),
   ]);
   const hasLiveBusiness = businesses.some((business) => business.onboarding_completed_at);
 
   if (hasLiveBusiness && !draft && addingNew !== "1") redirect(routes.dashboard);
 
   return (
-    <OnboardingWizard
+    <>
+      {invites?.length ? <PendingInvites invites={invites} /> : null}
+      <OnboardingWizard
       defaults={{
         firstName: user.fullName.split(" ")[0] ?? "",
         businessName: draft?.name ?? "",
@@ -43,6 +50,7 @@ async function OnboardingGate({ searchParams }: { searchParams: PageProps<"/onbo
         isAdditionalBusiness: hasLiveBusiness,
       }}
     />
+    </>
   );
 }
 

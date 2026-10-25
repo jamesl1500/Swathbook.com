@@ -273,7 +273,7 @@ export const supportingFeatures: Feature[] = [
     {
         icon: BellRing,
         title: "Automatic reminders",
-        body: "Booking confirmations, day-before reminders and on-my-way texts go out without you lifting a finger.",
+        body: "Booking confirmations, deposit nudges and day-before reminders go out by email without you lifting a finger.",
     },
     {
         icon: Receipt,
@@ -322,7 +322,7 @@ export const pricingTiers: PricingTier[] = [
             "Unlimited services & bookings",
             "Deposits and card payments",
             "AI route planning for 1 driver",
-            "Email & text reminders",
+            "Email confirmations & reminders",
         ],
         cta: "Start free trial",
     },
@@ -335,7 +335,7 @@ export const pricingTiers: PricingTier[] = [
             "Everything in Solo",
             "Routes for up to 5 drivers",
             "Assign jobs to crew members",
-            "Recurring service plans",
+            "Team invites & roles",
             "Priority support",
         ],
         cta: "Start free trial",
@@ -380,6 +380,6 @@ export const faqs = [
     },
     {
         question: "Can I cancel anytime?",
-        answer: "Yes. No contracts, no setup fees. If you leave, you can export your customers and job history.",
+        answer: "Yes. No contracts, no setup fees. Cancel from your billing page and your link stops taking bookings at the end of the period you've paid for.",
     },
 ];

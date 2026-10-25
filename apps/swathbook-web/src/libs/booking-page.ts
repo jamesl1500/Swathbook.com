@@ -57,9 +57,18 @@ export const loadBookingPage = cache(async (slug: string): Promise<BookingPageDa
     return (data as BookingPageData | null) ?? null;
 });
 
-/** Name of a business that exists but has paused bookings (for a friendlier notice than a 404). */
+/**
+ * Name of a set-up business whose page is closed (bookings paused by the owner,
+ * or no active trial or plan), for a friendlier notice than a 404. Only called
+ * after get_booking_page found nothing.
+ */
 export const loadPausedBusinessName = cache(async (slug: string) => {
     if (!SLUG_PATTERN.test(slug) || !hasAdminClient()) return null;
-    const { data } = await createAdminClient().from("businesses").select("name").eq("slug", slug).eq("is_published", false).maybeSingle();
+    const { data } = await createAdminClient()
+        .from("businesses")
+        .select("name")
+        .eq("slug", slug)
+        .not("onboarding_completed_at", "is", null)
+        .maybeSingle();
     return data?.name ?? null;
 });

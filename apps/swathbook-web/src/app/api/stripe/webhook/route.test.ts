@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const handleStripeEvent = vi.fn<(...args: unknown[]) => Promise<string>>(async () => "processed");
 vi.mock("@/libs/stripe/webhooks", () => ({ handleStripeEvent }));
 vi.mock("@/libs/supabase/admin", () => ({ createAdminClient: () => ({}) }));
+vi.mock("@/libs/email/worker", () => ({ sendQueuedEmailsSoon: vi.fn() }));
 
 const { POST } = await import("./route");
 const { resetStripeClient } = await import("@/libs/stripe/server");

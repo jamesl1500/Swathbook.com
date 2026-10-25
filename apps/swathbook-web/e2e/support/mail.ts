@@ -44,3 +44,32 @@ export async function getAuthLink(email: string, subject: RegExp, { minCount = 1
     link.host = app.host;
     return link.toString();
 }
+
+type MailpitMessage = { Subject: string; HTML: string; Text: string };
+
+/** Waits for the newest email to `email` whose subject matches, and returns it. */
+export async function waitForEmail(email: string, subject: RegExp, { minCount = 1 } = {}): Promise<MailpitMessage> {
+    let message: MailpitSummary | undefined;
+    await expect
+        .poll(
+            async () => {
+                const matching = (await listMessages(email)).filter((item) => subject.test(item.Subject));
+                message = matching[0];
+                return matching.length;
+            },
+            { message: `waiting for "${subject}" email to ${email}`, timeout: 20_000 },
+        )
+        .toBeGreaterThanOrEqual(minCount);
+    return (await (await fetch(`${env.mailpitUrl}/api/v1/message/${message!.ID}`)).json()) as MailpitMessage;
+}
+
+/** The first link in an email whose path matches, pointed at the app under test. */
+export function linkIn(message: MailpitMessage, path: RegExp) {
+    const href = [...message.HTML.matchAll(/href="([^"]+)"/g)].map((match) => match[1].replaceAll("&amp;", "&")).find((url) => path.test(new URL(url).pathname));
+    if (!href) throw new Error(`No link matching ${path} in "${message.Subject}"`);
+    const link = new URL(href);
+    const app = new URL(env.baseURL);
+    link.protocol = app.protocol;
+    link.host = app.host;
+    return link.toString();
+}

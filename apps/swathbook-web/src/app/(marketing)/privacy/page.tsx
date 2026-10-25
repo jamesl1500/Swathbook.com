@@ -25,7 +25,7 @@ export default function PrivacyPage() {
       sections={[
         { title: "What we collect", body: <p>Account details you give us, your business and service information, and the bookings your customers make.</p> },
         { title: "How we use it", body: <p>To run your booking page, process payments, plan routes, and send the notifications you&apos;ve turned on.</p> },
-        { title: "Your customers' data", body: <p>Customer details belong to you. We only use them to provide the service, and you can export or delete them.</p> },
+        { title: "Your customers' data", body: <p>Customer details belong to you. We only use them to provide the service, and you can delete them, or your whole account, any time.</p> },
         { title: "Contact", body: <p>Questions? Email {siteConfig.supportEmail}.</p> },
       ]}
     />

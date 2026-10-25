@@ -17,7 +17,7 @@ export const metadata: Metadata = pageMetadata({
 });
 
 const roadmap = [
-  { title: "Crew scheduling", body: "Assign jobs to team members and give each rig its own route." },
+  { title: "Text message reminders", body: "Confirmations and on-my-way texts, alongside the emails customers already get." },
   { title: "Recurring plans", body: "Weekly, bi-weekly and seasonal services that rebook themselves." },
   { title: "Quotes & estimates", body: "Send a quote, get it approved, and turn it into a booked job in one tap." },
   { title: "Reviews on autopilot", body: "Ask happy customers for a Google review right after they pay." },

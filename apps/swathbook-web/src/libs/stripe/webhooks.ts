@@ -1,8 +1,8 @@
 /**
  * webhooks.ts
  *
- * Handles Stripe thin events (one event destination covering connected
- * accounts). Each event is recorded once in stripe_webhook_events; the handler
+ * Handles Stripe thin events: connected-account payments and onboarding, plus
+ * Swathbook's own subscriptions on the platform account. Each event is recorded once in stripe_webhook_events; the handler
  * then re-fetches the current object from Stripe rather than trusting a
  * snapshot, and mirrors it into payments / refunds / stripe_connect_accounts.
  *
@@ -13,6 +13,7 @@
 import type Stripe from "stripe";
 import type { createAdminClient } from "@/libs/supabase/admin";
 import type { Database } from "@/libs/supabase/database.types";
+import { syncSubscription } from "@/libs/billing/stripe-billing";
 import { syncConnectAccount } from "./connect";
 
 type AdminClient = ReturnType<typeof createAdminClient>;
@@ -46,7 +47,23 @@ const PAYMENT_INTENT_EVENTS = new Set([
 
 const REFUND_EVENTS = new Set(["v1.refund.created", "v1.refund.updated", "v1.refund.failed"]);
 
-export const SUBSCRIBED_EVENTS = [...ACCOUNT_EVENTS, ...PAYMENT_INTENT_EVENTS, ...REFUND_EVENTS, "v1.charge.refunded"];
+// Swathbook's own plans, on the platform account (no connected-account context).
+const SUBSCRIPTION_EVENTS = new Set([
+    "v1.customer.subscription.created",
+    "v1.customer.subscription.updated",
+    "v1.customer.subscription.deleted",
+    "v1.customer.subscription.paused",
+    "v1.customer.subscription.resumed",
+]);
+
+export const SUBSCRIBED_EVENTS = [
+    ...ACCOUNT_EVENTS,
+    ...PAYMENT_INTENT_EVENTS,
+    ...REFUND_EVENTS,
+    "v1.charge.refunded",
+    ...SUBSCRIPTION_EVENTS,
+    "v1.checkout.session.completed",
+];
 
 export function paymentStatusFromIntent(status: Stripe.PaymentIntent.Status, hadFailure: boolean): PaymentStatus {
     switch (status) {
@@ -178,6 +195,17 @@ export async function handleStripeEvent(stripe: Stripe, admin: AdminClient, even
             outcome = "processed";
         } else if (REFUND_EVENTS.has(event.type) && account && event.related_object?.id) {
             await upsertRefund(admin, await stripe.refunds.retrieve(event.related_object.id, undefined, { stripeAccount: account }));
+            outcome = "processed";
+        } else if (SUBSCRIPTION_EVENTS.has(event.type) && !account && event.related_object?.id) {
+            await syncSubscription(admin, await stripe.subscriptions.retrieve(event.related_object.id));
+            outcome = "processed";
+        } else if (event.type === "v1.checkout.session.completed" && !account && event.related_object?.id) {
+            // Sync right away so the billing page is current when the customer lands back on it.
+            const session = await stripe.checkout.sessions.retrieve(event.related_object.id);
+            if (session.mode === "subscription" && session.subscription) {
+                const id = typeof session.subscription === "string" ? session.subscription : session.subscription.id;
+                await syncSubscription(admin, await stripe.subscriptions.retrieve(id));
+            }
             outcome = "processed";
         } else if (event.type === "v1.charge.refunded" && account && event.related_object?.id) {
             const refunds = await stripe.refunds.list({ charge: event.related_object.id, limit: 100 }, { stripeAccount: account });

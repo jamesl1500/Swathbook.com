@@ -33,6 +33,8 @@ process.env.E2E_BASE_URL = baseURL;
 process.env.E2E_SUPABASE_URL = supabase.url;
 process.env.E2E_SUPABASE_SECRET_KEY = supabase.secretKey;
 process.env.E2E_MAILPIT_URL = supabase.mailpitUrl;
+const E2E_CRON_SECRET = "e2e-cron-secret";
+process.env.E2E_CRON_SECRET = E2E_CRON_SECRET;
 
 export default defineConfig({
     testDir: "./e2e",
@@ -68,6 +70,10 @@ export default defineConfig({
             STRIPE_WEBHOOK_SECRET: "",
             NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: "",
             GOOGLE_MAPS_API_KEY: "",
+            // Emails go to the local Mailpit inbox, never to Resend.
+            RESEND_API_KEY: "",
+            MAILPIT_URL: supabase.mailpitUrl,
+            CRON_SECRET: E2E_CRON_SECRET,
         },
     },
 });

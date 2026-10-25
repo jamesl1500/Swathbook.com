@@ -18,6 +18,8 @@ function fakeStripe() {
         },
         paymentIntents: { create: vi.fn(), retrieve: vi.fn() },
         refunds: { retrieve: vi.fn(), list: vi.fn() },
+        subscriptions: { retrieve: vi.fn() },
+        checkout: { sessions: { retrieve: vi.fn() } },
     };
 }
 
@@ -252,6 +254,40 @@ describe("handleStripeEvent", () => {
             last_payment_error: null,
             latest_charge: { id: "ch_1", payment_method_details: { type: "card", card: { brand: "visa", last4: "4242" } } },
         });
+    });
+
+    it("syncs Swathbook plans from platform subscription events", async () => {
+        const subscription = {
+            id: "sub_9",
+            customer: "cus_9",
+            status: "active",
+            metadata: { business_id: "b9", plan: "crew" },
+            cancel_at_period_end: false,
+            trial_end: null,
+            canceled_at: null,
+            ended_at: null,
+            items: { data: [{ current_period_start: 1, current_period_end: 2, price: { id: "price_crew", lookup_key: "swathbook_crew_monthly" } }] },
+        };
+        stripe.subscriptions.retrieve.mockResolvedValue(subscription);
+        const event = { id: "evt_1", type: "v1.customer.subscription.updated", related_object: { id: "sub_9", type: "subscription" } };
+
+        expect(await handleStripeEvent(asStripe(stripe), asAdmin(db), event)).toBe("processed");
+        expect(stripe.subscriptions.retrieve).toHaveBeenCalledWith("sub_9");
+        expect(db.callsTo("subscriptions", "upsert")[0].values).toMatchObject({ business_id: "b9", plan: "crew", status: "active" });
+    });
+
+    it("syncs the new plan as soon as checkout completes", async () => {
+        stripe.checkout.sessions.retrieve.mockResolvedValue({ id: "cs_1", mode: "subscription", subscription: "sub_9" });
+        stripe.subscriptions.retrieve.mockResolvedValue({
+            id: "sub_9",
+            customer: "cus_9",
+            status: "trialing",
+            metadata: { business_id: "b9", plan: "solo" },
+            items: { data: [{ price: { id: "price_solo", lookup_key: "swathbook_solo_monthly" } }] },
+        });
+        const event = { id: "evt_1", type: "v1.checkout.session.completed", related_object: { id: "cs_1", type: "checkout_session" } };
+        expect(await handleStripeEvent(asStripe(stripe), asAdmin(db), event)).toBe("processed");
+        expect(db.callsTo("subscriptions", "upsert")[0].values).toMatchObject({ plan: "solo", status: "trialing" });
     });
 
     it("re-fetches the PaymentIntent on the connected account and updates the payment", async () => {

@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { noIndex } from "@/libs/seo";
 import { getActiveBusiness, getCurrentUser } from "@/libs/auth";
 import { AppFooter } from "@/components/app/app-footer";
+import { BillingBanner } from "@/components/app/billing-banner";
 import { AppHeader } from "@/components/app/app-header";
 import { BusinessSwitcher } from "@/components/app/business-switcher";
 import { DashboardNav } from "@/components/app/dashboard-nav";
@@ -36,6 +37,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </Suspense>
         </aside>
         <div className="min-w-0 flex-1">
+          <Suspense>
+            <BillingBanner />
+          </Suspense>
           <main className="px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-10">{children}</main>
         </div>
       </div>

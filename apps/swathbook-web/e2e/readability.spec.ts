@@ -1,3 +1,4 @@
+import { createHash, randomBytes } from "node:crypto";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import { addJob, admin, createBusiness, createUser, memberIdFor } from "./support/admin";
@@ -97,6 +98,19 @@ test.describe("public pages", () => {
   });
 });
 
+test("a team invite page is readable", async ({ page }) => {
+  const owner = await createUser({ fullName: "Olive Owner" });
+  const business = await createBusiness(owner.id, { name: "Shine On Detailing" });
+  const token = randomBytes(32).toString("hex");
+  await admin.from("business_invitations").insert({
+    business_id: business.id,
+    email: "crew@example.com",
+    role: "crew",
+    token_hash: createHash("sha256").update(token).digest("hex"),
+  });
+  await audit(page, `/invite/${token}`);
+});
+
 test.describe("signed-in pages", () => {
   test("onboarding is readable", async ({ page }) => {
     const user = await createUser({ fullName: "New Owner" });
@@ -116,6 +130,8 @@ test.describe("signed-in pages", () => {
       lat: 30.2,
       lng: -97.7,
     });
+    // Near the end of the trial, so the billing banner is audited on every page.
+    await admin.from("businesses").update({ trial_ends_at: new Date(Date.now() + 2 * 86_400_000).toISOString() }).eq("id", business.id);
     await logIn(page, owner.email, owner.password);
     await expectOnPath(page, "/dashboard");
 
@@ -134,6 +150,8 @@ test.describe("signed-in pages", () => {
       "/dashboard/link",
       "/dashboard/payouts",
       "/dashboard/account",
+      "/dashboard/team",
+      "/dashboard/billing",
     ]) {
       await audit(page, path, main);
     }

@@ -142,3 +142,10 @@ export async function getBusinessBySlug(slug: string) {
         .maybeSingle();
     return data;
 }
+
+/** Runs the minute-by-minute job (hold release + email sweep) on the app under test. */
+export async function runCron() {
+    const response = await fetch(`${env.baseURL}/api/cron/notifications`, { headers: { authorization: `Bearer ${env.cronSecret}` } });
+    if (!response.ok) throw new Error(`cron failed: ${response.status}`);
+    return response.json() as Promise<{ released: number; sent: number; skipped: number; failed: number }>;
+}

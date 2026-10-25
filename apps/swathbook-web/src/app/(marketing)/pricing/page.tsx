@@ -19,7 +19,7 @@ export const metadata: Metadata = pageMetadata({
 const pricingFaqs = [
   {
     question: "Is there a free trial?",
-    answer: "Yes. Every plan starts with a free trial, and you don't need a credit card to set up your link.",
+    answer: "Yes. Every new business gets 14 days free with everything turned on, and you don't need a credit card. Pick a plan any time; you won't be charged until the trial ends.",
   },
   {
     question: "Are there payment processing fees?",
@@ -31,7 +31,7 @@ const pricingFaqs = [
   },
   {
     question: "What happens if I cancel?",
-    answer: "Your link stops taking new bookings at the end of your billing period, and you can export your customers and job history.",
+    answer: "Your link stops taking new bookings at the end of your billing period. Your account, customers and job history stay put, so you can pick up where you left off.",
   },
 ];
 
