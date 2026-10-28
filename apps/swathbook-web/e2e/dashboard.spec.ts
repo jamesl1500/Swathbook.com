@@ -115,6 +115,27 @@ test.describe("booking link", () => {
         await expect(page.getByTestId("photo-tile")).toHaveCount(1);
     });
 
+    test("the service area shows in the Google preview, page title and structured data", async ({ page }) => {
+        const { business } = await ownerWithBusiness(page, { name: "Shine On Detail" });
+        await page.goto("/dashboard/link");
+        await expect(page.getByTestId("seo-score")).toHaveText(/^\d of 7 done$/);
+        await expect(page.getByText("Add the area you serve")).toBeVisible();
+
+        await page.getByLabel("About your business").fill("Mobile car detailing that comes to your driveway, fully insured.");
+        await page.getByLabel("Where you work").fill("Austin, Round Rock & Cedar Park, TX");
+        await page.getByRole("button", { name: "Save booking page" }).click();
+        await expect(page.getByText("Booking page saved.")).toBeVisible();
+        await page.reload();
+        await expect(page.getByTestId("search-preview")).toContainText("Shine On Detail · Lawn mowing in Austin, TX | Book online");
+        await expect(page.getByTestId("search-preview")).toContainText("Serving Austin, Round Rock & Cedar Park, TX.");
+
+        await page.goto(`/l/${business.slug}`);
+        await expect(page).toHaveTitle("Shine On Detail · Lawn mowing in Austin, TX | Book online");
+        await expect(page.getByText("Lawn mowing · Serving Austin, Round Rock & Cedar Park, TX")).toBeVisible();
+        const jsonLd = JSON.parse((await page.locator('script[type="application/ld+json"]').first().textContent())!);
+        expect(jsonLd).toMatchObject({ areaServed: "Austin, Round Rock & Cedar Park, TX", priceRange: "$45" });
+    });
+
     test("a link someone else has is rejected", async ({ page }) => {
         const rival = await createUser();
         const taken = await createBusiness(rival.id, { slug: uniqueSlug("taken") });

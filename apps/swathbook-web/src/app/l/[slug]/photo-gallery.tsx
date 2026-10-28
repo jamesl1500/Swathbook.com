@@ -9,7 +9,9 @@ export type GalleryPhoto = { id: string; url: string; caption: string | null };
  * "Our work": swipeable on phones, a grid on larger screens. Tapping a photo
  * opens it full screen with previous/next controls (arrow keys work too).
  */
-export function PhotoGallery({ photos, businessName }: { photos: GalleryPhoto[]; businessName: string }) {
+export function PhotoGallery({ photos, businessName, tradeName }: { photos: GalleryPhoto[]; businessName: string; tradeName?: string }) {
+  // Captions are the best alt text; otherwise say what kind of work it shows.
+  const fallbackAlt = (index: number) => `${businessName}${tradeName ? ` ${tradeName.toLowerCase()}` : ""} work, photo ${index + 1}`;
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [open, setOpen] = useState(0);
   if (!photos.length) return null;
@@ -36,7 +38,7 @@ export function PhotoGallery({ photos, businessName }: { photos: GalleryPhoto[];
               {/* eslint-disable-next-line @next/next/no-img-element -- user-uploaded image from Supabase Storage */}
               <img
                 src={photo.url}
-                alt={photo.caption || `${businessName} photo ${index + 1}`}
+                alt={photo.caption || fallbackAlt(index)}
                 loading="lazy"
                 className="aspect-[4/3] w-full object-cover transition-transform duration-300 hover:scale-[1.03]"
               />
@@ -62,7 +64,7 @@ export function PhotoGallery({ photos, businessName }: { photos: GalleryPhoto[];
           {/* eslint-disable-next-line @next/next/no-img-element -- user-uploaded image from Supabase Storage */}
           <img
             src={current.url}
-            alt={current.caption || `${businessName} photo ${open + 1}`}
+            alt={current.caption || fallbackAlt(open)}
             className="max-h-[80dvh] max-w-full rounded-2xl object-contain"
           />
           <figcaption className="max-w-xl text-center text-sm text-white">

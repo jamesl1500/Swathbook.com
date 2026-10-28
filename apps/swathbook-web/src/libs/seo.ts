@@ -130,6 +130,7 @@ type JsonLdBusiness = {
     phone: string | null;
     website_url: string | null;
     currency: string;
+    service_area?: string | null;
 };
 
 type JsonLdService = {
@@ -149,12 +150,15 @@ export function businessJsonLd({
     hours,
     logoUrl,
     tradeName,
+    imageUrls = [],
 }: {
     business: JsonLdBusiness;
     services: JsonLdService[];
     hours: Array<{ weekday: number; opens_at: string; closes_at: string }>;
     logoUrl: string | null;
     tradeName?: string;
+    /** Cover and gallery photos, best first. */
+    imageUrls?: string[];
 }) {
     const url = `${siteConfig.url}${businessPagePath(business.slug)}`;
     const currency = business.currency.toUpperCase();
@@ -166,7 +170,10 @@ export function businessJsonLd({
         url,
         ...(business.description ? { description: business.description } : {}),
         ...(business.phone ? { telephone: business.phone } : {}),
-        ...(logoUrl ? { logo: logoUrl, image: logoUrl } : {}),
+        ...(logoUrl ? { logo: logoUrl } : {}),
+        ...(imageUrls.length || logoUrl ? { image: imageUrls.length ? imageUrls : logoUrl } : {}),
+        ...(business.service_area ? { areaServed: business.service_area } : {}),
+        ...priceRange(services, currency),
         ...(business.website_url ? { sameAs: [business.website_url] } : {}),
         ...(tradeName ? { knowsAbout: tradeName } : {}),
         ...(hours.length
@@ -211,4 +218,54 @@ function servicePrice(service: JsonLdService, currency: string) {
         return { priceSpecification: { "@type": "PriceSpecification", minPrice: price, priceCurrency: currency } };
     }
     return {}; // Priced by quote: no number to publish.
+}
+
+function priceRange(services: JsonLdService[], currency: string) {
+    const prices = services.filter((service) => service.price_type !== "quote" && service.price_cents > 0).map((service) => service.price_cents);
+    if (!prices.length) return {};
+    const format = (cents: number) => new Intl.NumberFormat("en-US", { style: "currency", currency, maximumFractionDigits: 0 }).format(cents / 100);
+    const low = Math.min(...prices);
+    const high = Math.max(...prices);
+    return { priceRange: low === high ? format(low) : `${format(low)}–${format(high)}` };
+}
+
+/** "Austin, Round Rock & Cedar Park, TX" -> "Austin, TX": the first place, plus a trailing state code. */
+export function shortArea(area: string) {
+    const parts = area.split(/\s*(?:,|&|\band\b|\/|;)\s*/i).filter(Boolean);
+    const first = parts[0] ?? area;
+    const state = parts.length > 1 && /^[A-Z]{2}$/.test(parts[parts.length - 1]) ? parts[parts.length - 1] : null;
+    return state && state !== first ? `${first}, ${state}` : first;
+}
+
+/**
+ * A booking page's search snippet. Local searches usually name a place, so the
+ * service area goes in the title and description when the business set one.
+ */
+export function businessPageMeta({
+    business,
+    services,
+    tradeName,
+}: {
+    business: { name: string; description: string | null; service_area?: string | null };
+    services: Array<{ name: string }>;
+    tradeName?: string;
+}) {
+    const area = business.service_area?.trim() || null;
+    const title = `Book ${business.name} online`;
+    // Lead with what people search for (name, trade, town) and stay near the ~60
+    // characters Google shows; "Book online" only when it still fits.
+    const place = area ? shortArea(area) : null;
+    const core = [business.name, tradeName && place ? `${tradeName} in ${place}` : tradeName ?? (place ? `Serving ${place}` : null)]
+        .filter(Boolean)
+        .join(" · ");
+    const fullTitle = `${core} | Book online`.length <= 65 ? `${core} | Book online` : core;
+    const serviceNames = services.slice(0, 3).map((service) => service.name.toLowerCase());
+    const intro = business.description?.trim()
+        ? business.description.trim()
+        : `${business.name}${tradeName ? `, ${tradeName.toLowerCase()}` : ""}: ${serviceNames.length ? `${serviceNames.join(", ")} and more.` : ""}`;
+    const mentionsArea = area && intro.toLowerCase().includes(area.toLowerCase());
+    const description = metaDescription(
+        [intro.replace(/[.\s]*$/, "."), area && !mentionsArea ? `Serving ${area}.` : null, "See prices, pick a time and book online."].filter(Boolean).join(" "),
+    );
+    return { title, fullTitle, description, area };
 }

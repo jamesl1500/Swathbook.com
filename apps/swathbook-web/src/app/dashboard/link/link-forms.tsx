@@ -22,7 +22,7 @@ export function ProfileForm({
   values,
 }: {
   businessId: string;
-  values: { name: string; slug: string; description: string; phone: string; email: string; websiteUrl: string; brandColor: string };
+  values: { name: string; slug: string; description: string; serviceArea: string; phone: string; email: string; websiteUrl: string; brandColor: string };
 }) {
   const [state, formAction] = useActionState(withToast(updateBookingPage), {});
   const errors = state.fieldErrors ?? {};
@@ -69,6 +69,15 @@ export function ProfileForm({
           placeholder="Family-owned and serving the Northside since 2014. Licensed and insured."
           className={inputStyles}
         />
+      </Field>
+
+      <Field
+        label="Where you work"
+        htmlFor="serviceArea"
+        hint="Towns or neighborhoods you serve. Shown on your page and used by search engines; most people search with a place name."
+        error={errors.serviceArea?.[0]}
+      >
+        <Input id="serviceArea" name="serviceArea" defaultValue={values.serviceArea} maxLength={120} placeholder="Austin, Round Rock & Cedar Park, TX" />
       </Field>
 
       <div className="grid gap-4 sm:grid-cols-2">

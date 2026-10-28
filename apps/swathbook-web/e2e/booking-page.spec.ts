@@ -17,7 +17,7 @@ test.describe("public booking page", () => {
 
         await page.goto(`/l/${business.slug}`);
         await expect(page.getByRole("heading", { level: 1, name: "Northside Leaf & Lawn" })).toBeVisible();
-        await expect(page).toHaveTitle("Book Northside Leaf & Lawn online · Lawn mowing");
+        await expect(page).toHaveTitle("Northside Leaf & Lawn · Lawn mowing | Book online");
         // Search engines get the business as structured data.
         const jsonLd = JSON.parse((await page.locator('script[type="application/ld+json"]').first().textContent())!);
         expect(jsonLd).toMatchObject({ "@type": "LocalBusiness", name: "Northside Leaf & Lawn" });

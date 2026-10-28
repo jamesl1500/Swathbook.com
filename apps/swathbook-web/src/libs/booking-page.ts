@@ -33,6 +33,7 @@ export type BookingPageData = {
         phone: string | null;
         email: string | null;
         website_url: string | null;
+        service_area: string | null;
         logo_path: string | null;
         cover_path: string | null;
         brand_color: string | null;

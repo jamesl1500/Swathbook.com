@@ -10,7 +10,7 @@ import { trades } from "@/libs/marketing/content";
 import { formatPrice } from "@/libs/utils";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Booking & Routing Software for Detailers, Cleaners, Landscapers & More",
+  title: "Booking Software for Every Field Service Trade",
   description:
     "Swathbook fits landscapers, lawn care, plumbers, mobile detailers, pool techs, cleaners and every trade that drives to its customers. See starter menus.",
   path: routes.industries,

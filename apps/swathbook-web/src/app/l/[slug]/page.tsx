@@ -10,7 +10,7 @@ import { siteConfig } from "@/libs/globals/site";
 import { hasGoogleMaps } from "@/libs/google/maps";
 import { findTrade } from "@/libs/marketing/content";
 import { businessPagePath, routes } from "@/libs/routes";
-import { businessJsonLd, metaDescription } from "@/libs/seo";
+import { businessJsonLd, businessPageMeta } from "@/libs/seo";
 import { publicAssetUrl } from "@/libs/supabase/storage";
 import { formatTimeKey, todayKey } from "@/libs/time";
 import { brandOnLight, brandTextColor, cn } from "@/libs/utils";
@@ -25,17 +25,9 @@ export async function generateMetadata({ params }: PageProps<"/l/[slug]">): Prom
   // Paused or unknown pages stay out of search results.
   if (!page) return { title: "Book online", robots: { index: false, follow: false } };
   const { business, services } = page;
-  const tradeName = findTrade(business.trade)?.name;
-  const title = `Book ${business.name} online`;
-  const serviceNames = services.slice(0, 3).map((service) => service.name.toLowerCase());
-  const description = metaDescription(
-    business.description ||
-      `${business.name}${tradeName ? `, ${tradeName.toLowerCase()}` : ""}: ${
-        serviceNames.length ? `${serviceNames.join(", ")} and more. ` : ""
-      }See prices, pick a time and book online in under a minute.`,
-  );
+  const { title, fullTitle, description } = businessPageMeta({ business, services, tradeName: findTrade(business.trade)?.name });
   return {
-    title: { absolute: tradeName ? `${title} · ${tradeName}` : title },
+    title: { absolute: fullTitle },
     description,
     alternates: { canonical: businessPagePath(business.slug) },
     // The share image comes from ./opengraph-image.tsx.
@@ -68,6 +60,7 @@ function BookingPage({ page, googleEnabled }: { page: BookingPageData; googleEna
   const brand = business.brand_color ?? "#1c3d70";
   const logo = publicAssetUrl(business.logo_path);
   const cover = publicAssetUrl(business.cover_path);
+  const tradeName = findTrade(business.trade)?.name;
   // Over a photo, text is always white on a dark scrim; otherwise it follows the brand color.
   const onHeader = cover ? "#ffffff" : brandTextColor(brand);
   const photos = (page.photos ?? []).map((photo) => ({ id: photo.id, url: publicAssetUrl(photo.storage_path) ?? "", caption: photo.caption }));
@@ -79,7 +72,16 @@ function BookingPage({ page, googleEnabled }: { page: BookingPageData; googleEna
 
   return (
     <div className="min-h-dvh bg-paper" style={{ "--brand": brand } as React.CSSProperties}>
-      <JsonLd data={businessJsonLd({ business, services, hours, logoUrl: logo, tradeName: findTrade(business.trade)?.name })} />
+      <JsonLd
+        data={businessJsonLd({
+          business,
+          services,
+          hours,
+          logoUrl: logo,
+          tradeName,
+          imageUrls: [cover, ...photos.map((photo) => photo.url)].filter((url): url is string => Boolean(url)),
+        })}
+      />
       <header
         className="relative overflow-hidden text-(color:--on-brand)"
         style={{ backgroundColor: brand, "--on-brand": onHeader } as React.CSSProperties}
@@ -103,7 +105,9 @@ function BookingPage({ page, googleEnabled }: { page: BookingPageData; googleEna
             </span>
             <div className="min-w-0">
               <h1 className="text-3xl font-extrabold leading-tight sm:text-4xl">{business.name}</h1>
-              <p className="mt-1 text-(color:--on-brand)/85">Book online in under a minute</p>
+              <p className="mt-1 text-(color:--on-brand)/85">
+                {[tradeName, business.service_area ? `Serving ${business.service_area}` : null].filter(Boolean).join(" · ") || "Book online in under a minute"}
+              </p>
             </div>
           </div>
           {business.description ? <p className="mt-5 max-w-2xl leading-relaxed text-(color:--on-brand)/90">{business.description}</p> : null}
@@ -138,7 +142,7 @@ function BookingPage({ page, googleEnabled }: { page: BookingPageData; googleEna
 
         {photos.length ? (
           <div className="min-w-0 lg:col-start-1">
-            <PhotoGallery photos={photos} businessName={business.name} />
+            <PhotoGallery photos={photos} businessName={business.name} tradeName={tradeName} />
           </div>
         ) : null}
 

@@ -11,6 +11,7 @@ import { publicAssetUrl } from "@/libs/supabase/storage";
 import { brandOnLight } from "@/libs/utils";
 import { CoverForm, LogoForm, PhotosForm } from "./image-forms";
 import { PublishToggle, ProfileForm } from "./link-forms";
+import { SearchCard } from "./search-card";
 import { ShareTools } from "./share-tools";
 
 export const metadata: Metadata = { title: "Booking link" };
@@ -33,7 +34,7 @@ async function BookingLink() {
   // QR modules must stay dark enough to scan on white, even for pale brand colors.
   const qrColor = brandOnLight(brand);
   const supabase = await createClient();
-  const [qrSvg, qrPng, { data: photos }] = await Promise.all([
+  const [qrSvg, qrPng, { data: photos }, { data: services }] = await Promise.all([
     QRCode.toString(url, { type: "svg", margin: 1, errorCorrectionLevel: "M", color: { dark: qrColor, light: "#ffffff" } }),
     QRCode.toDataURL(url, { margin: 2, width: 1024, errorCorrectionLevel: "M", color: { dark: qrColor, light: "#ffffff" } }),
     supabase
@@ -43,6 +44,7 @@ async function BookingLink() {
       .order("sort_order")
       .order("created_at")
       .order("id"),
+    supabase.from("services").select("name, description").eq("business_id", business.id).eq("is_active", true).eq("is_public", true),
   ]);
 
   return (
@@ -71,6 +73,12 @@ async function BookingLink() {
             qrPng={qrPng}
             brandColor={brand}
           />
+          <SearchCard
+            business={business}
+            displayUrl={`${siteConfig.bookingLinkPrefix}${business.slug}`}
+            services={services ?? []}
+            photoCount={photos?.length ?? 0}
+          />
         </div>
 
         <div className="min-w-0 space-y-6">
@@ -82,6 +90,7 @@ async function BookingLink() {
                 name: business.name,
                 slug: business.slug,
                 description: business.description ?? "",
+                serviceArea: business.service_area ?? "",
                 phone: business.phone ?? "",
                 email: business.email ?? "",
                 websiteUrl: business.website_url ?? "",

@@ -3,6 +3,7 @@ import { cacheLife } from "next/cache";
 import { siteConfig } from "@/libs/globals/site";
 import { businessPagePath, routes } from "@/libs/routes";
 import { createAdminClient, hasAdminClient } from "@/libs/supabase/admin";
+import { publicAssetUrl } from "@/libs/supabase/storage";
 
 const pages: Array<{ path: string; priority: number; changeFrequency: "weekly" | "monthly" | "yearly" }> = [
   { path: routes.home, priority: 1, changeFrequency: "weekly" },
@@ -29,7 +30,7 @@ async function businessPages(): Promise<MetadataRoute.Sitemap> {
 
   const { data, error } = await createAdminClient()
     .from("businesses")
-    .select("slug, updated_at")
+    .select("slug, updated_at, cover_path, trial_ends_at, business_photos(storage_path, sort_order), subscriptions(status)")
     .eq("is_published", true)
     .not("onboarding_completed_at", "is", null)
     .order("updated_at", { ascending: false })
@@ -38,12 +39,30 @@ async function businessPages(): Promise<MetadataRoute.Sitemap> {
     console.error("[sitemap] couldn't list business pages", error);
     return [];
   }
-  return data.map((business) => ({
-    url: `${siteConfig.url}${businessPagePath(business.slug)}`,
-    lastModified: business.updated_at,
-    changeFrequency: "weekly",
-    priority: 0.7,
-  }));
+  const now = Date.now();
+  // Same rule as private.business_has_access(): paused pages stay out of the sitemap.
+  const live = data.filter(
+    (business) =>
+      (business.trial_ends_at && Date.parse(business.trial_ends_at) > now) ||
+      business.subscriptions.some((subscription) => ["trialing", "active", "past_due"].includes(subscription.status)),
+  );
+  return live.map((business) => {
+    // Cover and gallery photos as image entries, so work photos can show up in image search.
+    const images = [
+      business.cover_path,
+      ...[...business.business_photos].sort((a, b) => a.sort_order - b.sort_order).map((photo) => photo.storage_path),
+    ]
+      .map((path) => publicAssetUrl(path))
+      .filter((url): url is string => Boolean(url))
+      .slice(0, 10);
+    return {
+      url: `${siteConfig.url}${businessPagePath(business.slug)}`,
+      lastModified: business.updated_at,
+      changeFrequency: "weekly" as const,
+      priority: 0.7,
+      ...(images.length ? { images } : {}),
+    };
+  });
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
