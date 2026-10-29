@@ -6,4 +6,5 @@ onlyBuiltDependencies:
   - "@parcel/watcher"
   - "@swc/core"
   - esbuild
+  - supabase
   - unrs-resolver

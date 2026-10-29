@@ -9,9 +9,17 @@
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
-    "test": "turbo run test"
+    "test": "turbo run test",
+    "test:e2e": "pnpm --filter swathbook-web test:e2e",
+    "db:start": "supabase start -x vector,logflare,edge-runtime,imgproxy",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset",
+    "db:test": "supabase test db",
+    "db:push": "supabase db push --linked",
+    "db:types": "supabase gen types typescript --local --schema public > apps/swathbook-web/src/libs/supabase/database.types.ts"
   },
   "devDependencies": {
+    "supabase": "^2.122.0",
     "turbo": "^2.11.9"
   }
 }
