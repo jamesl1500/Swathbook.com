@@ -6,7 +6,7 @@
 import { vi } from "vitest";
 
 type QueryError = { code?: string; message: string };
-type QueryResult = { data?: unknown; error?: QueryError | null };
+type QueryResult = { data?: unknown; error?: QueryError | null; count?: number | null };
 
 export type RecordedCall = {
     table: string;
@@ -32,7 +32,7 @@ export function createSupabaseMock() {
         // Use queued results in order; the last one repeats.
         const responder = queue.length > 1 ? queue.shift() : queue[0];
         const result = typeof responder === "function" ? responder(call) : (responder ?? {});
-        return Promise.resolve({ data: result.data ?? null, error: result.error ?? null });
+        return Promise.resolve({ data: result.data ?? null, error: result.error ?? null, count: result.count ?? null });
     }
 
     function from(table: string) {
@@ -65,7 +65,7 @@ export function createSupabaseMock() {
             },
         } as Record<string, unknown>;
 
-        for (const filter of ["eq", "neq", "is", "in", "not", "order", "limit", "match", "gte", "lte", "lt", "gt"]) {
+        for (const filter of ["eq", "neq", "is", "in", "not", "order", "limit", "range", "match", "gte", "lte", "lt", "gt", "like", "ilike", "or"]) {
             builder[filter] = (...args: unknown[]) => {
                 call.filters.push([filter, ...args]);
                 return builder;
