@@ -24,7 +24,7 @@ export function AppFooter() {
           <ul className="flex flex-wrap gap-x-5 gap-y-2">
             {links.map((link) => (
               <li key={link.href}>
-                <Link href={link.href} className="hover:text-ink">
+                <Link href={link.href} className="inline-flex min-h-9 items-center hover:text-ink">
                   {link.label}
                 </Link>
               </li>

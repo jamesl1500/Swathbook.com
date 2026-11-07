@@ -71,7 +71,7 @@ async function Customer({ params }: { params: PageProps<"/dashboard/customers/[c
         {canManage ? <Stat label="Lifetime paid" value={formatCents(paid, business.currency)} /> : null}
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
         <div className="space-y-6">
           <Card>
             <CardTitle>Contact</CardTitle>

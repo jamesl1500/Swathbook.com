@@ -59,7 +59,7 @@ export default function PricingPage() {
       </section>
 
       <section className="border-t border-line bg-paper-deep/50 pb-8 pt-24">
-        <Container className="grid gap-12 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+        <Container className="grid grid-cols-[minmax(0,1fr)] gap-12 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
           <div className="lg:sticky lg:top-24 lg:self-start">
             <SectionHeading eyebrow="Billing questions" title="The fine print, in plain English" />
             <TalkToUsCard className="mt-8" />

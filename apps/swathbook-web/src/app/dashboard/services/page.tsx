@@ -36,7 +36,7 @@ async function Services() {
         title="Services"
         description="What customers can book, what it costs, how long it takes, and whether you collect a deposit up front."
       />
-      <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-8 xl:grid-cols-[minmax(0,1fr)_380px]">
         <div>
           {services?.length ? (
             <ServiceList businessId={business.id} services={services} currency={business.currency} />

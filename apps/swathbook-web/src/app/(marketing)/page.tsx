@@ -72,7 +72,7 @@ export default function HomePage() {
         </Container>
       </section>
       <section className="border-t border-line bg-paper-deep/50 pb-8 pt-24">
-        <Container className="grid gap-12 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+        <Container className="grid grid-cols-[minmax(0,1fr)] gap-12 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
           <div className="lg:sticky lg:top-24 lg:self-start">
             <SectionHeading eyebrow="Questions" title="Good questions, straight answers" />
             <TalkToUsCard className="mt-8" />
@@ -132,7 +132,7 @@ function Hero() {
 
           <a
             href="#how-it-works"
-            className="mt-10 inline-flex items-center gap-2 text-sm font-semibold text-ink-soft hover:text-ink"
+            className="mt-10 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-ink-soft hover:text-ink"
           >
             See how it works
             <ArrowDown className="size-4" aria-hidden="true" />
@@ -198,7 +198,7 @@ function Pillars() {
             return (
               <div
                 key={pillar.title}
-                className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16"
+                className="grid grid-cols-[minmax(0,1fr)] items-center gap-10 lg:grid-cols-2 lg:gap-16"
               >
                 <div className={index % 2 === 1 ? "lg:order-2" : undefined}>
                   <span className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1.5 text-sm font-semibold text-brand-600">

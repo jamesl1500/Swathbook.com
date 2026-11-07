@@ -40,7 +40,7 @@ export default function FeaturesPage() {
           {pillars.map((pillar, index) => {
             const Icon = pillar.icon;
             return (
-              <div key={pillar.title} id={pillar.kicker.toLowerCase().replace(/\s+/g, "-")} className="scroll-mt-24 grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+              <div key={pillar.title} id={pillar.kicker.toLowerCase().replace(/\s+/g, "-")} className="scroll-mt-24 grid grid-cols-[minmax(0,1fr)] items-center gap-10 lg:grid-cols-2 lg:gap-16">
                 <div className={index % 2 === 1 ? "lg:order-2" : undefined}>
                   <span className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1.5 text-sm font-semibold text-brand-600">
                     <Icon className="size-4" aria-hidden="true" />

@@ -73,9 +73,9 @@ async function Payouts({ searchParams }: { searchParams: PageProps<"/dashboard/p
         <Card>
           <CardTitle>Payments aren&apos;t configured yet</CardTitle>
           <p className="text-ink-soft">
-            Add <code className="rounded bg-paper-deep px-1.5 py-0.5 text-sm">STRIPE_SECRET_KEY</code>,{" "}
-            <code className="rounded bg-paper-deep px-1.5 py-0.5 text-sm">NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code> and{" "}
-            <code className="rounded bg-paper-deep px-1.5 py-0.5 text-sm">STRIPE_WEBHOOK_SECRET</code> to the server environment to turn on
+            Add <code className="rounded bg-paper-deep px-1.5 py-0.5 text-sm [overflow-wrap:anywhere]">STRIPE_SECRET_KEY</code>,{" "}
+            <code className="rounded bg-paper-deep px-1.5 py-0.5 text-sm [overflow-wrap:anywhere]">NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code> and{" "}
+            <code className="rounded bg-paper-deep px-1.5 py-0.5 text-sm [overflow-wrap:anywhere]">STRIPE_WEBHOOK_SECRET</code> to the server environment to turn on
             payouts. Until then, customers can still book without paying online.
           </p>
         </Card>

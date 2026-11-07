@@ -145,6 +145,20 @@
   }
 }
 
+/*
+ * iOS Safari zooms the whole page when you tap a field whose text is under
+ * 16px, and leaves it zoomed. On phones and touch screens every typed field
+ * gets at least 16px. Unlayered on purpose, so it wins over text-sm and
+ * friends on individual inputs.
+ */
+@media (max-width: 639px), (pointer: coarse) {
+  input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"], [type="submit"], [type="button"], [type="hidden"]),
+  select,
+  textarea {
+    font-size: max(1rem, 16px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

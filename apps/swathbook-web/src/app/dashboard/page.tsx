@@ -110,11 +110,11 @@ async function Overview() {
         {canManage ? <Stat label="Collected this month" value={formatCents(stats.collected_this_month_cents ?? 0, business.currency)} /> : null}
       </div>
 
-      <div className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+      <div className="mt-8 grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <Card>
           <CardTitle
             action={
-              <Link href={routes.schedule} className="inline-flex items-center gap-1 text-sm font-semibold text-brand-600 hover:text-brand-700">
+              <Link href={routes.schedule} className="inline-flex min-h-9 items-center gap-1 text-sm font-semibold text-brand-600 hover:text-brand-700">
                 Full schedule
                 <ArrowRight className="size-4" aria-hidden="true" />
               </Link>
@@ -188,7 +188,7 @@ async function Overview() {
               ? `You run ${liveCount} businesses. Switch between them from the menu at the top.`
               : "Running more than one business? Each gets its own link, services and schedule."}
           </p>
-          <Link href={routes.addBusiness} className="inline-flex items-center gap-1.5 font-semibold text-brand-600 hover:text-brand-700">
+          <Link href={routes.addBusiness} className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-brand-600 hover:text-brand-700">
             <Plus className="size-4" aria-hidden="true" />
             Add a business
           </Link>
