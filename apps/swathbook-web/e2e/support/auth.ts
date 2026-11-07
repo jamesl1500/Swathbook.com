@@ -28,3 +28,11 @@ export async function chooseTrade(page: Page, name: string) {
         await expect(radio).toBeChecked({ timeout: 1_000 });
     }).toPass({ timeout: 10_000 });
 }
+
+/** Opens a tab on a tabbed dashboard page. Tab names can end in a count ("Google 3 of 7"). */
+export async function openTab(page: Page, name: string) {
+    // Tab labels are plain words, so `name` needs no regex escaping.
+    const tab = page.getByRole("tab", { name: new RegExp(`^${name}( |$)`) });
+    await tab.click();
+    await expect(tab).toHaveAttribute("aria-selected", "true");
+}
