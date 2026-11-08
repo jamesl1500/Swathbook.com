@@ -19,7 +19,7 @@
     "db:types": "supabase gen types typescript --local --schema public > apps/swathbook-web/src/libs/supabase/database.types.ts"
   },
   "devDependencies": {
-    "supabase": "^2.122.0",
-    "turbo": "^2.11.9"
+    "supabase": "^2.122.1",
+    "turbo": "^2.11.10"
   }
 }
