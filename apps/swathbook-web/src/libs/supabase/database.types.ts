@@ -229,6 +229,20 @@ isOneToOne: false
       referencedColumns: ["business_id","id"]
     }
                   ]
+                },"customer_profiles": {
+                  Row: {
+                    "address_city": string | null,"address_line1": string | null,"address_line2": string | null,"address_postal_code": string | null,"address_region": string | null,"created_at": string,"onboarded_at": string | null,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "address_city"?: string | null,"address_line1"?: string | null,"address_line2"?: string | null,"address_postal_code"?: string | null,"address_region"?: string | null,"created_at"?: string,"onboarded_at"?: string | null,"updated_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "address_city"?: string | null,"address_line1"?: string | null,"address_line2"?: string | null,"address_postal_code"?: string | null,"address_region"?: string | null,"created_at"?: string,"onboarded_at"?: string | null,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"customers": {
                   Row: {
                     "business_id": string,"created_at": string,"email": string | null,"email_opt_in": boolean,"full_name": string,"id": string,"notes": string | null,"phone": string | null,"search_text": string | null,"sms_opt_in": boolean,"stripe_customer_id": string | null,"tags": (string)[],"updated_at": string
@@ -604,6 +618,14 @@ isOneToOne: false
 "business_overview":
 { Args: { "p_business_id": string }; Returns: Json
                            },
+"business_trades":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "business_count": number,"trade": string
+            }[]
+                           },
+"cancel_my_booking":
+{ Args: { "p_booking_id": string,"p_reason"?: string }; Returns: string
+                           },
 "claim_notifications":
 { Args: { "p_booking_id"?: string,"p_limit"?: number }; Returns: {
               "attempts": number,
@@ -655,6 +677,9 @@ isOneToOne: false
 "delete_account":
 { Args: { "p_user_id": string }; Returns: undefined
                            },
+"finish_my_setup":
+{ Args: Record<PropertyKey, never>; Returns: undefined
+                           },
 "get_available_slots":
 { Args: { "p_days"?: number,"p_from"?: string,"p_service_ids": (string)[],"p_slug": string }; Returns: {
               "slot_end": string,"slot_start": string
@@ -676,16 +701,41 @@ isOneToOne: false
 "is_slug_available":
 { Args: { "p_business_id"?: string,"p_slug": string }; Returns: boolean
                            },
+"my_booking":
+{ Args: { "p_booking_id": string }; Returns: Json
+                           },
+"my_bookings":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
+"my_details":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
 "my_pending_invitations":
 { Args: Record<PropertyKey, never>; Returns: {
               "business_name": string,"invitation_id": string,"invited_by_name": string,"role": Database["public"]['Enums']["member_role"]
             }[]
                            },
+"my_reschedule_slots":
+{ Args: { "p_booking_id": string,"p_days"?: number,"p_from"?: string }; Returns: {
+              "slot_end": string,"slot_start": string
+            }[]
+                           },
 "release_expired_holds":
 { Args: Record<PropertyKey, never>; Returns: number
                            },
+"reschedule_my_booking":
+{ Args: { "p_booking_id": string,"p_start": string }; Returns: string
+                           },
 "resolve_cancel_request":
 { Args: { "p_approve": boolean,"p_booking_id": string,"p_note"?: string }; Returns: undefined
+                           },
+"save_my_details":
+{ Args: { "p_address"?: Json,"p_finish_setup"?: boolean,"p_full_name": string,"p_phone"?: string }; Returns: Json
+                           },
+"search_businesses":
+{ Args: { "p_limit"?: number,"p_offset"?: number,"p_query"?: string,"p_trade"?: string }; Returns: {
+              "accepts_online_payments": boolean,"brand_color": string,"description": string,"from_price_cents": number,"id": string,"logo_path": string,"name": string,"service_area": string,"service_count": number,"slug": string,"total_count": number,"trade": string
+            }[]
                            },
 "team_members":
 { Args: { "p_business_id": string }; Returns: {

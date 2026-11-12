@@ -11,12 +11,13 @@
     "lint": "turbo run lint",
     "test": "turbo run test",
     "test:e2e": "pnpm --filter swathbook-web test:e2e",
+    "app": "pnpm --filter swathbook-client-app start",
     "db:start": "supabase start -x vector,logflare,edge-runtime,imgproxy",
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
     "db:test": "supabase test db",
     "db:push": "supabase db push --linked",
-    "db:types": "supabase gen types typescript --local --schema public > apps/swathbook-web/src/libs/supabase/database.types.ts"
+    "db:types": "supabase gen types typescript --local --schema public > apps/swathbook-web/src/libs/supabase/database.types.ts && node -e \"require('fs').copyFileSync('apps/swathbook-web/src/libs/supabase/database.types.ts', 'apps/swathbook-client-app/src/data/database.types.ts')\""
   },
   "devDependencies": {
     "supabase": "^2.122.1",

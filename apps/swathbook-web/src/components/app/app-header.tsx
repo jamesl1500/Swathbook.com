@@ -7,7 +7,7 @@ import { routes } from "@/libs/routes";
 import { cn } from "@/libs/utils";
 
 const headerAction =
-  "inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-semibold text-ink-soft hover:bg-paper-deep hover:text-ink";
+  "inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-semibold text-ink-soft hover:bg-paper-deep hover:text-ink cursor-pointer";
 
 /**
  * Top bar for signed-in screens (onboarding, dashboard). `children` renders
