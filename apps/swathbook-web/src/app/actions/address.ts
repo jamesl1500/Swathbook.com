@@ -18,6 +18,6 @@ export async function suggestAddresses(query: string, token: string): Promise<Ad
 }
 
 export async function resolveAddress(placeId: string, token: string): Promise<ResolvedAddress | null> {
-    if (typeof placeId !== "string" || !sessionToken.safeParse(token).success) return null;
+    if (typeof placeId !== "string" || placeId.length > 300 || !sessionToken.safeParse(token).success) return null;
     return placeDetails(placeId, token);
 }

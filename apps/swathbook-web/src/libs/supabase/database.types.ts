@@ -737,6 +737,9 @@ isOneToOne: false
               "accepts_online_payments": boolean,"brand_color": string,"description": string,"from_price_cents": number,"id": string,"logo_path": string,"name": string,"service_area": string,"service_count": number,"slug": string,"total_count": number,"trade": string
             }[]
                            },
+"set_my_avatar":
+{ Args: { "p_path"?: string }; Returns: string
+                           },
 "team_members":
 { Args: { "p_business_id": string }; Returns: {
               "calendar_color": string,"email": string,"full_name": string,"joined_at": string,"member_id": string,"role": Database["public"]['Enums']["member_role"],"status": Database["public"]['Enums']["member_status"],"user_id": string

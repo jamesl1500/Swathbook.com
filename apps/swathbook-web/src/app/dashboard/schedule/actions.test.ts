@@ -2,8 +2,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { expectRedirect } from "@/test/next-mocks";
 import { createSupabaseMock, type SupabaseMock } from "@/test/supabase-mock";
+import { BUSINESS_ID, form } from "@/test/dashboard";
 
-const BUSINESS_ID = "6f1f5c2e-0c4a-4b8e-9a59-1f2d3c4b5a69";
 const MEMBER_ID = "0b6b0a56-2d0f-4c3e-9f0a-6a1d2c3b4e5f";
 const MOW = "11111111-1111-4111-8111-111111111111";
 const EDGE = "22222222-2222-4222-8222-222222222222";
@@ -27,10 +27,7 @@ vi.mock("@/libs/stripe/server", () => ({
 }));
 vi.mock("@/libs/supabase/admin", () => ({ createAdminClient: () => state.admin.client }));
 vi.mock("@/libs/supabase/server", () => ({ createClient: vi.fn(async () => state.supabase.client) }));
-vi.mock("@/libs/dashboard", () => ({
-    authorizeBusiness: vi.fn(async () => state.auth),
-    isFailure: (value: unknown) => typeof value === "object" && value !== null && "error" in value,
-}));
+vi.mock("@/libs/dashboard", async () => (await import("@/test/dashboard")).mockDashboard(() => state.auth));
 
 import {
     addTimeOff,
@@ -42,15 +39,6 @@ import {
     saveJobNotes,
     searchCustomers,
 } from "./actions";
-
-function form(fields: Record<string, string | string[]>) {
-    const data = new FormData();
-    data.set("businessId", BUSINESS_ID);
-    for (const [key, value] of Object.entries(fields)) {
-        for (const item of [value].flat()) data.append(key, item);
-    }
-    return data;
-}
 
 const PAYMENT = {
     id: "pay_1",

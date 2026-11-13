@@ -2,8 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { expectRedirect } from "@/test/next-mocks";
 import { createSupabaseMock, type SupabaseMock } from "@/test/supabase-mock";
-
-const BUSINESS_ID = "6f1f5c2e-0c4a-4b8e-9a59-1f2d3c4b5a69";
+import { BUSINESS_ID, form } from "@/test/dashboard";
 
 const state = vi.hoisted(() => ({
     admin: null as unknown as SupabaseMock,
@@ -18,22 +17,12 @@ vi.mock("@/libs/site-url", () => ({ getSiteUrl: vi.fn(async () => "https://swath
 vi.mock("@/libs/billing/stripe-billing", () => ({ createCheckoutSession: state.createCheckoutSession, createPortalSession: state.createPortalSession }));
 vi.mock("@/libs/stripe/server", () => ({ hasStripe: () => state.stripeConfigured, getStripe: () => ({}) }));
 vi.mock("@/libs/supabase/admin", () => ({ createAdminClient: () => state.admin.client }));
-vi.mock("@/libs/dashboard", () => ({
-    authorizeBusiness: vi.fn(async () => state.auth),
-    isFailure: (value: unknown) => typeof value === "object" && value !== null && "error" in value,
-}));
+vi.mock("@/libs/dashboard", async () => (await import("@/test/dashboard")).mockDashboard(() => state.auth));
 
 import { PLANS } from "@/libs/billing/plans";
 import { openBillingPortal, startCheckout } from "./actions";
 
 const PLAN = Object.keys(PLANS)[0];
-
-function form(fields: Record<string, string> = {}) {
-    const data = new FormData();
-    data.set("businessId", BUSINESS_ID);
-    for (const [key, value] of Object.entries(fields)) data.set(key, value);
-    return data;
-}
 
 const owner = { user: { id: "u1", email: "olive@example.com" }, role: "owner", businessId: BUSINESS_ID };
 const business = { id: BUSINESS_ID, name: "Green Acres", stripe_customer_id: "cus_1", trial_ends_at: null };

@@ -2,8 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { expectRedirect } from "@/test/next-mocks";
 import { createSupabaseMock, type SupabaseMock } from "@/test/supabase-mock";
-
-const BUSINESS_ID = "6f1f5c2e-0c4a-4b8e-9a59-1f2d3c4b5a69";
+import { BUSINESS_ID } from "@/test/dashboard";
 
 const state = vi.hoisted(() => ({
     admin: null as unknown as SupabaseMock,
@@ -27,10 +26,7 @@ vi.mock("@/libs/stripe/server", () => ({
     getStripe: () => ({ accounts: { createLoginLink: state.createLoginLink } }),
 }));
 vi.mock("@/libs/supabase/admin", () => ({ createAdminClient: () => state.admin.client }));
-vi.mock("@/libs/dashboard", () => ({
-    authorizeBusiness: vi.fn(async () => state.auth),
-    isFailure: (value: unknown) => typeof value === "object" && value !== null && "error" in value,
-}));
+vi.mock("@/libs/dashboard", async () => (await import("@/test/dashboard")).mockDashboard(() => state.auth));
 
 import { openExpressDashboard, refreshPayoutStatus, startPayoutsOnboarding } from "./actions";
 

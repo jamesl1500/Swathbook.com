@@ -16,7 +16,7 @@ Requires Node 24, pnpm and Docker (for the local Supabase stack).
 | `pnpm db:reset` | Rebuild the local database from the migrations |
 | `pnpm db:test` | Database tests: RLS, grants, triggers and functions (`supabase/tests`) |
 | `pnpm db:push` | Apply new migrations to the linked hosted project (uses this repo's Supabase CLI) |
-| `pnpm db:types` | Regenerate the database types (web and client app) after schema changes |
+| `pnpm db:types` | Regenerate the database types after schema changes (written to the web app; the client app re-exports them) |
 | `pnpm test` | Unit and component tests (Vitest) |
 | `pnpm app` | Start the customer app's Expo dev server (press i, a or w) |
 | `pnpm test:e2e` | End-to-end tests (Playwright) against a production build wired to local Supabase; needs `pnpm db:start` first |

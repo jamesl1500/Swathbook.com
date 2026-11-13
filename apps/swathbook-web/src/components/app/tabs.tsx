@@ -53,7 +53,7 @@ export function Tabs({ label, items, param = "tab" }: { label: string; items: Ta
     window.history.replaceState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}`);
   }
 
-  function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+  function onKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
     const index = items.findIndex((item) => item.id === active);
     const target = { ArrowRight: index + 1, ArrowLeft: index - 1, Home: 0, End: items.length - 1 }[event.key];
     if (target === undefined) return;
@@ -65,7 +65,7 @@ export function Tabs({ label, items, param = "tab" }: { label: string; items: Ta
     <div>
       {/* Scrolls sideways on the narrowest phones rather than wrapping into a second row. */}
       <div ref={scroller} data-allow-overflow className="-mx-4 mb-6 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden">
-        <div role="tablist" aria-label={label} onKeyDown={onKeyDown} className="flex min-w-max gap-1 border-b border-line">
+        <div role="tablist" aria-label={label} className="flex min-w-max gap-1 border-b border-line">
           {items.map((item) => {
             const selected = item.id === active;
             return (
@@ -82,6 +82,7 @@ export function Tabs({ label, items, param = "tab" }: { label: string; items: Ta
                 aria-controls={`${baseId}-panel-${item.id}`}
                 tabIndex={selected ? 0 : -1}
                 onClick={() => select(item.id)}
+                onKeyDown={onKeyDown}
                 className={cn(
                   "-mb-px inline-flex h-11 cursor-pointer items-center gap-2 border-b-2 px-2.5 text-[0.95rem] font-semibold whitespace-nowrap transition-colors focus-visible:rounded-t-lg focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-200 sm:px-4",
                   selected ? "border-brand-600 text-ink" : "border-transparent text-ink-soft hover:border-line-strong hover:text-ink",

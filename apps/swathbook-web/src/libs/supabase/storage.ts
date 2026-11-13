@@ -4,12 +4,14 @@
  * Paths and public URLs for Supabase Storage.
  *   business-assets (public): <business_id>/<file>, gallery in <business_id>/photos/<file>
  *   job-files (private):      <business_id>/<booking_id>/<file>
+ *   avatars (private):        <user_id>/<file> (profile photos, set from the customer app)
  *
  * @module src/libs/supabase/storage
  * @since 1.0.0
  */
 
 export const BUSINESS_ASSETS_BUCKET = "business-assets";
+export const AVATARS_BUCKET = "avatars";
 
 export function publicAssetUrl(path: string | null | undefined) {
     if (!path) return null;

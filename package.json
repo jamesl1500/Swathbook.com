@@ -17,7 +17,7 @@
     "db:reset": "supabase db reset",
     "db:test": "supabase test db",
     "db:push": "supabase db push --linked",
-    "db:types": "supabase gen types typescript --local --schema public > apps/swathbook-web/src/libs/supabase/database.types.ts && node -e \"require('fs').copyFileSync('apps/swathbook-web/src/libs/supabase/database.types.ts', 'apps/swathbook-client-app/src/data/database.types.ts')\""
+    "db:types": "supabase gen types typescript --local --schema public > apps/swathbook-web/src/libs/supabase/database.types.ts"
   },
   "devDependencies": {
     "supabase": "^2.122.1",

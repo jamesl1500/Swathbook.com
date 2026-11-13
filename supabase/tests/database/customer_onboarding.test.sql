@@ -1,30 +1,11 @@
--- Customer app onboarding: home address and setup state (20261111000100_customer_onboarding.sql).
+-- Customer app onboarding and profile photos (20261111000100_customer_onboarding.sql,
+-- 20261112000100_customer_avatars.sql).
 begin;
 \set QUIET 1
 create extension if not exists pgtap with schema extensions;
 select no_plan();
 
-create schema t;
-create function t.ok(p_cond boolean, p_msg text) returns text language sql as $$
-    select extensions.ok(coalesce(p_cond, false), p_msg);
-$$;
-create function t.expect_error(p_sql text, p_like text, p_msg text) returns text language plpgsql as $$
-begin
-    begin
-        execute p_sql;
-    exception when others then
-        if sqlerrm ilike '%' || p_like || '%' or sqlstate = p_like then
-            return extensions.ok(true, p_msg);
-        end if;
-        return extensions.ok(false, p_msg) || E'\n' || extensions.diag(format('wrong error [%s] %s', sqlstate, sqlerrm));
-    end;
-    return extensions.ok(false, p_msg) || E'\n' || extensions.diag('statement succeeded');
-end $$;
-create function t.as_user(p_id uuid) returns void language sql as $$
-    select set_config('request.jwt.claims', json_build_object('sub', p_id, 'role', 'authenticated')::text, false);
-$$;
-grant usage on schema t to public;
-grant execute on all functions in schema t to public;
+\ir _helpers.psql
 
 -- Cara (customer) also works for Owen's business, so they're teammates and can
 -- read each other's profiles. Her home address must still stay private.
@@ -78,10 +59,42 @@ select t.ok((select public.my_details() ->> 'onboarded_at') is null, 'the owner 
 do $$ begin perform public.finish_my_setup(); end $$;
 select t.ok((select public.my_details() ->> 'onboarded_at') is not null, 'skipping also finishes setup');
 
+-- Profile photos. Files as the storage API would record them (owner = uploader).
+reset role;
+insert into storage.objects (bucket_id, name, owner_id) values
+    ('avatars', '00000000-0000-0000-0000-0000000000c1/one.jpg', '00000000-0000-0000-0000-0000000000c1'),
+    ('avatars', '00000000-0000-0000-0000-0000000000c1/two.jpg', '00000000-0000-0000-0000-0000000000c1'),
+    ('avatars', '00000000-0000-0000-0000-0000000000a1/owen.jpg', '00000000-0000-0000-0000-0000000000a1');
+set role authenticated;
+select t.as_user('00000000-0000-0000-0000-0000000000c1');
+
+select t.ok((select public.my_details() ->> 'avatar_path') is null, 'no photo to start with');
+select t.expect_error('select public.set_my_avatar(''00000000-0000-0000-0000-0000000000c1/missing.jpg'')', 'invalid_avatar',
+                      'the file has to exist');
+select t.expect_error('select public.set_my_avatar(''00000000-0000-0000-0000-0000000000a1/owen.jpg'')', 'invalid_avatar',
+                      'she can''t use someone else''s file');
+select t.expect_error('select public.set_my_avatar(''00000000-0000-0000-0000-0000000000c1/../x.jpg'')', 'invalid_avatar',
+                      'paths are checked');
+select t.ok((select public.set_my_avatar('00000000-0000-0000-0000-0000000000c1/one.jpg')) is null, 'she sets a photo');
+select t.ok((select public.my_details() ->> 'avatar_path' = '00000000-0000-0000-0000-0000000000c1/one.jpg'), 'my_details has it');
+select t.ok((select public.set_my_avatar('00000000-0000-0000-0000-0000000000c1/two.jpg') = '00000000-0000-0000-0000-0000000000c1/one.jpg'),
+            'replacing it hands back the old file to delete');
+select t.expect_error('update public.profiles set avatar_path = ''anything.jpg'' where id = ''00000000-0000-0000-0000-0000000000c1''',
+                      'permission denied', 'avatar_path can''t be written directly');
+select t.ok((select count(*) = 2 from storage.objects where bucket_id = 'avatars'), 'she sees only her own avatar files');
+
+select t.as_user('00000000-0000-0000-0000-0000000000a1');
+select t.ok((select count(*) = 1 from storage.objects where bucket_id = 'avatars'), 'her teammate can''t see her photos');
+
+select t.as_user('00000000-0000-0000-0000-0000000000c1');
+select t.ok((select public.set_my_avatar(null) = '00000000-0000-0000-0000-0000000000c1/two.jpg'), 'she removes her photo');
+select t.ok((select public.my_details() ->> 'avatar_path') is null, 'and it''s gone');
+
 reset role;
 set role anon;
 select t.expect_error('select public.save_my_details(''Cara'')', 'permission denied', 'anon cannot save details');
 select t.expect_error('select * from public.customer_profiles', 'permission denied', 'anon cannot read customer profiles');
+select t.expect_error('select public.set_my_avatar(null)', 'permission denied', 'anon cannot set a photo');
 reset role;
 
 select * from finish();

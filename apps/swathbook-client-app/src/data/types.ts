@@ -133,6 +133,8 @@ export type MyDetails = {
   email: string;
   full_name: string | null;
   phone: string | null;
+  /** Their profile photo in the private avatars bucket (show it with useAvatarUrl). */
+  avatar_path: string | null;
   /** Best address for a new booking: their saved home, else where they last booked. */
   address: BookingAddress | null;
   /** The home address they saved themselves (null if none). */

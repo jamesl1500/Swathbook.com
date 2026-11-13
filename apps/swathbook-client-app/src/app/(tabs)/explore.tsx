@@ -25,7 +25,7 @@ export default function ExploreScreen() {
       <View style={styles.filters}>
         <SearchField value={query} onChangeText={setQuery} placeholder="Search businesses, services or towns" />
         {trades.data && trades.data.length > 1 ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips} role="radiogroup" aria-label="Trade">
             <Chip selected={trade === null} onPress={() => setTrade(null)}>
               All
             </Chip>
