@@ -7,7 +7,8 @@ import { getMyDetails, queryClient } from '@/data/api';
 import { sendSignInCode, verifySignInCode } from '@/data/auth';
 import { Button, FormMessage, LogoMark, Screen, space, Text, TextField } from '@/design-system';
 
-const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+// name@domain.tld. Dots only separate domain labels, so matching never backtracks.
+const EMAIL = /^[^@\s]+@[^@\s.]+(?:\.[^@\s.]+)+$/;
 
 /**
  * Supabase's code length is a project setting (6 to 10 digits; the hosted

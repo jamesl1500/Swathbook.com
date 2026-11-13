@@ -142,14 +142,14 @@ export default function DesignSystemScreen() {
             New
           </Badge>
         </View>
-        <View style={styles.wrap}>
+        <View style={styles.wrap} role="radiogroup" aria-label="Trade">
           {['Lawn care', 'Detailing', 'Pool service'].map((label) => (
             <Chip key={label} selected={chip === label} onPress={() => setChip(label)}>
               {label}
             </Chip>
           ))}
         </View>
-        <View style={styles.wrap}>
+        <View style={styles.wrap} role="radiogroup" aria-label="Time">
           {['8:30 AM', '11:00 AM', '1:30 PM'].map((label, i) => (
             <Chip key={label} shape="tile" selected={i === 0}>
               {label}
@@ -233,6 +233,8 @@ export default function DesignSystemScreen() {
           <Avatar name="Greenline Lawn" color="#2f6b3a" />
           <Avatar name="Clearview" />
           <Avatar name="Pale Brand" color="#ffe6d6" />
+          <Avatar name="Cara Customer" size="lg" label="Change photo (example)" onPress={() => undefined} />
+          <Avatar name="Cara Customer" size="lg" busy onPress={() => undefined} />
         </View>
         <MapGrid tone="light" style={styles.grid}>
           <Text variant="label" tone="brand">

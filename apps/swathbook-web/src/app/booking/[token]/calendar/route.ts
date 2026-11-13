@@ -5,7 +5,7 @@ function icsDate(value: string) {
 }
 
 function escapeIcs(value: string) {
-  return value.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+  return value.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r\n|\r|\n/g, "\\n");
 }
 
 /** "Add to calendar": a single-event .ics file for the customer's booking. */

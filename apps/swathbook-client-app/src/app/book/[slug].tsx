@@ -1,11 +1,12 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { CalendarCheck, CalendarX, ChevronRight, LogIn, SearchX } from 'lucide-react-native';
-import { useMemo, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { AddressFields, toAddressValue, type AddressValue } from '@/components/address-fields';
 import { Loading, LoadError } from '@/components/query-state';
+import { SlotPicker, useSlotDays } from '@/components/slot-picker';
 import { ApiError, useAvailableSlots, useBookingPage, useCreateBooking, useMyDetails } from '@/data/api';
 import { useAuth } from '@/data/auth';
 import type { BookingPage, MyDetails, Slot } from '@/data/types';
@@ -24,7 +25,7 @@ import {
   Text,
   TextField,
 } from '@/design-system';
-import { dayKey, formatCents, formatDuration, formatServicePrice, formatShortDate, formatTime } from '@/lib/format';
+import { formatCents, formatDuration, formatServicePrice, formatShortDate, formatTime } from '@/lib/format';
 
 export default function BookScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
@@ -87,18 +88,8 @@ function BookingFlow({ page, details }: { page: BookingPage; details: MyDetails 
   const deposit = business.accepts_online_payments ? chosen.reduce((sum, s) => sum + s.deposit_cents, 0) : 0;
   const anyEstimate = chosen.some((s) => s.price_type !== 'fixed');
 
-  // Openings grouped by the business's local day, in order.
-  const days = useMemo(() => {
-    const groups = new Map<string, Slot[]>();
-    for (const s of slots.data ?? []) {
-      const key = dayKey(s.slot_start, tz);
-      groups.set(key, [...(groups.get(key) ?? []), s]);
-    }
-    return [...groups.entries()];
-  }, [slots.data, tz]);
-
-  const activeDay = day !== null && days.some(([key]) => key === day) ? day : (days[0]?.[0] ?? null);
-  const daySlots = days.find(([key]) => key === activeDay)?.[1] ?? [];
+  const slotDays = useSlotDays(slots.data, tz, day);
+  const { days } = slotDays;
   const lastDay = days.at(-1)?.[0];
 
   function toggleService(id: string) {
@@ -239,40 +230,24 @@ function BookingFlow({ page, details }: { page: BookingPage; details: MyDetails 
           </EmptyState>
         ) : (
           <View style={styles.stack}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
-              {days.map(([key, list]) => (
-                <Chip
-                  key={key}
-                  selected={key === activeDay}
-                  onPress={() => {
-                    setDay(key);
-                    setSlot(null);
-                  }}
-                  aria-label={`${formatShortDate(list[0].slot_start, tz)}, ${list.length} times`}
-                >
-                  {formatShortDate(list[0].slot_start, tz)}
+            <SlotPicker
+              {...slotDays}
+              tz={tz}
+              slot={slot}
+              onDay={(key) => {
+                setDay(key);
+                setSlot(null);
+              }}
+              onSlot={setSlot}
+              moreDays={
+                <Chip icon={ChevronRight} onPress={laterOpenings} aria-label="Later dates">
+                  Later
                 </Chip>
-              ))}
-              <Chip icon={ChevronRight} onPress={laterOpenings} aria-label="Later dates">
-                Later
-              </Chip>
-            </ScrollView>
-            <View style={styles.times}>
-              {daySlots.map((s) => (
-                <Chip
-                  key={s.slot_start}
-                  shape="tile"
-                  selected={slot?.slot_start === s.slot_start}
-                  onPress={() => setSlot(s)}
-                  style={styles.time}
-                >
-                  {formatTime(s.slot_start, tz)}
-                </Chip>
-              ))}
-            </View>
+              }
+            />
             {tz !== Intl.DateTimeFormat().resolvedOptions().timeZone ? (
               <Text variant="caption" tone="faint">
-                Times are in {business.name}&rsquo;s time zone ({tz.replace(/_/g, ' ')}).
+                Times are in {business.name}&rsquo;s time zone ({tz.replaceAll('_', ' ')}).
               </Text>
             ) : null}
           </View>
@@ -378,18 +353,6 @@ const styles = StyleSheet.create({
   },
   stack: {
     gap: space[3],
-  },
-  row: {
-    gap: space[2],
-    paddingRight: space[4],
-  },
-  times: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: space[2],
-  },
-  time: {
-    minWidth: 92,
   },
   slotsLoading: {
     paddingVertical: space[8],

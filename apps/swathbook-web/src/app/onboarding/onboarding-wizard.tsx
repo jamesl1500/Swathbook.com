@@ -150,7 +150,7 @@ export function OnboardingWizard({ defaults }: { defaults: OnboardingDefaults })
           noValidate
           onSubmit={(event) => {
             event.preventDefault();
-            if (isLast) submit();
+            if (isLast) void submit();
             else goNext();
           }}
           className="mt-10"

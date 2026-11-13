@@ -9,6 +9,9 @@ describe("safeNextPath", () => {
     it.each([
         ["protocol-relative URL", "//evil.example/steal"],
         ["backslash trick", "/\\evil.example"],
+        ["tab before the slash", "/\t/evil.example"],
+        ["newline before the slash", "/\n/evil.example"],
+        ["carriage return and backslash", "/\r\\evil.example"],
         ["absolute URL", "https://evil.example"],
         ["relative path", "dashboard"],
         ["empty string", ""],

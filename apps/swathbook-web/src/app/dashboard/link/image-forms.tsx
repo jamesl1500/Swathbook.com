@@ -21,10 +21,16 @@ function useBusinessAction(businessId: string) {
         const formData = new FormData();
         formData.set("businessId", businessId);
         for (const [key, value] of Object.entries(fields)) formData.set(key, value);
-        const result = await action(formData);
-        if (result.error) toast.error(result.error);
-        else if (result.success && !quiet) toast.success(result.success);
-        resolve(!result.error);
+        try {
+          const result = await action(formData);
+          if (result.error) toast.error(result.error);
+          else if (result.success && !quiet) toast.success(result.success);
+          resolve(!result.error);
+        } catch {
+          // The request itself failed (offline, server down): say so rather than hang.
+          toast.error("Couldn't save that. Check your connection and try again.");
+          resolve(false);
+        }
       }),
     );
   }
@@ -117,7 +123,7 @@ export function LogoForm({ businessId, logoUrl, businessName }: { businessId: st
             }}
           />
           {logoUrl ? (
-            <Button size="sm" variant="ghost" className="min-h-11" disabled={pending} onClick={() => run(removeLogo, {})}>
+            <Button size="sm" variant="ghost" className="min-h-11" disabled={pending} onClick={() => void run(removeLogo, {})}>
               <Trash className="size-4" aria-hidden="true" />
               Remove
             </Button>
@@ -159,7 +165,7 @@ export function CoverForm({ businessId, coverUrl, brandColor }: { businessId: st
           }}
         />
         {coverUrl ? (
-          <Button size="sm" variant="ghost" className="min-h-11" disabled={pending} onClick={() => run(removeCover, {})}>
+          <Button size="sm" variant="ghost" className="min-h-11" disabled={pending} onClick={() => void run(removeCover, {})}>
             <Trash className="size-4" aria-hidden="true" />
             Remove
           </Button>
@@ -228,7 +234,7 @@ export function PhotosForm({ businessId, photos }: { businessId: string; photos:
                   placeholder="Add a caption"
                   onBlur={(event) => {
                     if (event.target.value.trim() !== (photo.caption ?? "")) {
-                      run(savePhotoCaption, { photoId: photo.id, caption: event.target.value });
+                      void run(savePhotoCaption, { photoId: photo.id, caption: event.target.value });
                     }
                   }}
                   className={cn(inputStyles, "px-2.5 py-1.5 text-sm")}
@@ -240,7 +246,7 @@ export function PhotosForm({ businessId, photos }: { businessId: string; photos:
                       variant="ghost"
                       className="size-10 px-0"
                       disabled={pending || index === 0}
-                      onClick={() => run(movePhoto, { photoId: photo.id, direction: "earlier" })}
+                      onClick={() => void run(movePhoto, { photoId: photo.id, direction: "earlier" })}
                     >
                       <ArrowLeft className="size-4" aria-hidden="true" />
                       <span className="sr-only">Move photo {index + 1} earlier</span>
@@ -250,7 +256,7 @@ export function PhotosForm({ businessId, photos }: { businessId: string; photos:
                       variant="ghost"
                       className="size-10 px-0"
                       disabled={pending || index === photos.length - 1}
-                      onClick={() => run(movePhoto, { photoId: photo.id, direction: "later" })}
+                      onClick={() => void run(movePhoto, { photoId: photo.id, direction: "later" })}
                     >
                       <ArrowRight className="size-4" aria-hidden="true" />
                       <span className="sr-only">Move photo {index + 1} later</span>
@@ -262,7 +268,7 @@ export function PhotosForm({ businessId, photos }: { businessId: string; photos:
                     className="size-10 px-0 text-clay hover:text-clay"
                     disabled={pending}
                     onClick={() => {
-                      if (window.confirm("Remove this photo from your page?")) run(deletePhoto, { photoId: photo.id });
+                      if (window.confirm("Remove this photo from your page?")) void run(deletePhoto, { photoId: photo.id });
                     }}
                   >
                     <Trash className="size-4" aria-hidden="true" />

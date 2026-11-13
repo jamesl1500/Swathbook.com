@@ -180,9 +180,14 @@ function ReschedulePicker({
   useEffect(() => {
     if (byDay[day] !== undefined) return;
     let current = true;
-    getRescheduleSlots(token, day).then((result) => {
-      if (current) setByDay((previous) => ({ ...previous, [day]: "error" in result ? { error: result.error } : result.slots }));
-    });
+    getRescheduleSlots(token, day).then(
+      (result) => {
+        if (current) setByDay((previous) => ({ ...previous, [day]: "error" in result ? { error: result.error } : result.slots }));
+      },
+      () => {
+        if (current) setByDay((previous) => ({ ...previous, [day]: { error: "Couldn't load open times. Check your connection and try again." } }));
+      },
+    );
     return () => {
       current = false;
     };

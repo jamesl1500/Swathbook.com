@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
-import { addJob, admin, createBusiness, createUser, memberIdFor } from "./support/admin";
+import { createBusiness, createUser } from "./support/admin";
 import { expectOnPath, logIn } from "./support/auth";
-import { tomorrowAt } from "./support/time";
+import { dashboardPaths, signInToBusyDashboard } from "./support/dashboard";
 
 /**
  * Layout on the screens people actually hold. readability.spec.ts covers 390px
@@ -96,41 +96,10 @@ test.describe("public pages on phones and tablets", () => {
 test.describe("the dashboard on phones and tablets", () => {
     test("every page fits, and the tab bar never hides the end of the page", async ({ page }) => {
         test.setTimeout(300_000);
-        const owner = await createUser({ fullName: "Olive Owner" });
-        const business = await createBusiness(owner.id, { name: "Shine On Mobile Detailing", openEveryDay: true });
-        const { bookingId, customerId } = await addJob(business.id, {
-            start: tomorrowAt(10).at,
-            memberId: await memberIdFor(business.id, owner.id),
-            customerName: "Pat Customer With A Long Name",
-            lat: 30.2,
-            lng: -97.7,
-        });
-        await admin.from("businesses").update({ trial_ends_at: new Date(Date.now() + 2 * 86_400_000).toISOString() }).eq("id", business.id);
-        await logIn(page, owner.email, owner.password);
-        await expectOnPath(page, "/dashboard");
+        const job = await signInToBusyDashboard(page, { customerName: "Pat Customer With A Long Name" });
 
         const ready = (p: Page) => p.locator("main h1").first().waitFor();
-        for (const path of [
-            "/dashboard",
-            `/dashboard/schedule?week=${tomorrowAt(10).date}`,
-            `/dashboard/schedule/${bookingId}`,
-            "/dashboard/schedule/new",
-            "/dashboard/schedule/availability",
-            "/dashboard/schedule/availability?tab=rules",
-            "/dashboard/customers",
-            `/dashboard/customers/${customerId}`,
-            "/dashboard/customers/new",
-            `/dashboard/routes?date=${tomorrowAt(10).date}`,
-            "/dashboard/services",
-            "/dashboard/link",
-            "/dashboard/link?tab=details",
-            "/dashboard/link?tab=photos",
-            "/dashboard/payouts",
-            "/dashboard/account",
-            "/dashboard/team",
-            "/dashboard/bookings",
-            "/dashboard/billing",
-        ]) {
+        for (const path of dashboardPaths(job, { tabs: true })) {
             await test.step(path, () => checkLayout(page, path, ready));
         }
 

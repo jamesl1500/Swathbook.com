@@ -2,8 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { expectRedirect } from "@/test/next-mocks";
 import { createSupabaseMock, type SupabaseMock } from "@/test/supabase-mock";
-
-const BUSINESS_ID = "6f1f5c2e-0c4a-4b8e-9a59-1f2d3c4b5a69";
+import { BUSINESS_ID, form } from "@/test/dashboard";
 
 const state = vi.hoisted(() => ({
     supabase: null as unknown as SupabaseMock,
@@ -15,19 +14,9 @@ vi.mock("next/cache", () => ({ refresh: vi.fn() }));
 vi.mock("next/navigation", async () => ({ redirect: (await import("@/test/next-mocks")).mockRedirect }));
 vi.mock("@/libs/google/maps", () => ({ hasGoogleMaps: () => true, geocodeAddress: state.geocode, placeDetails: vi.fn(async () => null) }));
 vi.mock("@/libs/supabase/server", () => ({ createClient: vi.fn(async () => state.supabase.client) }));
-vi.mock("@/libs/dashboard", () => ({
-    authorizeBusiness: vi.fn(async () => state.auth),
-    isFailure: (value: unknown) => typeof value === "object" && value !== null && "error" in value,
-}));
+vi.mock("@/libs/dashboard", async () => (await import("@/test/dashboard")).mockDashboard(() => state.auth));
 
 import { createCustomer, deleteAddress, deleteCustomer, makePrimaryAddress, saveAddress, updateCustomer } from "./actions";
-
-function form(fields: Record<string, string>) {
-    const data = new FormData();
-    data.set("businessId", BUSINESS_ID);
-    for (const [key, value] of Object.entries(fields)) data.set(key, value);
-    return data;
-}
 
 const customer = { fullName: "  Ada Lovelace ", email: " ADA@Example.com ", phone: "+1 (512) 555-0100", notes: "", tags: "VIP, weekly, vip,  ", emailOptIn: "on" };
 

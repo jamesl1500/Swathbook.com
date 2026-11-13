@@ -5,7 +5,8 @@
  * customer (or anonymously):
  *   search_businesses, business_trades, get_booking_page, get_available_slots,
  *   my_bookings, my_booking, my_details, my_reschedule_slots, save_my_details,
- *   finish_my_setup.
+ *   finish_my_setup, set_my_avatar (the photo itself goes to the private
+ *   avatars bucket, in a folder only they can use).
  * Changes go through the web app's /api/app routes, which add what the
  * database can't do alone (geocoding, emails right away, account deletion).
  */
@@ -13,6 +14,7 @@
 import { QueryClient, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { config } from '@/lib/config';
+import type { ProfilePhoto } from '@/lib/photo';
 import { supabase } from '@/lib/supabase';
 
 import { useAuth } from './auth';
@@ -139,6 +141,53 @@ export async function saveMyDetails({ fullName, phone, address, finishSetup = fa
 /** "Skip for now": stop offering account setup. */
 export const finishMySetup = () => call<null>(supabase.rpc('finish_my_setup'));
 
+// --- Profile photo ---------------------------------------------------------------
+
+const AVATARS = 'avatars';
+const PHOTO_FAILED = "We couldn't save your photo. Please try again.";
+
+/** A link to their photo. The bucket is private, so it's signed and expires in an hour. */
+export async function getAvatarUrl(path: string) {
+  const { data, error } = await supabase.storage.from(AVATARS).createSignedUrl(path, 60 * 60);
+  if (error || !data) throw new ApiError("We couldn't load your photo.", 'failed');
+  return data.signedUrl;
+}
+
+/** Points their profile at `path` (or at nothing), then deletes the photo it replaces. */
+async function swapAvatar(path: string | null) {
+  const previous = await call<string | null>(supabase.rpc('set_my_avatar', path ? { p_path: path } : {}));
+  // Best effort: an old file left behind only costs storage, and goes when the account does.
+  if (previous) await supabase.storage.from(AVATARS).remove([previous]);
+}
+
+/** Uploads a new profile photo and makes it theirs. */
+export async function setMyAvatar(photo: ProfilePhoto) {
+  const { data } = await supabase.auth.getSession();
+  const userId = data.session?.user.id;
+  if (!userId) throw new ApiError('Sign in to continue.', 'unauthenticated', 401);
+
+  // A fresh name every time, so no device or CDN shows a stale photo.
+  const path = `${userId}/${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}.${photo.extension}`;
+  let upload;
+  try {
+    upload = await supabase.storage.from(AVATARS).upload(path, photo.bytes, { contentType: photo.contentType, upsert: false });
+  } catch {
+    throw new ApiError(OFFLINE, 'offline', 0);
+  }
+  if (upload.error) {
+    console.warn('[api]', upload.error);
+    throw new ApiError(PHOTO_FAILED);
+  }
+  try {
+    await swapAvatar(path);
+  } catch (error) {
+    await supabase.storage.from(AVATARS).remove([path]);
+    throw error instanceof ApiError && error.code === 'offline' ? error : new ApiError(PHOTO_FAILED);
+  }
+}
+
+export const removeMyAvatar = () => swapAvatar(null);
+
 export type NewBooking = {
   slug: string;
   serviceIds: string[];
@@ -188,7 +237,7 @@ export const useBookingPage = (slug: string) => useQuery({ queryKey: ['booking-p
 
 export const useAvailableSlots = (slug: string, serviceIds: string[], from: string | null) =>
   useQuery({
-    queryKey: ['slots', slug, [...serviceIds].sort(), from],
+    queryKey: ['slots', slug, [...serviceIds].sort((a, b) => a.localeCompare(b)), from],
     queryFn: () => getAvailableSlots(slug, serviceIds, from),
     enabled: serviceIds.length > 0,
     staleTime: 15_000,
@@ -208,6 +257,24 @@ export function useMyDetails() {
   const { signedIn } = useAuth();
   return useQuery({ queryKey: ['me', 'details'], queryFn: getMyDetails, enabled: signedIn });
 }
+
+/** A displayable URL for their photo; refreshed before the signed link expires. */
+export const useAvatarUrl = (path: string | null | undefined) =>
+  useQuery({
+    queryKey: ['me', 'avatar', path],
+    queryFn: () => getAvatarUrl(path!),
+    enabled: Boolean(path),
+    staleTime: 45 * 60_000,
+    gcTime: 50 * 60_000,
+  });
+
+function useAvatarMutation<T>(mutationFn: (input: T) => Promise<void>) {
+  const client = useQueryClient();
+  return useMutation({ mutationFn, onSuccess: () => client.invalidateQueries({ queryKey: ['me', 'details'] }) });
+}
+
+export const useSetMyAvatar = () => useAvatarMutation(setMyAvatar);
+export const useRemoveMyAvatar = () => useAvatarMutation(removeMyAvatar);
 
 export const useRescheduleSlots = (id: string) =>
   useQuery({ queryKey: ['me', 'reschedule-slots', id], queryFn: () => getRescheduleSlots(id), staleTime: 15_000 });

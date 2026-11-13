@@ -4,27 +4,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 select no_plan();
 
-create schema t;
-create function t.ok(p_cond boolean, p_msg text) returns text language sql as $$
-    select extensions.ok(coalesce(p_cond, false), p_msg);
-$$;
-create function t.expect_error(p_sql text, p_like text, p_msg text) returns text language plpgsql as $$
-begin
-    begin
-        execute p_sql;
-    exception when others then
-        if sqlerrm ilike '%' || p_like || '%' or sqlstate = p_like then
-            return extensions.ok(true, p_msg);
-        end if;
-        return extensions.ok(false, p_msg) || E'\n' || extensions.diag(format('wrong error [%s] %s', sqlstate, sqlerrm));
-    end;
-    return extensions.ok(false, p_msg) || E'\n' || extensions.diag('statement succeeded');
-end $$;
-create function t.as_user(p_id uuid) returns void language sql as $$
-    select set_config('request.jwt.claims', json_build_object('sub', p_id, 'role', 'authenticated')::text, false);
-$$;
-grant usage on schema t to public;
-grant execute on all functions in schema t to public;
+\ir _helpers.psql
 
 -- Two owners, a customer with a confirmed email, one whose email isn't confirmed
 -- (but matches a booking), and a stranger.

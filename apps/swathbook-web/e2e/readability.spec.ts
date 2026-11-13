@@ -1,8 +1,9 @@
 import { createHash, randomBytes } from "node:crypto";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { addJob, admin, createBusiness, createUser, memberIdFor } from "./support/admin";
+import { addJob, admin, createBusiness, createUser } from "./support/admin";
 import { expectOnPath, logIn } from "./support/auth";
+import { dashboardPaths, signInToBusyDashboard } from "./support/dashboard";
 import { tomorrowAt } from "./support/time";
 
 /**
@@ -121,39 +122,10 @@ test.describe("signed-in pages", () => {
 
   test("every dashboard page is readable", async ({ page }) => {
     test.setTimeout(240_000);
-    const owner = await createUser({ fullName: "Olive Owner" });
-    const business = await createBusiness(owner.id, { name: "Shine On Mobile Detailing", openEveryDay: true });
-    const { bookingId, customerId } = await addJob(business.id, {
-      start: tomorrowAt(10).at,
-      memberId: await memberIdFor(business.id, owner.id),
-      customerName: "Pat Customer",
-      lat: 30.2,
-      lng: -97.7,
-    });
-    // Near the end of the trial, so the billing banner is audited on every page.
-    await admin.from("businesses").update({ trial_ends_at: new Date(Date.now() + 2 * 86_400_000).toISOString() }).eq("id", business.id);
-    await logIn(page, owner.email, owner.password);
-    await expectOnPath(page, "/dashboard");
+    const job = await signInToBusyDashboard(page);
 
     const main = { ready: (p: Page) => p.locator("main h1").first().waitFor() };
-    for (const path of [
-      "/dashboard",
-      `/dashboard/schedule?week=${tomorrowAt(10).date}`,
-      `/dashboard/schedule/${bookingId}`,
-      "/dashboard/schedule/new",
-      "/dashboard/schedule/availability",
-      "/dashboard/customers",
-      `/dashboard/customers/${customerId}`,
-      "/dashboard/customers/new",
-      `/dashboard/routes?date=${tomorrowAt(10).date}`,
-      "/dashboard/services",
-      "/dashboard/link",
-      "/dashboard/payouts",
-      "/dashboard/account",
-      "/dashboard/team",
-      "/dashboard/bookings",
-      "/dashboard/billing",
-    ]) {
+    for (const path of dashboardPaths(job)) {
       await audit(page, path, main);
     }
   });

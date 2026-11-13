@@ -1,15 +1,16 @@
 import Constants from 'expo-constants';
 import * as WebBrowser from 'expo-web-browser';
-import { CircleHelp, CircleUser, House, LogOut, Mail, Palette, Phone, ShieldCheck, Trash2, UserPen } from 'lucide-react-native';
+import { Camera, CircleHelp, CircleUser, House, ImageMinus, LogOut, Mail, Palette, Phone, ShieldCheck, Trash2, UserPen } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
 import { formatAddress } from '@/components/address';
 import { SignInPrompt } from '@/components/sign-in-prompt';
-import { useDeleteAccount, useMyDetails } from '@/data/api';
+import { useAvatarUrl, useDeleteAccount, useMyDetails, useRemoveMyAvatar, useSetMyAvatar } from '@/data/api';
 import { signOut, useAuth } from '@/data/auth';
 import { Avatar, Card, FormMessage, ListGroup, ListRow, Logo, PageHeader, Screen, SectionHeader, space, Text } from '@/design-system';
 import { config } from '@/lib/config';
-import { confirm } from '@/lib/confirm';
+import { confirm, notify } from '@/lib/confirm';
+import { pickProfilePhoto } from '@/lib/photo';
 
 export default function AccountScreen() {
   const { user } = useAuth();
@@ -27,17 +28,40 @@ export default function AccountScreen() {
   );
 }
 
+async function onSignOut() {
+  if (await confirm({ title: 'Sign out?', message: 'You can sign back in any time with a code.', confirmLabel: 'Sign out', cancelLabel: 'Stay' })) {
+    await signOut();
+  }
+}
+
 function SignedIn() {
   const { user } = useAuth();
   const details = useMyDetails();
   const deletion = useDeleteAccount();
+  const setAvatar = useSetMyAvatar();
+  const removeAvatar = useRemoveMyAvatar();
+  const avatarPath = details.data?.avatar_path ?? null;
+  const avatarUrl = useAvatarUrl(avatarPath);
   const name = details.data?.full_name || user?.email || 'You';
   const home = details.data?.home_address;
+  const savingPhoto = setAvatar.isPending || removeAvatar.isPending;
+  const photoError = setAvatar.error ?? removeAvatar.error;
 
-  async function onSignOut() {
-    if (await confirm({ title: 'Sign out?', message: 'You can sign back in any time with a code.', confirmLabel: 'Sign out', cancelLabel: 'Stay' })) {
-      await signOut();
+  async function openAvatarEdit() {
+    let photo;
+    try {
+      photo = await pickProfilePhoto();
+    } catch (error) {
+      console.warn('[photo]', error);
+      notify("Couldn't use that photo", 'Try a different one.');
+      return;
     }
+    if (photo) setAvatar.mutate(photo);
+  }
+
+  async function onRemovePhoto() {
+    const ok = await confirm({ title: 'Remove your photo?', message: 'Your initials show instead.', confirmLabel: 'Remove', destructive: true });
+    if (ok) removeAvatar.mutate(undefined);
   }
 
   async function onDelete() {
@@ -56,7 +80,15 @@ function SignedIn() {
   return (
     <>
       <Card style={styles.profile}>
-        <Avatar name={name} size="lg" onPress={openAvatarEdit}/>
+        <Avatar
+          name={name}
+          size="lg"
+          imageUri={avatarPath ? avatarUrl.data : null}
+          cacheKey={avatarPath}
+          onPress={openAvatarEdit}
+          label={avatarPath ? 'Change your photo' : 'Add a photo'}
+          busy={savingPhoto}
+        />
         <View style={styles.flex}>
           <Text variant="subheading" numberOfLines={1}>
             {name}
@@ -67,6 +99,8 @@ function SignedIn() {
         </View>
       </Card>
 
+      {photoError ? <FormMessage tone="error">{photoError.message}</FormMessage> : null}
+
       <View>
         <SectionHeader title="Your details" />
         <ListGroup>
@@ -75,6 +109,8 @@ function SignedIn() {
           <ListRow icon={Phone} title="Phone" subtitle={details.data?.phone || 'Not added'} />
           <ListRow icon={House} title="Home address" subtitle={home ? formatAddress(home) : 'Not added'} />
           <ListRow icon={UserPen} title="Edit your details" href="/edit-details" />
+          <ListRow icon={Camera} title={avatarPath ? 'Change photo' : 'Add a photo'} onPress={openAvatarEdit} />
+          {avatarPath ? <ListRow icon={ImageMinus} title="Remove photo" destructive onPress={onRemovePhoto} /> : null}
         </ListGroup>
       </View>
 

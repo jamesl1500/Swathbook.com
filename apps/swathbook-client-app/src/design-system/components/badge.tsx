@@ -40,6 +40,7 @@ export function Badge({
 
 export type ChipProps = Omit<PressableProps, 'children' | 'style'> & {
   children: ReactNode;
+  /** Set it (true or false) to make the chip one choice of several; leave it out for a plain button. */
   selected?: boolean;
   icon?: LucideIcon;
   /** `pill` for filters, `tile` for time slots (the website's opening chips). */
@@ -51,12 +52,15 @@ export type ChipProps = Omit<PressableProps, 'children' | 'style'> & {
  * A selectable chip. Selected chips go solid ink, exactly like the "Next
  * openings" times on the website's booking card.
  */
-export function Chip({ children, selected = false, icon: Icon, shape = 'pill', style, ...props }: ChipProps) {
+export function Chip({ children, selected, icon: Icon, shape = 'pill', style, ...props }: ChipProps) {
   const fg = selected ? colors.paper : colors.inkSoft;
+  // A chip with `selected` is one choice of several (put them in a
+  // role="radiogroup"); without it, it's a plain button like "Later".
+  const choice = selected !== undefined;
   return (
     <Pressable
-      role="button"
-      aria-selected={selected}
+      role={choice ? 'radio' : 'button'}
+      aria-checked={choice ? selected : undefined}
       hitSlop={{ top: 4, bottom: 4 }}
       style={({ pressed }) => [
         styles.chip,

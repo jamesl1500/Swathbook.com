@@ -1,5 +1,6 @@
 import { appError, appJson, appPreflight, authenticateApp } from "@/libs/app-api";
 import { createAdminClient } from "@/libs/supabase/admin";
+import { removeAvatarFiles } from "@/libs/supabase/storage-cleanup";
 
 /**
  * DELETE /api/app/account: a customer deletes their login (required for apps
@@ -17,12 +18,18 @@ export async function DELETE(request: Request) {
     if ("response" in auth) return auth.response;
 
     const admin = createAdminClient();
-    const [{ count: memberships }, { count: owned }] = await Promise.all([
+    const [members, businesses] = await Promise.all([
         admin.from("business_members").select("id", { count: "exact", head: true }).eq("user_id", auth.user.id),
         // Owners always have a membership too; this also covers a half-finished signup.
         admin.from("businesses").select("id", { count: "exact", head: true }).eq("owner_id", auth.user.id),
     ]);
-    if (memberships || owned) {
+    // Fail closed: if we can't tell whether they run a business, don't delete
+    // anything (deleting an owner's login would take their business with it).
+    if (members.error || businesses.error || members.count === null || businesses.count === null) {
+        console.error("[app] account deletion check failed", members.error ?? businesses.error);
+        return appError(500, "failed", "We couldn't delete your account. Please try again or contact support.");
+    }
+    if (members.count > 0 || businesses.count > 0) {
         return appError(409, "has_business", "This login is part of a business on Swathbook. Delete it from your dashboard on the website.");
     }
 
@@ -31,5 +38,7 @@ export async function DELETE(request: Request) {
         console.error("[app] account deletion failed", error);
         return appError(500, "failed", "We couldn't delete your account. Please try again or contact support.");
     }
+    // Their profile photos aren't tied to the login by any cascade.
+    await removeAvatarFiles(admin, auth.user.id);
     return appJson({ deleted: true });
 }

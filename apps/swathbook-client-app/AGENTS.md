@@ -37,7 +37,7 @@ pnpm exec expo install --fix      # fix incompatible package versions
 - Screens only use the hooks in `src/data/api.ts`. Reads are Supabase RPCs as the signed-in customer; changes go through the web app's `/api/app/*` routes (bearer token). Don't write tables directly from the app; your own details go through `save_my_details`.
 - A customer's bookings are matched by their **confirmed** login email (`private.current_customer_email()`); every customer-facing function must check ownership through `private.my_booking_row()`.
 - Never put secrets in `EXPO_PUBLIC_*` vars: they ship inside the app.
-- Regenerate types with `pnpm db:types` at the repo root after schema changes (writes both apps' `database.types.ts`).
+- Regenerate types with `pnpm db:types` at the repo root after schema changes. It writes them once, into the web app; `src/data/database.types.ts` re-exports them (type-only), so never paste a copy here.
 
 Run lint and typecheck before declaring any task done.
 
