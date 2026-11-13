@@ -30,19 +30,7 @@ export function SearchCard({
   photoCount: number;
 }) {
   const { fullTitle, description } = businessPageMeta({ business, services, tradeName: findTrade(business.trade)?.name });
-  const checks = [
-    { done: (business.description?.trim().length ?? 0) >= 60, label: "Describe your business in a sentence or two", hint: "Becomes your Google snippet." },
-    { done: Boolean(business.service_area?.trim()), label: "Add the area you serve", hint: "Most people search with a place name." },
-    {
-      done: services.length > 0 && services.every((service) => service.description?.trim()),
-      label: "Describe every service",
-      hint: "More words customers search for.",
-    },
-    { done: Boolean(business.phone), label: "Add a phone number", hint: "Builds trust and helps local results." },
-    { done: Boolean(business.logo_path), label: "Upload your logo", hint: "Shows on your page and share previews." },
-    { done: Boolean(business.cover_path), label: "Add a cover photo", hint: "Makes your link stand out when shared." },
-    { done: photoCount >= 3, label: "Show at least 3 photos of your work", hint: "Photos can appear in image search." },
-  ];
+  const checks = searchChecklist({ business, services, photoCount });
   const done = checks.filter((check) => check.done).length;
 
   return (
@@ -83,11 +71,36 @@ export function SearchCard({
             <strong className="text-ink">Add it to your Google Business Profile</strong> as your booking (appointment) link, so people can book straight
             from Google Search and Maps.
           </li>
-          <li>Put it in your Instagram, Facebook and Nextdoor bios, and on your truck or van with the QR code above.</li>
+          <li>Put it in your Instagram, Facebook and Nextdoor bios, and on your truck or van with the QR code from the Share tab.</li>
           <li>Ask happy customers for a Google review after each job. Reviews are a big part of how local businesses rank.</li>
-          <li>Link to it from your website with the &ldquo;Book now&rdquo; button below.</li>
+          <li>Link to it from your website with the &ldquo;Book now&rdquo; button from the Share tab.</li>
         </ol>
       </div>
     </Card>
   );
+}
+
+/** What helps the page show up (and look good) in search and link previews. */
+export function searchChecklist({
+  business,
+  services,
+  photoCount,
+}: {
+  business: SearchBusiness;
+  services: Array<{ name: string; description: string | null }>;
+  photoCount: number;
+}) {
+  return [
+    { done: (business.description?.trim().length ?? 0) >= 60, label: "Describe your business in a sentence or two", hint: "Becomes your Google snippet." },
+    { done: Boolean(business.service_area?.trim()), label: "Add the area you serve", hint: "Most people search with a place name." },
+    {
+      done: services.length > 0 && services.every((service) => service.description?.trim()),
+      label: "Describe every service",
+      hint: "More words customers search for.",
+    },
+    { done: Boolean(business.phone), label: "Add a phone number", hint: "Builds trust and helps local results." },
+    { done: Boolean(business.logo_path), label: "Upload your logo", hint: "Shows on your page and share previews." },
+    { done: Boolean(business.cover_path), label: "Add a cover photo", hint: "Makes your link stand out when shared." },
+    { done: photoCount >= 3, label: "Show at least 3 photos of your work", hint: "Photos can appear in image search." },
+  ];
 }

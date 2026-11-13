@@ -10,6 +10,7 @@ import { routes } from "@/libs/routes";
 import { getSiteUrl } from "@/libs/site-url";
 import { getStripe, hasStripe } from "@/libs/stripe/server";
 import { createAdminClient } from "@/libs/supabase/admin";
+import { removeAvatarFiles, removeFolder } from "@/libs/supabase/storage-cleanup";
 import { createClient } from "@/libs/supabase/server";
 import { changeEmailSchema, changeNameSchema, changePasswordSchema, deleteAccountSchema } from "@/libs/validation/auth";
 
@@ -156,6 +157,7 @@ export async function deleteAccount(_prev: FormState, formData: FormData): Promi
 
     await cancelPlans((liveSubscriptions ?? []).map((row) => row.stripe_subscription_id));
     await removeBusinessFiles(admin, businessIds);
+    await removeAvatarFiles(admin, user.id);
     await supabase.auth.signOut();
     (await cookies()).delete(ACTIVE_BUSINESS_COOKIE);
     redirect(`${routes.login}?notice=account_deleted`);
@@ -178,26 +180,5 @@ const BUSINESS_BUCKETS = ["business-assets", "job-files"] as const;
 
 /** Best effort: storage isn't transactional with the database, so log and move on. */
 async function removeBusinessFiles(admin: ReturnType<typeof createAdminClient>, businessIds: string[]) {
-    for (const bucket of BUSINESS_BUCKETS) {
-        for (const businessId of businessIds) {
-            try {
-                const paths = await listFiles(admin, bucket, businessId);
-                if (paths.length) await admin.storage.from(bucket).remove(paths);
-            } catch (error) {
-                console.error(`[account] couldn't remove ${bucket}/${businessId}`, error);
-            }
-        }
-    }
-}
-
-async function listFiles(admin: ReturnType<typeof createAdminClient>, bucket: string, folder: string): Promise<string[]> {
-    const { data, error } = await admin.storage.from(bucket).list(folder, { limit: 1000 });
-    if (error) throw error;
-    const nested = await Promise.all(
-        (data ?? []).map((entry) =>
-            // Folders come back without an id.
-            entry.id ? Promise.resolve([`${folder}/${entry.name}`]) : listFiles(admin, bucket, `${folder}/${entry.name}`),
-        ),
-    );
-    return nested.flat();
+    await Promise.all(BUSINESS_BUCKETS.flatMap((bucket) => businessIds.map((businessId) => removeFolder(admin, bucket, businessId))));
 }

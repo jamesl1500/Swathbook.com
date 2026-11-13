@@ -152,13 +152,13 @@ export function RulesForm({ businessId, rules }: { businessId: string; rules: Ru
           <option value="non_refundable">Keep the deposit</option>
         </Select>
       </Field>
-      <label className="flex items-start gap-2.5 text-sm">
+      <label className="flex items-start gap-2.5 text-sm min-h-11 py-2">
         <input type="checkbox" name="autoConfirm" defaultChecked={rules.auto_confirm} className="mt-0.5 size-4 accent-[var(--color-brand-600)]" />
         <span>
           <strong>Confirm bookings automatically.</strong> Turn off to review each request before it&apos;s confirmed.
         </span>
       </label>
-      <label className="flex items-start gap-2.5 text-sm">
+      <label className="flex items-start gap-2.5 text-sm min-h-11 py-2">
         <input
           type="checkbox"
           name="allowCustomerReschedule"

@@ -155,11 +155,11 @@ export function ServiceEditor({
       </fieldset>
 
       <div className="space-y-2 rounded-xl bg-paper px-3 py-3 text-sm">
-        <label className="flex items-center gap-2.5">
+        <label className="flex items-center gap-2.5 min-h-11">
           <input type="checkbox" name="isPublic" defaultChecked={service?.is_public ?? true} className="size-4 accent-[var(--color-brand-600)]" />
           Show on my booking page
         </label>
-        <label className="flex items-center gap-2.5">
+        <label className="flex items-center gap-2.5 min-h-11">
           <input type="checkbox" name="isActive" defaultChecked={service?.is_active ?? true} className="size-4 accent-[var(--color-brand-600)]" />
           Active (uncheck to retire it without deleting)
         </label>

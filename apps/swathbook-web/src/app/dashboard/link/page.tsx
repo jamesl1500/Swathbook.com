@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import QRCode from "qrcode";
+import { Image as ImageIcon, Search, Share2, Store } from "lucide-react";
+import { Tabs } from "@/components/app/tabs";
 import { Card, CardTitle, ManagersOnly, PageHeader } from "@/components/app/ui";
 import { requireBusinessContext } from "@/libs/dashboard";
 import { siteConfig } from "@/libs/globals/site";
@@ -11,7 +13,7 @@ import { publicAssetUrl } from "@/libs/supabase/storage";
 import { brandOnLight } from "@/libs/utils";
 import { CoverForm, LogoForm, PhotosForm } from "./image-forms";
 import { PublishToggle, ProfileForm } from "./link-forms";
-import { SearchCard } from "./search-card";
+import { SearchCard, searchChecklist } from "./search-card";
 import { ShareTools } from "./share-tools";
 
 export const metadata: Metadata = { title: "Booking link" };
@@ -46,6 +48,9 @@ async function BookingLink() {
       .order("id"),
     supabase.from("services").select("name, description").eq("business_id", business.id).eq("is_active", true).eq("is_public", true),
   ]);
+  const displayUrl = `${siteConfig.bookingLinkPrefix}${business.slug}`;
+  const checklist = searchChecklist({ business, services: services ?? [], photoCount: photos?.length ?? 0 });
+  const searchDone = checklist.filter((check) => check.done).length;
 
   return (
     <>
@@ -63,58 +68,80 @@ async function BookingLink() {
 
       {/* minmax(0, …) and min-w-0 let the columns shrink below their content, so
           the embed snippet scrolls inside its box instead of widening the page. */}
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
-        <div className="min-w-0 space-y-6">
-          <ShareTools
-            url={url}
-            displayUrl={`${siteConfig.bookingLinkPrefix}${business.slug}`}
-            businessName={business.name}
-            qrSvg={qrSvg}
-            qrPng={qrPng}
-            brandColor={brand}
-          />
-          <SearchCard
-            business={business}
-            displayUrl={`${siteConfig.bookingLinkPrefix}${business.slug}`}
-            services={services ?? []}
-            photoCount={photos?.length ?? 0}
-          />
-        </div>
-
-        <div className="min-w-0 space-y-6">
-          <Card>
-            <CardTitle>Your page</CardTitle>
-            <ProfileForm
-              businessId={business.id}
-              values={{
-                name: business.name,
-                slug: business.slug,
-                description: business.description ?? "",
-                serviceArea: business.service_area ?? "",
-                phone: business.phone ?? "",
-                email: business.email ?? "",
-                websiteUrl: business.website_url ?? "",
-                brandColor: business.brand_color ?? "#1c3d70",
-              }}
-            />
-          </Card>
-          <Card>
-            <CardTitle>Logo</CardTitle>
-            <LogoForm businessId={business.id} logoUrl={publicAssetUrl(business.logo_path)} businessName={business.name} />
-          </Card>
-          <Card>
-            <CardTitle>Cover photo</CardTitle>
-            <CoverForm businessId={business.id} coverUrl={publicAssetUrl(business.cover_path)} brandColor={brand} />
-          </Card>
-          <Card>
-            <CardTitle>Photos</CardTitle>
-            <PhotosForm
-              businessId={business.id}
-              photos={(photos ?? []).map((photo) => ({ id: photo.id, url: publicAssetUrl(photo.storage_path) ?? "", caption: photo.caption }))}
-            />
-          </Card>
-        </div>
-      </div>
+      <Tabs
+        label="Page sections"
+        items={[
+          {
+            id: "share",
+            label: "Share",
+            icon: <Share2 />,
+            content: (
+              <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-6 lg:grid-cols-2">
+                <ShareTools url={url} displayUrl={displayUrl} businessName={business.name} qrSvg={qrSvg} qrPng={qrPng} brandColor={brand} />
+              </div>
+            ),
+          },
+          {
+            id: "details",
+            label: "Details",
+            icon: <Store />,
+            content: (
+              <Card className="max-w-3xl">
+                <CardTitle>Your page</CardTitle>
+                <ProfileForm
+                  businessId={business.id}
+                  values={{
+                    name: business.name,
+                    slug: business.slug,
+                    description: business.description ?? "",
+                    serviceArea: business.service_area ?? "",
+                    phone: business.phone ?? "",
+                    email: business.email ?? "",
+                    websiteUrl: business.website_url ?? "",
+                    brandColor: business.brand_color ?? "#1c3d70",
+                  }}
+                />
+              </Card>
+            ),
+          },
+          {
+            id: "photos",
+            label: "Photos & logo",
+            icon: <ImageIcon />,
+            badge: photos?.length ? photos.length : undefined,
+            content: (
+              <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+                <Card>
+                  <CardTitle>Logo</CardTitle>
+                  <LogoForm businessId={business.id} logoUrl={publicAssetUrl(business.logo_path)} businessName={business.name} />
+                </Card>
+                <Card>
+                  <CardTitle>Cover photo</CardTitle>
+                  <CoverForm businessId={business.id} coverUrl={publicAssetUrl(business.cover_path)} brandColor={brand} />
+                </Card>
+                <Card className="lg:col-span-2">
+                  <CardTitle>Photos</CardTitle>
+                  <PhotosForm
+                    businessId={business.id}
+                    photos={(photos ?? []).map((photo) => ({ id: photo.id, url: publicAssetUrl(photo.storage_path) ?? "", caption: photo.caption }))}
+                  />
+                </Card>
+              </div>
+            ),
+          },
+          {
+            id: "google",
+            label: "Google",
+            icon: <Search />,
+            badge: `${searchDone} of ${checklist.length}`,
+            content: (
+              <div className="max-w-3xl">
+                <SearchCard business={business} displayUrl={displayUrl} services={services ?? []} photoCount={photos?.length ?? 0} />
+              </div>
+            ),
+          },
+        ]}
+      />
     </>
   );
 }

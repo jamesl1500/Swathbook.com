@@ -1,0 +1,66 @@
+{
+  "expo": {
+    "name": "Swathbook",
+    "slug": "swathbook-client-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "swathbook",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#f6f3ee",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#1c3d70",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "server",
+      "favicon": "./assets/images/favicon.png",
+      "name": "Swathbook",
+      "themeColor": "#f6f3ee",
+      "backgroundColor": "#f6f3ee"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#f6f3ee",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 96
+        }
+      ],
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Swathbook uses your photos so you can pick a profile picture.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "9c0f7041-7828-4ede-b4f7-e58558cf8bf2"
+      }
+    },
+    "owner": "foundry-frame"
+  }
+}

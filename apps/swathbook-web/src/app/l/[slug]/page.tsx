@@ -128,7 +128,7 @@ function BookingPage({ page, googleEnabled }: { page: BookingPageData; googleEna
         </div>
       </header>
 
-      <main className="mx-auto grid max-w-5xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,1fr)_300px]">
+      <main className="mx-auto grid grid-cols-[minmax(0,1fr)] max-w-5xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,1fr)_300px]">
         <BookingFlow
           slug={business.slug}
           services={services}

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { CalendarOff, Clock, SlidersHorizontal } from "lucide-react";
+import { Tabs } from "@/components/app/tabs";
 import { Card, CardTitle, ManagersOnly, PageHeader } from "@/components/app/ui";
 import { requireBusinessContext } from "@/libs/dashboard";
 import { routes } from "@/libs/routes";
@@ -53,25 +55,48 @@ async function Availability() {
         title="Hours & time off"
         description={`When customers can book you. Times are in ${business.timezone.replace(/_/g, " ")}.`}
       />
-      <div className="grid gap-6 xl:grid-cols-2">
-        <div className="space-y-6">
-          <Card>
-            <CardTitle>Weekly hours</CardTitle>
-            <HoursForm businessId={business.id} hours={hours ?? []} />
-          </Card>
-          <Card>
-            <CardTitle>Time off</CardTitle>
-            <TimeOffList businessId={business.id} entries={entries} />
-            <div className="mt-5 border-t border-line pt-5">
-              <TimeOffForm businessId={business.id} team={team.map((person) => ({ id: person.id, name: person.name }))} defaultDate={todayKey(business.timezone)} />
-            </div>
-          </Card>
-        </div>
-        <Card>
-          <CardTitle>Booking rules</CardTitle>
-          <RulesForm businessId={business.id} rules={business} />
-        </Card>
-      </div>
+      <Tabs
+        label="Page sections"
+        items={[
+          {
+            id: "hours",
+            label: "Weekly hours",
+            icon: <Clock />,
+            content: (
+              <Card className="max-w-3xl">
+                <CardTitle>Weekly hours</CardTitle>
+                <HoursForm businessId={business.id} hours={hours ?? []} />
+              </Card>
+            ),
+          },
+          {
+            id: "time-off",
+            label: "Time off",
+            icon: <CalendarOff />,
+            badge: entries.length || undefined,
+            content: (
+              <Card className="max-w-3xl">
+                <CardTitle>Time off</CardTitle>
+                <TimeOffList businessId={business.id} entries={entries} />
+                <div className="mt-5 border-t border-line pt-5">
+                  <TimeOffForm businessId={business.id} team={team.map((person) => ({ id: person.id, name: person.name }))} defaultDate={todayKey(business.timezone)} />
+                </div>
+              </Card>
+            ),
+          },
+          {
+            id: "rules",
+            label: "Booking rules",
+            icon: <SlidersHorizontal />,
+            content: (
+              <Card className="max-w-3xl">
+                <CardTitle>Booking rules</CardTitle>
+                <RulesForm businessId={business.id} rules={business} />
+              </Card>
+            ),
+          },
+        ]}
+      />
     </>
   );
 }

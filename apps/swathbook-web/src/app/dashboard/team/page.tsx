@@ -53,7 +53,7 @@ async function Team() {
   const tz = business.timezone;
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
       <div className="min-w-0 space-y-6">
         <Card>
           <CardTitle

@@ -9,28 +9,7 @@ select no_plan();
 -- ---------------------------------------------------------------------------
 -- Test helpers (run as the caller's role)
 -- ---------------------------------------------------------------------------
-create schema t;
-create function t.ok(p_cond boolean, p_msg text) returns text language sql as $$
-    select extensions.ok(coalesce(p_cond, false), p_msg);
-$$;
--- Passes when p_sql fails with an error whose message contains p_like (or whose SQLSTATE is p_like).
-create function t.expect_error(p_sql text, p_like text, p_msg text) returns text language plpgsql as $$
-begin
-    begin
-        execute p_sql;
-    exception when others then
-        if sqlerrm ilike '%' || p_like || '%' or sqlstate = p_like then
-            return extensions.ok(true, p_msg);
-        end if;
-        return extensions.ok(false, p_msg) || E'\n' || extensions.diag(format('wrong error [%s] %s', sqlstate, sqlerrm));
-    end;
-    return extensions.ok(false, p_msg) || E'\n' || extensions.diag('statement succeeded');
-end $$;
-create function t.as_user(p_id uuid, p_email text) returns void language sql as $$
-    select set_config('request.jwt.claims', json_build_object('sub', p_id, 'email', p_email, 'role', 'authenticated')::text, false);
-$$;
-grant usage on schema t to public;
-grant execute on all functions in schema t to public;
+\ir _helpers.psql
 
 -- ---------------------------------------------------------------------------
 -- Users: A owns "Green Acres", B owns "Rival Lawn", C is invited as crew to A

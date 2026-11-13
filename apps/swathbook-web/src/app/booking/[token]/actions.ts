@@ -57,7 +57,9 @@ export async function rescheduleMyBooking(token: string, start: string): Promise
 
 export async function cancelMyBooking(token: string, reason: string): Promise<{ outcome: "cancelled" | "requested" } | { error: string }> {
     if (!isBookingToken(token)) return { error: "That booking link isn't valid." };
-    const { data, error } = await createAdminClient().rpc("customer_cancel_booking", { p_token: token, p_reason: reason.slice(0, 500) });
+    // Server Actions take whatever the caller sends, not just what the types say.
+    const note = typeof reason === "string" ? reason.slice(0, 500) : "";
+    const { data, error } = await createAdminClient().rpc("customer_cancel_booking", { p_token: token, p_reason: note });
     if (error || (data !== "cancelled" && data !== "requested")) {
         return { error: "This booking can't be cancelled online. Please contact the business." };
     }

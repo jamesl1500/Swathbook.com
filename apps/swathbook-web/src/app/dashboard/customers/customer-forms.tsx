@@ -51,11 +51,11 @@ function CustomerFields({ values, errors }: { values: CustomerValues; errors: Fo
         <Input id="tags" name="tags" defaultValue={values.tags.join(", ")} />
       </Field>
       <div className="space-y-2 rounded-xl bg-paper px-3 py-3 text-sm">
-        <label className="flex items-center gap-2.5">
+        <label className="flex items-center gap-2.5 min-h-11">
           <input type="checkbox" name="emailOptIn" defaultChecked={values.emailOptIn} className="size-4 accent-[var(--color-brand-600)]" />
           Email reminders
         </label>
-        <label className="flex items-center gap-2.5">
+        <label className="flex items-center gap-2.5 min-h-11">
           <input type="checkbox" name="smsOptIn" defaultChecked={values.smsOptIn} className="size-4 accent-[var(--color-brand-600)]" />
           Text message reminders
         </label>
@@ -123,11 +123,11 @@ export function CustomerProfile({
       <dl className="space-y-3 text-sm">
         <div>
           <dt className="label-tag text-ink-faint">Email</dt>
-          <dd className="mt-0.5">{values.email ? <a className="font-semibold text-brand-600" href={`mailto:${values.email}`}>{values.email}</a> : "—"}</dd>
+          <dd className="mt-0.5">{values.email ? <a className="inline-flex min-h-9 items-center font-semibold text-brand-600 [overflow-wrap:anywhere]" href={`mailto:${values.email}`}>{values.email}</a> : "—"}</dd>
         </div>
         <div>
           <dt className="label-tag text-ink-faint">Phone</dt>
-          <dd className="mt-0.5">{values.phone ? <a className="font-semibold text-brand-600" href={`tel:${values.phone}`}>{values.phone}</a> : "—"}</dd>
+          <dd className="mt-0.5">{values.phone ? <a className="inline-flex min-h-9 items-center font-semibold text-brand-600" href={`tel:${values.phone}`}>{values.phone}</a> : "—"}</dd>
         </div>
         {values.tags.length ? (
           <div>

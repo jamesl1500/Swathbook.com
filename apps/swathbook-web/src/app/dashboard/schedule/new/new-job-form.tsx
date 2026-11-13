@@ -118,7 +118,7 @@ export function NewJobForm({
                 ))}
               </ul>
             ) : null}
-            <button type="button" onClick={() => setCreatingCustomer(true)} className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600">
+            <button type="button" onClick={() => setCreatingCustomer(true)} className="mt-1 inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-brand-600">
               <UserPlus className="size-4" aria-hidden="true" />
               New customer
             </button>
@@ -207,7 +207,7 @@ export function NewJobForm({
         </Field>
       </div>
 
-      <label className="flex items-center gap-2.5 text-sm">
+      <label className="flex min-h-11 items-center gap-2.5 text-sm">
         <input type="checkbox" name="status" value="requested" className="size-4 accent-[var(--color-brand-600)]" />
         Tentative (mark as a request until the customer confirms)
       </label>

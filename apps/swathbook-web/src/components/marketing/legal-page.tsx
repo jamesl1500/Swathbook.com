@@ -35,7 +35,7 @@ export function LegalPage({
         </Container>
       </section>
 
-      <Container className="grid gap-12 py-16 lg:grid-cols-[minmax(0,1fr)_18rem] lg:py-20">
+      <Container className="grid grid-cols-[minmax(0,1fr)] gap-12 py-16 lg:grid-cols-[minmax(0,1fr)_18rem] lg:py-20">
         <div className="min-w-0 max-w-[68ch]">
           <p className="mb-10 rounded-xl border border-sun/50 bg-sun-soft px-4 py-3 text-sm text-ink">
             Placeholder copy. Replace with reviewed legal text before launch.
@@ -73,7 +73,7 @@ export function LegalPage({
               <Mail className="size-4" aria-hidden="true" />
               {siteConfig.supportEmail}
             </a>
-            <Link href={routes.contact} className="block text-sm font-semibold text-brand-600 hover:text-brand-700">
+            <Link href={routes.contact} className="flex min-h-11 items-center text-sm font-semibold text-brand-600 hover:text-brand-700">
               Other ways to reach us
             </Link>
           </div>

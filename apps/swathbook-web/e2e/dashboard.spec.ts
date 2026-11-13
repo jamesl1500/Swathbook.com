@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { addCrewMember, addJob, admin, createBusiness, createUser, memberIdFor } from "./support/admin";
-import { expectOnPath, logIn } from "./support/auth";
+import { expectOnPath, logIn, openTab } from "./support/auth";
 import { uniqueEmail, uniqueSlug } from "./support/data";
 import { tomorrowAt } from "./support/time";
 
@@ -46,13 +46,19 @@ test.describe("booking link", () => {
         const newSlug = uniqueSlug("shine");
         await page.goto("/dashboard/link");
 
+        // Opens on the Share tab.
+        await expect(page.getByRole("tab", { name: "Share" })).toHaveAttribute("aria-selected", "true");
         await expect(page.getByRole("img", { name: /QR code/ })).toBeVisible();
         await expect(page.getByTestId("share-url")).toHaveText(`swathbook.com/l/${business.slug}`);
+        await expect(page.getByLabel("About your business")).toBeHidden();
 
+        await openTab(page, "Details");
+        await expect(page).toHaveURL(/\?tab=details$/);
         await page.getByLabel("About your business").fill("Mobile detailing that comes to your driveway.");
         await page.getByLabel("Booking link").fill(newSlug);
         await page.getByRole("button", { name: "Save booking page" }).click();
         await expect(page.getByText(/Your link changed/)).toBeVisible();
+        await openTab(page, "Share");
         await expect(page.getByTestId("share-url")).toHaveText(`swathbook.com/l/${newSlug}`);
 
         await page.goto(`/l/${newSlug}`);
@@ -67,7 +73,7 @@ test.describe("booking link", () => {
 
     test("pick a brand color, add a cover photo and a gallery, and see them on the page", async ({ page }) => {
         const { business } = await ownerWithBusiness(page, { name: "Shine On Detail" });
-        await page.goto("/dashboard/link");
+        await page.goto("/dashboard/link?tab=details");
 
         // Brand color: a swatch, saved with the page details.
         await page.getByRole("radio", { name: "Teal" }).click();
@@ -78,6 +84,7 @@ test.describe("booking link", () => {
         expect(saved?.brand_color).toBe("#0e7c86");
 
         // Phone-sized photos are resized in the browser before upload.
+        await openTab(page, "Photos & logo");
         const photo = (label: string) => makeJpeg(page, label);
         await page.locator("#cover-upload").setInputFiles({ name: "van.jpg", mimeType: "image/jpeg", buffer: await photo("Cover") });
         await expect(page.getByText("Cover photo updated.")).toBeVisible();
@@ -108,8 +115,9 @@ test.describe("booking link", () => {
         await viewer.getByRole("button", { name: "Close" }).click();
         await expect(viewer).toBeHidden();
 
-        // Removing a photo takes it off the page.
-        await page.goto("/dashboard/link");
+        // Removing a photo takes it off the page. The tab shows how many there are.
+        await page.goto("/dashboard/link?tab=photos");
+        await expect(page.getByRole("tab", { name: "Photos & logo 2" })).toHaveAttribute("aria-selected", "true");
         page.once("dialog", (dialog) => dialog.accept());
         await page.getByRole("button", { name: "Remove photo 2" }).click();
         await expect(page.getByTestId("photo-tile")).toHaveCount(1);
@@ -117,15 +125,19 @@ test.describe("booking link", () => {
 
     test("the service area shows in the Google preview, page title and structured data", async ({ page }) => {
         const { business } = await ownerWithBusiness(page, { name: "Shine On Detail" });
-        await page.goto("/dashboard/link");
+        await page.goto("/dashboard/link?tab=google");
         await expect(page.getByTestId("seo-score")).toHaveText(/^\d of 7 done$/);
+        await expect(page.getByRole("tab", { name: /^Google \d of 7$/ })).toBeVisible();
         await expect(page.getByText("Add the area you serve")).toBeVisible();
 
+        await openTab(page, "Details");
         await page.getByLabel("About your business").fill("Mobile car detailing that comes to your driveway, fully insured.");
         await page.getByLabel("Where you work").fill("Austin, Round Rock & Cedar Park, TX");
         await page.getByRole("button", { name: "Save booking page" }).click();
         await expect(page.getByText("Booking page saved.")).toBeVisible();
         await page.reload();
+        await expect(page.getByRole("tab", { name: "Details" })).toHaveAttribute("aria-selected", "true");
+        await openTab(page, "Google");
         await expect(page.getByTestId("search-preview")).toContainText("Shine On Detail · Lawn mowing in Austin, TX | Book online");
         await expect(page.getByTestId("search-preview")).toContainText("Serving Austin, Round Rock & Cedar Park, TX.");
 
@@ -140,7 +152,7 @@ test.describe("booking link", () => {
         const rival = await createUser();
         const taken = await createBusiness(rival.id, { slug: uniqueSlug("taken") });
         await ownerWithBusiness(page);
-        await page.goto("/dashboard/link");
+        await page.goto("/dashboard/link?tab=details");
         await page.getByLabel("Booking link").fill(taken.slug);
         await page.getByRole("button", { name: "Save booking page" }).click();
         await expect(page.getByText("Someone already has that link. Try another.")).toBeVisible();
@@ -235,9 +247,11 @@ test.describe("schedule", () => {
         await page.getByRole("button", { name: "Save hours" }).click();
         await expect(page.getByText("Hours saved.")).toBeVisible();
 
+        await openTab(page, "Time off");
         await page.getByLabel(/Reason/).fill("Family reunion");
         await page.getByRole("button", { name: "Add time off" }).click();
         await expect(page.getByText("Family reunion")).toBeVisible();
+        await expect(page.getByRole("tab", { name: "Time off 1" })).toBeVisible();
     });
 });
 

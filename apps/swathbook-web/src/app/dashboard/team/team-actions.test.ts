@@ -1,8 +1,8 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createSupabaseMock, type SupabaseMock } from "@/test/supabase-mock";
+import { BUSINESS_ID, form } from "@/test/dashboard";
 
-const BUSINESS_ID = "6f1f5c2e-0c4a-4b8e-9a59-1f2d3c4b5a69";
 const MEMBER_ID = "0b6b0a56-2d0f-4c3e-9f0a-6a1d2c3b4e5f";
 
 const state = vi.hoisted(() => ({
@@ -15,21 +15,11 @@ vi.mock("next/cache", () => ({ refresh: vi.fn() }));
 vi.mock("@/libs/site-url", () => ({ getSiteUrl: vi.fn(async () => "https://swathbook.test") }));
 vi.mock("@/libs/supabase/server", () => ({ createClient: vi.fn(async () => state.supabase.client) }));
 vi.mock("@/libs/email/send", () => ({ sendEmail: state.sendEmail }));
-vi.mock("@/libs/dashboard", () => ({
-    authorizeBusiness: vi.fn(async () =>
-        state.role === "crew" ? { error: "Only owners and admins can do that." } : { user: { id: "u-owner", email: "olive@example.com", fullName: "Olive Owner" }, role: state.role, businessId: BUSINESS_ID },
-    ),
-    isFailure: (value: unknown) => typeof value === "object" && value !== null && "error" in value,
-}));
+vi.mock("@/libs/dashboard", async () => (await import("@/test/dashboard")).mockDashboard(() => state.role === "crew" ? { error: "Only owners and admins can do that." } : { user: { id: "u-owner", email: "olive@example.com", fullName: "Olive Owner" }, role: state.role, businessId: BUSINESS_ID }));
 
-import { changeRole, inviteMember, removeMember } from "./actions";
+import { changeRole, inviteMember, removeMember, resendInvite, revokeInvite } from "./actions";
 
-function form(fields: Record<string, string>) {
-    const data = new FormData();
-    data.set("businessId", BUSINESS_ID);
-    for (const [key, value] of Object.entries(fields)) data.set(key, value);
-    return data;
-}
+const INVITE_ID = "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d";
 
 beforeEach(() => {
     state.supabase = createSupabaseMock();
@@ -107,5 +97,43 @@ describe("changeRole and removeMember", () => {
         state.supabase.respond("business_members.select", { data: { user_id: "u-crew", role: "crew" } });
         expect(await removeMember(form({ memberId: MEMBER_ID }))).toEqual({ success: "Removed from the team. Their jobs are now unassigned." });
         expect(state.supabase.callsTo("business_members", "delete")).toHaveLength(1);
+    });
+});
+
+describe("resendInvite and revokeInvite", () => {
+    it("sends a fresh link for an open invite", async () => {
+        state.supabase.respond("business_invitations.select", { data: { email: "carl@example.com", role: "crew" } });
+        state.supabase.rpc.mockResolvedValue({ data: "c".repeat(64), error: null });
+        const result = await resendInvite(form({ inviteId: INVITE_ID }));
+
+        expect(state.supabase.callsTo("business_invitations", "select")[0].filters).toContainEqual(["eq", "business_id", BUSINESS_ID]);
+        expect(state.supabase.rpc).toHaveBeenCalledWith("create_business_invitation", { p_business_id: BUSINESS_ID, p_email: "carl@example.com", p_role: "crew" });
+        expect(result.inviteUrl).toBe(`https://swathbook.test/invite/${"c".repeat(64)}`);
+    });
+
+    it("won't resend missing, malformed or owner invites", async () => {
+        expect((await resendInvite(form({ inviteId: "nope" }))).error).toBe("That invite no longer exists.");
+        expect((await resendInvite(form({ inviteId: INVITE_ID }))).error).toBe("That invite no longer exists.");
+        state.supabase.respond("business_invitations.select", { data: { email: "x@example.com", role: "owner" } });
+        expect((await resendInvite(form({ inviteId: INVITE_ID }))).error).toBe("That invite no longer exists.");
+        expect(state.supabase.rpc).not.toHaveBeenCalled();
+    });
+
+    it("revokes only unaccepted invites in this business", async () => {
+        expect(await revokeInvite(form({ inviteId: INVITE_ID }))).toEqual({ success: "Invite canceled." });
+        const update = state.supabase.callsTo("business_invitations", "update")[0];
+        expect(update.values).toEqual({ revoked_at: expect.any(String) });
+        expect(update.filters).toEqual([
+            ["eq", "id", INVITE_ID],
+            ["eq", "business_id", BUSINESS_ID],
+            ["is", "accepted_at", null],
+        ]);
+    });
+
+    it("crew can't resend or revoke", async () => {
+        state.role = "crew";
+        expect((await resendInvite(form({ inviteId: INVITE_ID }))).error).toBeDefined();
+        expect((await revokeInvite(form({ inviteId: INVITE_ID }))).error).toBeDefined();
+        expect(state.supabase.calls).toHaveLength(0);
     });
 });

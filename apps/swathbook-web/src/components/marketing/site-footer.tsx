@@ -37,7 +37,7 @@ export function SiteFooter() {
   return (
     <footer className="relative overflow-hidden bg-ink text-paper">
       <div className="relative mx-auto max-w-6xl px-4 pb-10 pt-16 sm:px-6">
-        <div className="grid gap-12 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,2fr)]">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-12 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,2fr)]">
           <div className="max-w-sm">
             <Logo tone="paper" />
             <p className="mt-4 leading-relaxed text-paper/80">
@@ -53,7 +53,7 @@ export function SiteFooter() {
             </Link>
             <a
               href={`mailto:${siteConfig.supportEmail}`}
-              className="mt-5 flex items-center gap-2 text-sm text-paper/80 hover:text-paper"
+              className="mt-5 flex min-h-11 items-center gap-2 text-sm text-paper/80 hover:text-paper"
             >
               <Mail className="size-4 text-sky" aria-hidden="true" />
               {siteConfig.supportEmail}

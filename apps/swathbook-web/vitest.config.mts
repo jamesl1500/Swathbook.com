@@ -14,5 +14,11 @@ export default defineConfig({
     clearMocks: true,
     restoreMocks: true,
     css: false,
+    coverage: {
+      provider: "v8",
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: ["src/**/*.test.{ts,tsx}", "src/test/**", "src/libs/supabase/database.types.ts"],
+      reporter: ["text-summary", "html"],
+    },
   },
 });

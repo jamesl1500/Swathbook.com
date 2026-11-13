@@ -218,8 +218,7 @@ function improve(order: number[], stops: RouteStopInput[], matrix: TravelMatrix,
 export function optimizeRoute(stops: RouteStopInput[], matrix: TravelMatrix, options: PlanOptions = {}): RoutePlan {
     if (stops.length === 0) return evaluateOrder([], stops, matrix, options);
 
-    const starts = [bookingOrder(stops), nearestNeighborOrder(stops, matrix)];
-    return starts
-        .map((order) => improve(order, stops, matrix, options))
-        .reduce((best, plan) => (plan.cost < best.cost ? plan : best));
+    const fromBookings = improve(bookingOrder(stops), stops, matrix, options);
+    const fromNearest = improve(nearestNeighborOrder(stops, matrix), stops, matrix, options);
+    return fromNearest.cost < fromBookings.cost ? fromNearest : fromBookings;
 }

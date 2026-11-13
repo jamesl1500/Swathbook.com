@@ -36,7 +36,7 @@ export function LoginForm() {
         htmlFor="password"
         error={passwordError}
         action={
-          <Link href={routes.forgotPassword} className="text-sm font-medium text-brand-600 hover:text-brand-700">
+          <Link href={routes.forgotPassword} className="inline-flex min-h-6 items-center text-sm font-medium text-brand-600 hover:text-brand-700">
             Forgot password?
           </Link>
         }

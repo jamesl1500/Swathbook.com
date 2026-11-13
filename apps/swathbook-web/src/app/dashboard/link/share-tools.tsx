@@ -87,7 +87,7 @@ export function ShareTools({
             aria-label={`QR code for ${displayUrl}`}
             dangerouslySetInnerHTML={{ __html: qrSvg }}
           />
-          <div className="min-w-0 flex-1 space-y-3">
+          <div className="min-w-0 flex-1 basis-52 space-y-3">
             <p className="text-sm text-ink-soft">
               Print it on business cards, flyers, invoices and your truck or van. Phones open your booking page straight from the camera.
             </p>
@@ -109,7 +109,7 @@ export function ShareTools({
         </div>
       </Card>
 
-      <Card>
+      <Card className="lg:col-span-2">
         <CardTitle>&ldquo;Book now&rdquo; button for your website</CardTitle>
         <p className="text-sm text-ink-soft">Paste this into your website builder (Wix, Squarespace, WordPress) to add a booking button.</p>
         <div className="mt-4 flex items-center gap-4 rounded-2xl bg-paper p-4">

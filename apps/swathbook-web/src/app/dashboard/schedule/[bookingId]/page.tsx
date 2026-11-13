@@ -70,7 +70,7 @@ async function BookingDetail({ params }: { params: PageProps<"/dashboard/schedul
 
   return (
     <>
-      <Link href={routes.schedule} className="mb-4 inline-flex items-center gap-1.5 text-sm font-semibold text-ink-soft hover:text-ink">
+      <Link href={routes.schedule} className="mb-3 inline-flex min-h-9 items-center gap-1.5 text-sm font-semibold text-ink-soft hover:text-ink">
         <ArrowLeft className="size-4" aria-hidden="true" />
         Schedule
       </Link>
@@ -130,7 +130,7 @@ async function BookingDetail({ params }: { params: PageProps<"/dashboard/schedul
       ) : null}
       <QuickActions phone={booking.customers?.phone ?? null} directionsUrl={address ? directionsUrl(address) : null} />
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
         <div className="space-y-6">
           <Card>
             <CardTitle>Where</CardTitle>
@@ -149,7 +149,7 @@ async function BookingDetail({ params }: { params: PageProps<"/dashboard/schedul
                   href={directionsUrl(address)}
                   target="_blank"
                   rel="noreferrer"
-                  className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 hover:text-brand-700"
+                  className="mt-2 inline-flex min-h-9 items-center gap-1.5 text-sm font-semibold text-brand-600 hover:text-brand-700"
                 >
                   <ExternalLink className="size-4" aria-hidden="true" />
                   Directions
@@ -246,7 +246,7 @@ async function BookingDetail({ params }: { params: PageProps<"/dashboard/schedul
             <CardTitle>Customer</CardTitle>
             <p className="font-semibold">
               {canManage && booking.customers ? (
-                <Link href={customerPath(booking.customers.id)} className="text-brand-600 hover:underline">
+                <Link href={customerPath(booking.customers.id)} className="inline-flex min-h-9 items-center text-brand-600 hover:underline">
                   {booking.customers.full_name}
                 </Link>
               ) : (
@@ -255,15 +255,15 @@ async function BookingDetail({ params }: { params: PageProps<"/dashboard/schedul
             </p>
             <div className="mt-2 space-y-1 text-sm">
               {booking.customers?.phone ? (
-                <a href={`tel:${booking.customers.phone}`} className="flex items-center gap-2 text-ink-soft hover:text-ink">
+                <a href={`tel:${booking.customers.phone}`} className="flex min-h-9 items-center gap-2 text-ink-soft hover:text-ink">
                   <Phone className="size-4" aria-hidden="true" />
                   {booking.customers.phone}
                 </a>
               ) : null}
               {booking.customers?.email ? (
-                <a href={`mailto:${booking.customers.email}`} className="flex items-center gap-2 text-ink-soft hover:text-ink">
-                  <Mail className="size-4" aria-hidden="true" />
-                  {booking.customers.email}
+                <a href={`mailto:${booking.customers.email}`} className="flex min-h-9 min-w-0 items-center gap-2 text-ink-soft hover:text-ink">
+                  <Mail className="size-4 shrink-0" aria-hidden="true" />
+                  <span className="truncate">{booking.customers.email}</span>
                 </a>
               ) : null}
             </div>

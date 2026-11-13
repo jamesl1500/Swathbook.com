@@ -142,7 +142,7 @@ export function OnboardingWizard({ defaults }: { defaults: OnboardingDefaults })
   const busy = advancing || submitting;
 
   return (
-    <div className="mx-auto grid max-w-6xl gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-14 lg:py-14">
+    <div className="mx-auto grid grid-cols-[minmax(0,1fr)] max-w-6xl gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-14 lg:py-14">
       <div>
         <StepProgress current={step} onSelect={(index) => index < step && goTo(index)} />
 
@@ -150,7 +150,7 @@ export function OnboardingWizard({ defaults }: { defaults: OnboardingDefaults })
           noValidate
           onSubmit={(event) => {
             event.preventDefault();
-            if (isLast) submit();
+            if (isLast) void submit();
             else goNext();
           }}
           className="mt-10"

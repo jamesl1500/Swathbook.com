@@ -62,11 +62,23 @@ export function matchesPath(pathname: string, paths: readonly string[]) {
     return paths.some((path) => pathname === path || pathname.startsWith(`${path}/`));
 }
 
+const NEXT_BASE = "https://next.invalid";
+
 /**
  * Returns `value` only if it's a same-site relative path, guarding `?next=` against open redirects.
+ *
+ * It's resolved the way a browser resolves it, so tricks that look like a path
+ * but aren't ("//evil", "/\evil", "/<tab>/evil": browsers drop tabs and
+ * newlines and read "\" as "/") are caught by the origin check.
  */
 export function safeNextPath(value: unknown): string | null {
     if (typeof value !== "string" || !value.startsWith("/")) return null;
-    if (value.startsWith("//") || value.startsWith("/\\")) return null;
-    return value;
+    let url: URL;
+    try {
+        url = new URL(value, NEXT_BASE);
+    } catch {
+        return null;
+    }
+    if (url.origin !== NEXT_BASE) return null;
+    return `${url.pathname}${url.search}${url.hash}`;
 }

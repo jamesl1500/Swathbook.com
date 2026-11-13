@@ -22,7 +22,7 @@ export const metadata: Metadata = { robots: noIndex };
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="grid min-h-dvh lg:grid-cols-[1fr_minmax(0,0.85fr)]">
+    <div className="grid grid-cols-[minmax(0,1fr)] min-h-dvh lg:grid-cols-[1fr_minmax(0,0.85fr)]">
       <div className="flex flex-col px-4 py-6 sm:px-10">
         <Logo />
         <main className="flex flex-1 items-center justify-center py-12">

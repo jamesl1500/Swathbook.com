@@ -156,12 +156,30 @@ export async function makePrimaryAddress(formData: FormData): Promise<FormState>
     if (isFailure(auth)) return auth;
     const supabase = await createClient();
     const customerId = text(formData, "customerId");
+    const addressId = text(formData, "addressId");
+    // Check the address is this customer's before clearing their current
+    // primary, so a mismatched form can't leave them with none.
+    const { data: address } = await supabase
+        .from("customer_addresses")
+        .select("id")
+        .eq("id", addressId)
+        .eq("customer_id", customerId)
+        .eq("business_id", auth.businessId)
+        .maybeSingle();
+    if (!address) return { error: "We couldn't find that address." };
+
     // One primary per customer (unique index), so clear first.
-    await supabase.from("customer_addresses").update({ is_primary: false }).eq("customer_id", customerId).eq("business_id", auth.businessId);
+    const { error: clearError } = await supabase
+        .from("customer_addresses")
+        .update({ is_primary: false })
+        .eq("customer_id", customerId)
+        .eq("business_id", auth.businessId);
+    if (clearError) return { error: "We couldn't update the primary address." };
     const { error } = await supabase
         .from("customer_addresses")
         .update({ is_primary: true })
-        .eq("id", text(formData, "addressId"))
+        .eq("id", addressId)
+        .eq("customer_id", customerId)
         .eq("business_id", auth.businessId);
     if (error) return { error: "We couldn't update the primary address." };
     refresh();
