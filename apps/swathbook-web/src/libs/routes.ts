@@ -40,7 +40,19 @@ export const routes = {
     account: "/dashboard/account",
     billing: "/dashboard/billing",
     team: "/dashboard/team",
+
+    // Customers: find a business, then sign in to see and manage their jobs.
+    findBusinesses: "/businesses",
+    customerSignIn: "/my/sign-in",
+    customerHome: "/my",
+    customerJobs: "/my/jobs",
+    customerProfile: "/my/profile",
 } as const;
+
+/** The public directory of businesses in one trade, e.g. /businesses/lawn-care. */
+export const tradeDirectoryPath = (trade: string) => `${routes.findBusinesses}/${trade}`;
+/** One of the signed-in customer's jobs. */
+export const customerJobPath = (id: string) => `${routes.customerJobs}/${id}`;
 
 /** Where an emailed team invite lands. */
 export const invitePath = (token: string) => `/invite/${token}`;
@@ -57,6 +69,13 @@ export const protectedPaths = [routes.onboarding, routes.dashboard];
 
 /** Signed-in users skip straight past these. */
 export const guestOnlyPaths = [routes.login, routes.signup, routes.forgotPassword];
+
+/**
+ * The customer area. Signed-out visitors go to the customer sign-in (an
+ * emailed code), not the business login; signed-in visitors skip the sign-in.
+ */
+export const customerPaths = [routes.customerHome];
+export const customerGuestOnlyPaths = [routes.customerSignIn];
 
 export function matchesPath(pathname: string, paths: readonly string[]) {
     return paths.some((path) => pathname === path || pathname.startsWith(`${path}/`));

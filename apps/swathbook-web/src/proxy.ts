@@ -1,5 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { guestOnlyPaths, matchesPath, protectedPaths, routes } from "@/libs/routes";
+import {
+  customerGuestOnlyPaths,
+  customerPaths,
+  guestOnlyPaths,
+  matchesPath,
+  protectedPaths,
+  routes,
+  safeNextPath,
+} from "@/libs/routes";
 import { hasSupabaseEnv } from "@/libs/supabase/env";
 import { redirectWithSession, updateSession } from "@/libs/supabase/proxy";
 
@@ -15,6 +23,18 @@ export async function proxy(request: NextRequest) {
 
   const { response, userId } = await updateSession(request);
   const { pathname, search } = request.nextUrl;
+
+  // Customers: checked first, since the sign-in page sits inside /my.
+  if (matchesPath(pathname, customerGuestOnlyPaths)) {
+    if (!userId) return response;
+    const next = safeNextPath(request.nextUrl.searchParams.get("next"));
+    return redirectWithSession(new URL(next ?? routes.customerJobs, request.url), response);
+  }
+  if (!userId && matchesPath(pathname, customerPaths)) {
+    const url = new URL(routes.customerSignIn, request.url);
+    url.searchParams.set("next", `${pathname}${search}`);
+    return redirectWithSession(url, response);
+  }
 
   if (!userId && matchesPath(pathname, protectedPaths)) {
     const url = new URL(routes.login, request.url);

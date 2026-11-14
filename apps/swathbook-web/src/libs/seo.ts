@@ -112,6 +112,51 @@ export function faqJsonLd(items: Array<{ question: string; answer: string }> = f
     };
 }
 
+/** schema.org BreadcrumbList. `path`s are site-relative; the last crumb is the current page. */
+export function breadcrumbJsonLd(crumbs: Array<{ name: string; path: string }>) {
+    return {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: crumbs.map((crumb, index) => ({
+            "@type": "ListItem",
+            position: index + 1,
+            name: crumb.name,
+            item: `${siteConfig.url}${crumb.path === "/" ? "" : crumb.path}`,
+        })),
+    };
+}
+
+/**
+ * schema.org ItemList of booking pages, for a directory page. Each entry only
+ * points at the business's own page, which carries the full LocalBusiness data.
+ */
+export function businessListJsonLd({
+    name,
+    path,
+    businesses,
+    offset = 0,
+}: {
+    name: string;
+    path: string;
+    businesses: Array<{ name: string; slug: string }>;
+    /** Position of the first business, for page 2 onwards. */
+    offset?: number;
+}) {
+    return {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        name,
+        url: `${siteConfig.url}${path}`,
+        numberOfItems: businesses.length,
+        itemListElement: businesses.map((business, index) => ({
+            "@type": "ListItem",
+            position: offset + index + 1,
+            name: business.name,
+            url: `${siteConfig.url}${businessPagePath(business.slug)}`,
+        })),
+    };
+}
+
 /** Trims to `max` characters on a word boundary, for meta descriptions. */
 export function metaDescription(text: string, max = 160) {
     const clean = text.replace(/\s+/g, " ").trim();

@@ -19,7 +19,7 @@ export const metadata: Metadata = pageMetadata({
 const pricingFaqs = [
   {
     question: "Is there a free trial?",
-    answer: "Yes. Every new business gets 14 days free with everything turned on, and you don't need a credit card. Pick a plan any time; you won't be charged until the trial ends.",
+    answer: "Yes. Every new business gets a 7-day free trial with everything turned on, and you don't need a credit card. Pick a plan any time; you won't be charged until the trial ends.",
   },
   {
     question: "Are there payment processing fees?",

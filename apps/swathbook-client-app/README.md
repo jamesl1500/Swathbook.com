@@ -6,7 +6,7 @@ The customer app: find businesses on Swathbook, book them, and manage your jobs.
 
 The app needs Supabase and the web app (`apps/swathbook-web`), which serves its `/api/app` routes and the pages where deposits are paid.
 
-1. Copy `.env.example` to `.env.local` and fill it in. For the local stack (`pnpm db:start`), the URL and publishable key come from `npx supabase status`, and the site URL is `http://localhost:3000`. On a real phone, use your computer's LAN address instead of `localhost`/`127.0.0.1` for both.
+1. Copy `.env.example` to `.env.local` and fill it in. Release builds only accept `https://` URLs (`src/lib/url.ts`); plain `http://` works in development, and only for this machine or your local network. For the local stack (`pnpm db:start`), the URL and publishable key come from `npx supabase status`, and the site URL is `http://localhost:3000`. On a real phone, use your computer's LAN address instead of `localhost`/`127.0.0.1` for both.
 2. Run the web app against the **same** Supabase project. Its `.env` may point at the hosted project; for a local run, override that per process, and blank Resend so test emails go to Mailpit, not out:
 
    ```bash
@@ -25,7 +25,7 @@ Or from this folder: `pnpm start`, `pnpm ios`, `pnpm android`, `pnpm web`.
 
 Sign-in codes arrive in Mailpit locally (http://127.0.0.1:55424).
 
-Checks: `pnpm lint` and `pnpm exec tsc --noEmit`. Add native packages with `pnpm exec expo install <package>`; it resolves versions that work with this SDK.
+Checks: `pnpm lint`, `pnpm test` (Vitest, for the plain TypeScript in `src/lib`) and `pnpm exec tsc --noEmit`. Add native packages with `pnpm exec expo install <package>`; it resolves versions that work with this SDK.
 
 ## Screens
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { businessJsonLd, businessPageMeta, metaDescription, shortArea } from "./seo";
+import { breadcrumbJsonLd, businessJsonLd, businessListJsonLd, businessPageMeta, metaDescription, shortArea } from "./seo";
 
 describe("metaDescription", () => {
     it("keeps short text and collapses whitespace", () => {
@@ -118,5 +118,35 @@ describe("shortArea", () => {
             tradeName: "Mobile detailing",
         });
         expect(meta.fullTitle).toBe("Northside Premium Mobile Detailing · Mobile detailing in Cedar Park, TX");
+    });
+});
+
+describe("breadcrumbJsonLd", () => {
+    it("numbers crumbs and makes their URLs absolute", () => {
+        expect(breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Find a pro", path: "/businesses" }])).toEqual({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+                { "@type": "ListItem", position: 1, name: "Home", item: "https://www.swathbook.com" },
+                { "@type": "ListItem", position: 2, name: "Find a pro", item: "https://www.swathbook.com/businesses" },
+            ],
+        });
+    });
+});
+
+describe("businessListJsonLd", () => {
+    it("lists booking pages, continuing positions on later pages", () => {
+        const data = businessListJsonLd({
+            name: "Lawn mowing services on Swathbook",
+            path: "/businesses/lawn-care?page=2",
+            businesses: [{ name: "Green Acres", slug: "green-acres" }],
+            offset: 24,
+        });
+        expect(data).toMatchObject({
+            "@type": "ItemList",
+            url: "https://www.swathbook.com/businesses/lawn-care?page=2",
+            numberOfItems: 1,
+            itemListElement: [{ "@type": "ListItem", position: 25, name: "Green Acres", url: "https://www.swathbook.com/l/green-acres" }],
+        });
     });
 });

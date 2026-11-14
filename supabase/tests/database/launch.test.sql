@@ -28,9 +28,9 @@ insert into public.stripe_connect_accounts (business_id, stripe_account_id, char
 values ('10000000-0000-0000-0000-000000000001', 'acct_launch', true);
 
 -- --- Trial and access ------------------------------------------------------------
-select ok((select trial_ends_at between now() + interval '13 days 23 hours' and now() + interval '14 days 1 hour'
+select ok((select trial_ends_at between now() + interval '6 days 23 hours' and now() + interval '7 days 1 hour'
            from public.businesses where id = '10000000-0000-0000-0000-000000000001'),
-          'finishing onboarding starts a 14-day trial');
+          'finishing onboarding starts a 7-day trial');
 select isnt(public.get_booking_page('launch-detail'), null, 'the page is open during the trial');
 
 update public.businesses set trial_ends_at = now() - interval '1 minute' where id = '10000000-0000-0000-0000-000000000001';

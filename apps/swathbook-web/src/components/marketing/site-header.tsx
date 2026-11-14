@@ -16,7 +16,7 @@ export function SiteHeader() {
             <Link
               key={link.href}
               href={link.href}
-              className="rounded-full px-3.5 py-2 text-[0.95rem] font-medium text-ink-soft transition-colors hover:bg-paper-deep hover:text-ink"
+              className="rounded-full px-2.5 py-2 text-[0.95rem] font-medium text-ink-soft transition-colors hover:bg-paper-deep hover:text-ink lg:px-3.5"
             >
               {link.label}
             </Link>
@@ -24,6 +24,12 @@ export function SiteHeader() {
         </nav>
 
         <div className="hidden items-center gap-2 md:flex">
+          {/* Only where there's room; phones and tablets get it in the menu and footer. */}
+          <span className="hidden lg:contents">
+            <Link href={routes.customerJobs} className={buttonStyles({ variant: "ghost", size: "sm" })}>
+              My bookings
+            </Link>
+          </span>
           <Link href={routes.login} className={buttonStyles({ variant: "ghost", size: "sm" })}>
             Log in
           </Link>

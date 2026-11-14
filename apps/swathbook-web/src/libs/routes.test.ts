@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { guestOnlyPaths, matchesPath, protectedPaths, routes, safeNextPath } from "./routes";
+import { customerGuestOnlyPaths, customerJobPath, customerPaths, guestOnlyPaths, matchesPath, protectedPaths, routes, safeNextPath, tradeDirectoryPath } from "./routes";
 
 describe("safeNextPath", () => {
     it.each(["/dashboard", "/onboarding?new=1", "/auth/reset_password", "/"])("allows same-site path %s", (path) => {
@@ -50,5 +50,20 @@ describe("businessPagePath", () => {
     it("puts booking links under /l/ so they never shadow a page", async () => {
         const { businessPagePath } = await import("./routes");
         expect(businessPagePath("shine-on")).toBe("/l/shine-on");
+    });
+});
+
+describe("customer paths", () => {
+    it("covers the customer area, with sign-in as its guest-only page", () => {
+        expect(matchesPath("/my", customerPaths)).toBe(true);
+        expect(matchesPath("/my/jobs/123", customerPaths)).toBe(true);
+        expect(matchesPath("/myself", customerPaths)).toBe(false);
+        expect(matchesPath(routes.customerSignIn, customerGuestOnlyPaths)).toBe(true);
+        expect(matchesPath(routes.customerJobs, customerGuestOnlyPaths)).toBe(false);
+    });
+
+    it("builds job and directory paths", () => {
+        expect(customerJobPath("abc")).toBe("/my/jobs/abc");
+        expect(tradeDirectoryPath("lawn-care")).toBe("/businesses/lawn-care");
     });
 });

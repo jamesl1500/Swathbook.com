@@ -1,7 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { CalendarClock, CalendarPlus, Clock, CreditCard, Mail, MapPin, Phone, RotateCcw, SearchX, X } from 'lucide-react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Linking, StyleSheet, View } from 'react-native';
 
 import { formatAddress } from '@/components/address';
@@ -33,10 +33,23 @@ import { confirm } from '@/lib/confirm';
 import { formatCents, formatDuration, formatLongDate, formatTime, formatTimeRange, minutesBetween } from '@/lib/format';
 import { tradeName } from '@/lib/trades';
 
+/** How long to keep checking for a payment after the payment page closes. */
+const PAYMENT_CHECK_MS = 30_000;
+
 export default function JobScreen() {
   const { id, booked } = useLocalSearchParams<{ id: string; booked?: string }>();
   const { signedIn } = useAuth();
-  const { data: booking, isPending, isError, refetch } = useMyBooking(id);
+  // 0: not checking. Each payment bumps it, restarting the window. Just booked
+  // means they've come straight from the payment page, so start checking.
+  const [paymentCheck, setPaymentCheck] = useState(booked === '1' ? 1 : 0);
+  const checkingPayment = paymentCheck > 0;
+  const { data: booking, isPending, isError, refetch } = useMyBooking(id, { watchPayment: checkingPayment });
+
+  useEffect(() => {
+    if (!paymentCheck) return;
+    const timer = setTimeout(() => setPaymentCheck(0), PAYMENT_CHECK_MS);
+    return () => clearTimeout(timer);
+  }, [paymentCheck]);
 
   if (!signedIn) {
     return (
@@ -62,10 +75,30 @@ export default function JobScreen() {
       </Screen>
     );
   }
-  return <JobDetail booking={booking} justBooked={booked === '1'} onPaid={refetch} />;
+  return (
+    <JobDetail
+      booking={booking}
+      justBooked={booked === '1'}
+      checkingPayment={checkingPayment}
+      onPaid={() => {
+        setPaymentCheck((count) => count + 1);
+        void refetch();
+      }}
+    />
+  );
 }
 
-function JobDetail({ booking, justBooked, onPaid }: { booking: CustomerBooking; justBooked: boolean; onPaid: () => void }) {
+function JobDetail({
+  booking,
+  justBooked,
+  checkingPayment,
+  onPaid,
+}: {
+  booking: CustomerBooking;
+  justBooked: boolean;
+  checkingPayment: boolean;
+  onPaid: () => void;
+}) {
   const cancel = useCancelBooking();
   const [cancelOutcome, setCancelOutcome] = useState<'cancelled' | 'requested' | null>(null);
   const { business, options } = booking;
@@ -123,6 +156,11 @@ function JobDetail({ booking, justBooked, onPaid }: { booking: CustomerBooking; 
           <Button variant="accent" icon={CreditCard} block onPress={pay}>
             {`Pay ${formatCents(booking.deposit_due_cents - booking.deposit_paid_cents, booking.currency)} deposit`}
           </Button>
+          {checkingPayment ? (
+            <Text variant="small" tone="soft" role="status" aria-live="polite">
+              Already paid? We&rsquo;re confirming it with the bank. This updates in a moment.
+            </Text>
+          ) : null}
         </Card>
       ) : null}
 

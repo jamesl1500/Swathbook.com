@@ -11,7 +11,16 @@
  * database can't do alone (geocoding, emails right away, account deletion).
  */
 
-import { QueryClient, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  focusManager,
+  keepPreviousData,
+  QueryClient,
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
+import { AppState, Platform } from 'react-native';
 
 import { config } from '@/lib/config';
 import type { ProfilePhoto } from '@/lib/photo';
@@ -30,6 +39,12 @@ export const queryClient = new QueryClient({
   },
 });
 
+// Native apps have no window focus: treat coming back to the foreground as
+// focus, so stale screens refresh then (and only then) instead of on a timer.
+if (Platform.OS !== 'web') {
+  AppState.addEventListener('change', (state) => focusManager.setFocused(state === 'active'));
+}
+
 /** An error with a message that's fine to show the customer. */
 export class ApiError extends Error {
   constructor(
@@ -43,6 +58,9 @@ export class ApiError extends Error {
 }
 
 const OFFLINE = "Can't reach Swathbook. Check your connection and try again.";
+const TIMED_OUT = 'Swathbook is taking too long to answer. Please try again.';
+/** Bookings geocode and send emails, so allow a while, but never hang forever. */
+const REQUEST_TIMEOUT_MS = 20_000;
 
 async function call<T>(promise: PromiseLike<{ data: unknown; error: { message: string; code?: string } | null }>): Promise<T> {
   let result;
@@ -64,14 +82,19 @@ async function appApi<T>(path: string, init: { method: 'POST' | 'DELETE'; body?:
   if (!data.session) throw new ApiError('Sign in to continue.', 'unauthenticated', 401);
 
   let response: Response;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
     response = await fetch(`${config.siteUrl}/api/app${path}`, {
       method: init.method,
       headers: { 'content-type': 'application/json', authorization: `Bearer ${data.session.access_token}` },
       body: init.body === undefined ? undefined : JSON.stringify(init.body),
+      signal: controller.signal,
     });
   } catch {
-    throw new ApiError(OFFLINE, 'offline', 0);
+    throw controller.signal.aborted ? new ApiError(TIMED_OUT, 'timeout', 0) : new ApiError(OFFLINE, 'offline', 0);
+  } finally {
+    clearTimeout(timer);
   }
   const body = (await response.json().catch(() => null)) as { error?: string; code?: string } | null;
   if (!response.ok) {
@@ -228,6 +251,9 @@ export function useBusinessSearch(query: string, trade: string | null) {
     queryFn: ({ pageParam }) => searchBusinesses(query, trade, pageParam),
     initialPageParam: 0,
     getNextPageParam: (last, pages) => (last.length === PAGE && pages.length * PAGE < Number(last[0]?.total_count ?? 0) ? pages.length : undefined),
+    // Keep showing the last results while the next search loads, instead of a spinner per keystroke.
+    placeholderData: keepPreviousData,
+    staleTime: 60_000,
   });
 }
 
@@ -248,9 +274,26 @@ export function useMyBookings() {
   return useQuery({ queryKey: ['me', 'bookings'], queryFn: getMyBookings, enabled: signedIn });
 }
 
-export function useMyBooking(id: string) {
+/** How often to re-check a booking while a just-made payment is being confirmed. */
+const PAYMENT_POLL_MS = 2_000;
+
+/**
+ * One of the customer's bookings. With `watchPayment`, it re-checks every
+ * couple of seconds while the booking still awaits its deposit: the payment
+ * is confirmed by Stripe's webhook, which can land a few seconds after the
+ * customer closes the payment page.
+ */
+export function useMyBooking(id: string, { watchPayment = false }: { watchPayment?: boolean } = {}) {
   const { signedIn } = useAuth();
-  return useQuery({ queryKey: ['me', 'bookings', id], queryFn: () => getMyBooking(id), enabled: signedIn });
+  const client = useQueryClient();
+  return useQuery({
+    queryKey: ['me', 'bookings', id],
+    queryFn: () => getMyBooking(id),
+    enabled: signedIn,
+    refetchInterval: (query) => (watchPayment && query.state.data?.status === 'pending_payment' ? PAYMENT_POLL_MS : false),
+    // Opened from a list: show what the list already has while the fresh copy loads.
+    placeholderData: () => client.getQueryData<CustomerBooking[]>(['me', 'bookings'])?.find((booking) => booking.id === id),
+  });
 }
 
 export function useMyDetails() {
@@ -279,10 +322,14 @@ export const useRemoveMyAvatar = () => useAvatarMutation(removeMyAvatar);
 export const useRescheduleSlots = (id: string) =>
   useQuery({ queryKey: ['me', 'reschedule-slots', id], queryFn: () => getRescheduleSlots(id), staleTime: 15_000 });
 
-/** After any change to a booking, refresh everything that shows bookings. */
+/**
+ * After any change to a booking, show the server's copy straight away, then
+ * refresh everything else that shows bookings (and the open times it freed or took).
+ */
 function useRefreshBookings() {
   const client = useQueryClient();
-  return () => {
+  return (result: { booking?: CustomerBooking | null }) => {
+    if (result.booking) client.setQueryData(['me', 'bookings', result.booking.id], result.booking);
     client.invalidateQueries({ queryKey: ['me'] });
     client.invalidateQueries({ queryKey: ['slots'] });
   };

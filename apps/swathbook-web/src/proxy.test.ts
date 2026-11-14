@@ -80,4 +80,34 @@ describe("proxy", () => {
         expect(response.headers.get("set-cookie")).toContain("sb-auth-token=fresh-token");
         expect(response.headers.get("cache-control")).toBe("private, no-store");
     });
+
+    describe("customer area", () => {
+        it.each([
+            ["/my", "/my/sign-in?next=%2Fmy"],
+            ["/my/jobs", "/my/sign-in?next=%2Fmy%2Fjobs"],
+            ["/my/jobs/abc?paid=1", "/my/sign-in?next=%2Fmy%2Fjobs%2Fabc%3Fpaid%3D1"],
+        ])("sends signed-out visitors from %s to the customer sign-in, not the business login", async (path, expected) => {
+            expect(locationOf(await request(path))).toBe(expected);
+        });
+
+        it("shows the sign-in page to signed-out visitors", async () => {
+            expect(locationOf(await request("/my/sign-in"))).toBeNull();
+        });
+
+        it("skips the sign-in for signed-in customers, honoring a safe ?next=", async () => {
+            state.userId = "u1";
+            expect(locationOf(await request("/my/sign-in"))).toBe("/my/jobs");
+            expect(locationOf(await request("/my/sign-in?next=%2Fmy%2Fprofile"))).toBe("/my/profile");
+            expect(locationOf(await request("/my/sign-in?next=%2F%2Fevil.example"))).toBe("/my/jobs");
+        });
+
+        it("lets signed-in customers into their pages", async () => {
+            state.userId = "u1";
+            expect(locationOf(await request("/my/jobs"))).toBeNull();
+        });
+    });
+
+    it.each(["/businesses", "/businesses/lawn-care?q=mow"])("keeps the directory public: %s", async (path) => {
+        expect(locationOf(await request(path))).toBeNull();
+    });
 });

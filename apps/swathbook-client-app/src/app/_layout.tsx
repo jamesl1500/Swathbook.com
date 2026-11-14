@@ -48,8 +48,9 @@ function App() {
     return (
       <Screen>
         <EmptyState icon={Settings} title="Swathbook isn't set up">
-          Add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY to apps/swathbook-client-app/.env.local (see
-          .env.example), then restart the dev server.
+          Add EXPO_PUBLIC_SUPABASE_URL, EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY and EXPO_PUBLIC_SITE_URL to
+          apps/swathbook-client-app/.env.local (see .env.example), then restart the dev server. Release builds only accept
+          https:// URLs.
         </EmptyState>
       </Screen>
     );

@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createCheckoutSession, createPortalSession } from "@/libs/billing/stripe-billing";
+import { createCheckoutSession, createPortalSession, isMissingResource } from "@/libs/billing/stripe-billing";
 import { isPaidPlan } from "@/libs/billing/plans";
 import { authorizeBusiness, isFailure } from "@/libs/dashboard";
 import type { FormState } from "@/libs/forms";
@@ -62,6 +62,11 @@ export async function openBillingPortal(_prev: FormState, formData: FormData): P
     try {
         url = await createPortalSession(getStripe(), business.stripe_customer_id, `${await getSiteUrl()}${routes.billing}`);
     } catch (error) {
+        if (isMissingResource(error)) {
+            // The saved customer isn't in this Stripe account: forget it, and the next checkout makes a fresh one.
+            await createAdminClient().from("businesses").update({ stripe_customer_id: null }).eq("id", auth.businessId);
+            return { error: "Choose a plan first." };
+        }
         console.error("[billing] portal failed", error);
         return { error: "We couldn't open billing. Please try again." };
     }

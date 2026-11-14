@@ -1,5 +1,5 @@
 import { SearchX } from 'lucide-react-native';
-import { useDeferredValue, useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { BusinessCard } from '@/components/business-card';
@@ -7,14 +7,15 @@ import { Loading, LoadError } from '@/components/query-state';
 import { useBusinessSearch, useTrades } from '@/data/api';
 import { Button, Chip, EmptyState, PageHeader, Screen, SearchField, space, Text } from '@/design-system';
 import { tradeName } from '@/lib/trades';
+import { useDebouncedValue } from '@/lib/use-debounced-value';
 
 export default function ExploreScreen() {
   const [query, setQuery] = useState('');
   const [trade, setTrade] = useState<string | null>(null);
-  // Don't query on every keystroke while typing fast.
-  const deferredQuery = useDeferredValue(query);
+  // One search once typing pauses, not one per keystroke.
+  const settledQuery = useDebouncedValue(query, 300);
   const trades = useTrades();
-  const search = useBusinessSearch(deferredQuery, trade);
+  const search = useBusinessSearch(settledQuery, trade);
   const results = search.data?.pages.flat() ?? [];
   const total = Number(results[0]?.total_count ?? 0);
 

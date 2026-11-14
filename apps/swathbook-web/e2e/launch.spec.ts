@@ -88,7 +88,7 @@ test.describe("billing", () => {
     test("the trial, a paused page when it ends, and reopening with a plan", async ({ page }) => {
         const { business } = await ownerSignedIn(page);
         await page.goto("/dashboard/billing");
-        await expect(page.getByTestId("billing-status")).toContainText("Free trial · 14 days left");
+        await expect(page.getByTestId("billing-status")).toContainText("Free trial · 7 days left");
         await expect(page.getByText("Billing isn't configured yet")).toBeVisible();
 
         // Trial over, no plan: the booking page pauses and the owner is told everywhere.
