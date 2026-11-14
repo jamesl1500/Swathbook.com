@@ -110,6 +110,8 @@ test.describe("search: booking pages", () => {
         const paused = await createBusiness(owner.id, { name: "Paused Pressure Wash", slug: uniqueSlug("paused"), published: false });
 
         await page.goto(`/l/${live.slug}`);
+        // The page body streams in behind a skeleton; read it once it has.
+        await expect(page.getByRole("heading", { level: 1, name: "Northside Leaf & Lawn" })).toBeVisible();
         const seo = await readSeo(page);
         expectIndexable(seo, `/l/${live.slug}`);
         const business = seo.jsonLd.flatMap((block) => [JSON.parse(block!)].flat()).find((item) => item["@type"] === "LocalBusiness");
@@ -135,7 +137,8 @@ test.describe("search: crawl rules", () => {
         expect(sitemap).not.toMatch(/localhost|\/dashboard|\/auth\//);
         // Booking pages (when there are any) are listed under /l/ on the production host.
         const locs = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
-        for (const loc of locs) expect(loc).toMatch(new RegExp(`^${SITE.replace(/\./g, "\\.")}(/[a-z-]*|/l/[a-z0-9-]+)?$`));
+        // Trade directories are listed under /businesses/<trade> once they have businesses.
+        for (const loc of locs) expect(loc).toMatch(new RegExp(`^${SITE.replace(/\./g, "\\.")}(/[a-z-]*|/l/[a-z0-9-]+|/businesses/[a-z0-9-]+)?$`));
     });
 
     test("private pages are kept out of search two ways", async ({ request }) => {

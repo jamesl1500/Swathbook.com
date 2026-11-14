@@ -1,7 +1,9 @@
 import type { MetadataRoute } from "next";
 import { cacheLife } from "next/cache";
 import { siteConfig } from "@/libs/globals/site";
-import { businessPagePath, routes } from "@/libs/routes";
+import { listDirectoryTrades } from "@/libs/business-directory";
+import { findDirectoryTrade } from "@/libs/marketing/directory";
+import { businessPagePath, routes, tradeDirectoryPath } from "@/libs/routes";
 import { createAdminClient, hasAdminClient } from "@/libs/supabase/admin";
 import { publicAssetUrl } from "@/libs/supabase/storage";
 
@@ -10,6 +12,7 @@ const pages: Array<{ path: string; priority: number; changeFrequency: "weekly" |
   { path: routes.features, priority: 0.9, changeFrequency: "monthly" },
   { path: routes.industries, priority: 0.9, changeFrequency: "monthly" },
   { path: routes.pricing, priority: 0.9, changeFrequency: "monthly" },
+  { path: routes.findBusinesses, priority: 0.8, changeFrequency: "weekly" },
   { path: routes.about, priority: 0.6, changeFrequency: "yearly" },
   { path: routes.contact, priority: 0.5, changeFrequency: "yearly" },
   { path: routes.terms, priority: 0.2, changeFrequency: "yearly" },
@@ -65,11 +68,27 @@ async function businessPages(): Promise<MetadataRoute.Sitemap> {
   });
 }
 
+/**
+ * Directory pages for trades that have bookable businesses. Empty trade pages
+ * are noindex, so listing them would only waste crawl budget.
+ */
+async function tradePages(): Promise<MetadataRoute.Sitemap> {
+  const live = await listDirectoryTrades();
+  return live
+    .filter((row) => row.count > 0 && findDirectoryTrade(row.trade))
+    .map((row) => ({
+      url: `${siteConfig.url}${tradeDirectoryPath(row.trade)}`,
+      changeFrequency: "weekly" as const,
+      priority: 0.8,
+    }));
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const marketing = pages.map(({ path, priority, changeFrequency }) => ({
     url: `${siteConfig.url}${path === "/" ? "" : path}`,
     changeFrequency,
     priority,
   }));
-  return [...marketing, ...(await businessPages())];
+  const [trades, businesses] = await Promise.all([tradePages(), businessPages()]);
+  return [...marketing, ...trades, ...businesses];
 }

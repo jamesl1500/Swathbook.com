@@ -77,6 +77,7 @@ export function createSupabaseMock() {
     const auth = {
         getClaims: vi.fn(async () => ({ data: { claims: null as Record<string, unknown> | null }, error: null })),
         signInWithPassword: vi.fn(),
+        signInWithOtp: vi.fn(async () => ({ data: {}, error: null as (QueryError & { status?: number }) | null })),
         signUp: vi.fn(),
         signOut: vi.fn(async () => ({ error: null })),
         resetPasswordForEmail: vi.fn(async () => ({ data: {}, error: null as QueryError | null })),

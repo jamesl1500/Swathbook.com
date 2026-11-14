@@ -40,6 +40,9 @@ export function MobileNav() {
                 {link.label}
               </Link>
             ))}
+            <Link href={routes.customerJobs} onClick={close} className="border-b border-line/70 py-3.5 font-display text-lg font-semibold">
+              My bookings
+            </Link>
           </nav>
           <div className="mt-5 grid grid-cols-2 gap-3">
             <Link href={routes.login} onClick={close} className={buttonStyles({ variant: "secondary" })}>

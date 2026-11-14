@@ -9,8 +9,9 @@ import { loadBookingPage, loadPausedBusinessName, type BookingPageData } from "@
 import { siteConfig } from "@/libs/globals/site";
 import { hasGoogleMaps } from "@/libs/google/maps";
 import { findTrade } from "@/libs/marketing/content";
-import { businessPagePath, routes } from "@/libs/routes";
-import { businessJsonLd, businessPageMeta } from "@/libs/seo";
+import { findDirectoryTrade } from "@/libs/marketing/directory";
+import { businessPagePath, routes, tradeDirectoryPath } from "@/libs/routes";
+import { breadcrumbJsonLd, businessJsonLd, businessPageMeta } from "@/libs/seo";
 import { publicAssetUrl } from "@/libs/supabase/storage";
 import { formatTimeKey, todayKey } from "@/libs/time";
 import { brandOnLight, brandTextColor, cn } from "@/libs/utils";
@@ -61,6 +62,7 @@ function BookingPage({ page, googleEnabled }: { page: BookingPageData; googleEna
   const logo = publicAssetUrl(business.logo_path);
   const cover = publicAssetUrl(business.cover_path);
   const tradeName = findTrade(business.trade)?.name;
+  const directory = findDirectoryTrade(business.trade);
   // Over a photo, text is always white on a dark scrim; otherwise it follows the brand color.
   const onHeader = cover ? "#ffffff" : brandTextColor(brand);
   const photos = (page.photos ?? []).map((photo) => ({ id: photo.id, url: publicAssetUrl(photo.storage_path) ?? "", caption: photo.caption }));
@@ -81,6 +83,13 @@ function BookingPage({ page, googleEnabled }: { page: BookingPageData; googleEna
           tradeName,
           imageUrls: [cover, ...photos.map((photo) => photo.url)].filter((url): url is string => Boolean(url)),
         })}
+      />
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "Find a pro", path: routes.findBusinesses },
+          ...(directory ? [{ name: directory.heading, path: tradeDirectoryPath(directory.id) }] : []),
+          { name: business.name, path: businessPagePath(business.slug) },
+        ])}
       />
       <header
         className="relative overflow-hidden text-(color:--on-brand)"
@@ -191,7 +200,12 @@ function BookingPage({ page, googleEnabled }: { page: BookingPageData; googleEna
         </aside>
       </main>
 
-      <footer className="border-t border-line py-6 text-center text-xs text-ink-faint">
+      <footer className="flex flex-col items-center gap-2 border-t border-line py-6 text-center text-xs text-ink-faint">
+        {directory ? (
+          <Link href={tradeDirectoryPath(directory.id)} className="inline-flex min-h-11 items-center px-2 hover:text-ink hover:underline">
+            More {directory.heading.toLowerCase()} on {siteConfig.name}
+          </Link>
+        ) : null}
         <Link href={routes.home} className="inline-flex items-center gap-1.5 hover:text-ink">
           <LogoMark className="size-4" />
           Booking powered by {siteConfig.name}

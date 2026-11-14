@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { ArrowLeft, Mail, ShieldCheck } from 'lucide-react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { getMyDetails, queryClient } from '@/data/api';
@@ -17,6 +17,9 @@ const EMAIL = /^[^@\s]+@[^@\s.]+(?:\.[^@\s.]+)+$/;
 const CODE_MAX = 10;
 const CODE = /^\d{6,10}$/;
 
+/** Supabase sends at most one code a minute per email; wait before offering another. */
+const RESEND_SECONDS = 30;
+
 /**
  * Sign in or create an account, in one flow: enter your email, then the
  * code we send. Use the same email you book with, and every booking
@@ -29,6 +32,13 @@ export default function SignInScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setTimeout(() => setCooldown((seconds) => seconds - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [cooldown]);
 
   async function sendCode() {
     if (!EMAIL.test(email.trim())) {
@@ -41,6 +51,7 @@ export default function SignInScreen() {
       await sendSignInCode(email);
       setStep('code');
       setNotice(null);
+      setCooldown(RESEND_SECONDS);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -77,6 +88,7 @@ export default function SignInScreen() {
     try {
       await sendSignInCode(email);
       setNotice('We sent a new code.');
+      setCooldown(RESEND_SECONDS);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -162,8 +174,8 @@ export default function SignInScreen() {
             >
               Different email
             </Button>
-            <Button variant="ghost" size="sm" disabled={busy} onPress={resend}>
-              Send a new code
+            <Button variant="ghost" size="sm" disabled={busy || cooldown > 0} onPress={resend}>
+              {cooldown > 0 ? `Send a new code (${cooldown}s)` : 'Send a new code'}
             </Button>
           </View>
         </View>

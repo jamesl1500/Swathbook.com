@@ -14,24 +14,28 @@ export function PayButton({
   amountCents,
   currency,
   brandColor,
+  returnPath,
 }: {
   token: string;
   kind: PaymentKind;
   amountCents: number;
   currency: string;
   brandColor: string;
+  /** Same-site path to come back to after paying; defaults to this booking's page. */
+  returnPath?: string;
 }) {
   const [session, setSession] = useState<PaymentSession | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   if (session) {
+    const back = returnPath ?? `/booking/${token}`;
     return (
       <PaymentForm
         clientSecret={session.clientSecret}
         stripeAccountId={session.stripeAccountId}
         amountLabel={formatCents(session.amountCents, currency)}
-        returnUrl={`${window.location.origin}/booking/${token}?paid=1`}
+        returnUrl={`${window.location.origin}${back}?paid=1`}
         brandColor={brandColor}
       />
     );

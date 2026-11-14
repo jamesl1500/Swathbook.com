@@ -2,8 +2,8 @@ import Link from "next/link";
 import { ArrowRight, Mail } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { siteConfig } from "@/libs/globals/site";
-import { trades } from "@/libs/marketing/content";
-import { routes } from "@/libs/routes";
+import { directoryTrades } from "@/libs/marketing/directory";
+import { routes, tradeDirectoryPath } from "@/libs/routes";
 
 const columns = [
   {
@@ -16,10 +16,12 @@ const columns = [
     ],
   },
   {
-    title: "Trades",
+    // Crawlable links into the directory, so every trade page is one hop from anywhere.
+    title: "Find a pro",
     links: [
-      ...trades.slice(0, 5).map((trade) => ({ href: `${routes.industries}#${trade.id}`, label: trade.name })),
-      { href: routes.industries, label: "All trades" },
+      ...directoryTrades.slice(0, 5).map((trade) => ({ href: tradeDirectoryPath(trade.id), label: trade.name })),
+      { href: routes.findBusinesses, label: "All businesses" },
+      { href: routes.customerJobs, label: "My bookings" },
     ],
   },
   {
