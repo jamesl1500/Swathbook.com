@@ -14,7 +14,11 @@ const state = vi.hoisted(() => ({
 
 vi.mock("next/navigation", async () => ({ redirect: (await import("@/test/next-mocks")).mockRedirect }));
 vi.mock("@/libs/site-url", () => ({ getSiteUrl: vi.fn(async () => "https://swathbook.test") }));
-vi.mock("@/libs/billing/stripe-billing", () => ({ createCheckoutSession: state.createCheckoutSession, createPortalSession: state.createPortalSession }));
+vi.mock("@/libs/billing/stripe-billing", async (importOriginal) => ({
+    isMissingResource: (await importOriginal<typeof import("@/libs/billing/stripe-billing")>()).isMissingResource,
+    createCheckoutSession: state.createCheckoutSession,
+    createPortalSession: state.createPortalSession,
+}));
 vi.mock("@/libs/stripe/server", () => ({ hasStripe: () => state.stripeConfigured, getStripe: () => ({}) }));
 vi.mock("@/libs/supabase/admin", () => ({ createAdminClient: () => state.admin.client }));
 vi.mock("@/libs/dashboard", async () => (await import("@/test/dashboard")).mockDashboard(() => state.auth));
@@ -78,5 +82,19 @@ describe("openBillingPortal", () => {
     it("asks to choose a plan first", async () => {
         state.admin.respond("businesses.select", { data: { stripe_customer_id: null } });
         expect((await openBillingPortal({}, form())).error).toBe("Choose a plan first.");
+    });
+
+    it("forgets a customer Stripe doesn't have (e.g. made with another account's keys)", async () => {
+        state.admin.respond("businesses.select", { data: { stripe_customer_id: "cus_gone" } });
+        state.createPortalSession.mockRejectedValueOnce(Object.assign(new Error("No such customer: 'cus_gone'"), { code: "resource_missing" }));
+        expect((await openBillingPortal({}, form())).error).toBe("Choose a plan first.");
+        expect(state.admin.callsTo("businesses", "update")[0]).toMatchObject({ values: { stripe_customer_id: null }, filters: [["eq", "id", BUSINESS_ID]] });
+    });
+
+    it("doesn't forget the customer over other errors", async () => {
+        state.admin.respond("businesses.select", { data: { stripe_customer_id: "cus_1" } });
+        state.createPortalSession.mockRejectedValueOnce(new Error("network"));
+        expect((await openBillingPortal({}, form())).error).toBe("We couldn't open billing. Please try again.");
+        expect(state.admin.callsTo("businesses", "update")).toHaveLength(0);
     });
 });

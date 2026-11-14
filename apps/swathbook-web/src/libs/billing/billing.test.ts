@@ -56,7 +56,10 @@ describe("plans", () => {
 function fakeStripe() {
     return {
         prices: { list: vi.fn(async () => ({ data: [] as Array<{ id: string }> })), create: vi.fn(async () => ({ id: "price_new" })) },
-        customers: { create: vi.fn(async () => ({ id: "cus_new" })) },
+        customers: {
+            create: vi.fn(async () => ({ id: "cus_new" })),
+            retrieve: vi.fn(async (id: string): Promise<{ id: string; deleted?: boolean }> => ({ id })),
+        },
         checkout: { sessions: { create: vi.fn(async () => ({ url: "https://checkout.stripe.com/c/pay_123" })) } },
     };
 }
@@ -78,7 +81,12 @@ describe("Stripe Billing", () => {
 
         expect(await priceIdFor(stripe as unknown as Stripe, "crew")).toBe("price_new");
         expect(stripe.prices.create).toHaveBeenCalledWith(
-            expect.objectContaining({ unit_amount: 7900, lookup_key: "swathbook_crew_monthly", recurring: { interval: "month" } }),
+            expect.objectContaining({
+                unit_amount: 7900,
+                lookup_key: "swathbook_crew_monthly",
+                recurring: { interval: "month" },
+                product_data: expect.objectContaining({ tax_code: "txcd_10103001" }),
+            }),
             { idempotencyKey: "price:swathbook_crew_monthly:7900" },
         );
         await priceIdFor(stripe as unknown as Stripe, "crew");
@@ -105,9 +113,50 @@ describe("Stripe Billing", () => {
                 customer: "cus_new",
                 client_reference_id: "b1",
                 subscription_data: { metadata: { business_id: "b1", plan: "crew" }, trial_end: Math.floor(Date.parse(trialEnd) / 1000) },
+                // Connect platforms can't use Managed Payments, whatever the account default.
+                managed_payments: { enabled: false },
                 success_url: "https://swathbook.test/dashboard/billing?checkout=success",
             }),
         );
+    });
+
+    describe("the saved customer", () => {
+        const checkout = (stripeCustomerId: string) =>
+            createCheckoutSession(stripe as unknown as Stripe, admin.client as never, {
+                business: { id: "b1", name: "Shine On", stripe_customer_id: stripeCustomerId, trial_ends_at: null },
+                plan: "solo",
+                email: "olive@example.com",
+                returnUrl: "https://swathbook.test/dashboard/billing",
+            });
+
+        it("is reused when Stripe still has it", async () => {
+            await checkout("cus_saved");
+            expect(stripe.customers.retrieve).toHaveBeenCalledWith("cus_saved");
+            expect(stripe.customers.create).not.toHaveBeenCalled();
+            expect(stripe.checkout.sessions.create).toHaveBeenCalledWith(expect.objectContaining({ customer: "cus_saved" }));
+        });
+
+        it("is replaced when Stripe doesn't know it (another account's keys)", async () => {
+            stripe.customers.retrieve.mockRejectedValueOnce(Object.assign(new Error("No such customer"), { code: "resource_missing" }));
+            await checkout("cus_other_account");
+            expect(stripe.customers.create).toHaveBeenCalledWith(expect.objectContaining({ metadata: { business_id: "b1" } }), {
+                idempotencyKey: "billing-customer:b1:replaces:cus_other_account",
+            });
+            expect(admin.callsTo("businesses", "update")[0].values).toEqual({ stripe_customer_id: "cus_new" });
+            expect(stripe.checkout.sessions.create).toHaveBeenCalledWith(expect.objectContaining({ customer: "cus_new" }));
+        });
+
+        it("is replaced when it was deleted", async () => {
+            stripe.customers.retrieve.mockResolvedValueOnce({ id: "cus_deleted", deleted: true });
+            await checkout("cus_deleted");
+            expect(stripe.checkout.sessions.create).toHaveBeenCalledWith(expect.objectContaining({ customer: "cus_new" }));
+        });
+
+        it("isn't replaced over other errors", async () => {
+            stripe.customers.retrieve.mockRejectedValueOnce(Object.assign(new Error("rate limited"), { code: "rate_limit" }));
+            await expect(checkout("cus_saved")).rejects.toThrow("rate limited");
+            expect(stripe.customers.create).not.toHaveBeenCalled();
+        });
     });
 
     it("mirrors a subscription, finding the business by customer when metadata is missing", async () => {

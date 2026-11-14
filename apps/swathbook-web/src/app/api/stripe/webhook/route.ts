@@ -11,14 +11,22 @@ import { sendQueuedEmailsSoon } from "@/libs/email/worker";
  */
 export async function POST(request: Request) {
   const secrets = webhookSecrets();
-  if (!hasStripe() || !secrets.length) return new Response("Stripe isn't configured", { status: 503 });
+  if (!hasStripe() || !secrets.length) {
+    // Logged because a rejected webhook is otherwise silent on this side.
+    console.warn("[stripe] webhook rejected: STRIPE_SECRET_KEY or STRIPE_WEBHOOK_SECRET isn't set");
+    return new Response("Stripe isn't configured", { status: 503 });
+  }
 
   const signature = request.headers.get("stripe-signature");
   if (!signature) return new Response("Missing signature", { status: 400 });
 
   const body = await request.text();
   const event = verify(body, signature, secrets);
-  if (!event) return new Response("Invalid signature", { status: 400 });
+  if (!event) {
+    // Usually the wrong secret: `stripe listen` prints its own whsec_, separate from the Dashboard's.
+    console.warn(`[stripe] webhook rejected: the signature matched none of the ${secrets.length} STRIPE_WEBHOOK_SECRET value(s)`);
+    return new Response("Invalid signature", { status: 400 });
+  }
 
   try {
     const outcome = await handleStripeEvent(getStripe(), createAdminClient(), event);

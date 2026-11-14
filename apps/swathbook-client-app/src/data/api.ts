@@ -274,13 +274,23 @@ export function useMyBookings() {
   return useQuery({ queryKey: ['me', 'bookings'], queryFn: getMyBookings, enabled: signedIn });
 }
 
-export function useMyBooking(id: string) {
+/** How often to re-check a booking while a just-made payment is being confirmed. */
+const PAYMENT_POLL_MS = 2_000;
+
+/**
+ * One of the customer's bookings. With `watchPayment`, it re-checks every
+ * couple of seconds while the booking still awaits its deposit: the payment
+ * is confirmed by Stripe's webhook, which can land a few seconds after the
+ * customer closes the payment page.
+ */
+export function useMyBooking(id: string, { watchPayment = false }: { watchPayment?: boolean } = {}) {
   const { signedIn } = useAuth();
   const client = useQueryClient();
   return useQuery({
     queryKey: ['me', 'bookings', id],
     queryFn: () => getMyBooking(id),
     enabled: signedIn,
+    refetchInterval: (query) => (watchPayment && query.state.data?.status === 'pending_payment' ? PAYMENT_POLL_MS : false),
     // Opened from a list: show what the list already has while the fresh copy loads.
     placeholderData: () => client.getQueryData<CustomerBooking[]>(['me', 'bookings'])?.find((booking) => booking.id === id),
   });

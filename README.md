@@ -18,6 +18,7 @@ Requires Node 24, pnpm and Docker (for the local Supabase stack).
 | `pnpm db:push` | Apply new migrations to the linked hosted project (uses this repo's Supabase CLI) |
 | `pnpm db:types` | Regenerate the database types after schema changes (written to the web app; the client app re-exports them) |
 | `pnpm test` | Unit and component tests (Vitest), for the web app and the customer app |
+| `pnpm stripe:listen` | Forward the Swathbook sandbox's Stripe events (platform and connected accounts) to the local web app's webhook. Set `STRIPE_WEBHOOK_SECRET` to the `whsec_` it prints, in the shell that runs the web app |
 | `pnpm app` | Start the customer app's Expo dev server (press i, a or w) |
 | `pnpm test:e2e` | End-to-end tests (Playwright) against a production build wired to local Supabase; needs `pnpm db:start` first |
 

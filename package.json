@@ -17,7 +17,8 @@
     "db:reset": "supabase db reset",
     "db:test": "supabase test db",
     "db:push": "supabase db push --linked",
-    "db:types": "supabase gen types typescript --local --schema public > apps/swathbook-web/src/libs/supabase/database.types.ts"
+    "db:types": "supabase gen types typescript --local --schema public > apps/swathbook-web/src/libs/supabase/database.types.ts",
+    "stripe:listen": "stripe listen -p \"swathbook sandbox\" --thin-events \"v2.core.account.updated,v2.core.account[requirements].updated,v2.core.account[configuration.merchant].updated,v2.core.account[configuration.merchant].capability_status_updated,v1.payment_intent.succeeded,v1.payment_intent.processing,v1.payment_intent.payment_failed,v1.payment_intent.canceled,v1.refund.created,v1.refund.updated,v1.refund.failed,v1.charge.refunded,v1.customer.subscription.created,v1.customer.subscription.updated,v1.customer.subscription.deleted,v1.customer.subscription.paused,v1.customer.subscription.resumed,v1.checkout.session.completed\" --forward-thin-to localhost:3000/api/stripe/webhook --forward-thin-connect-to localhost:3000/api/stripe/webhook"
   },
   "devDependencies": {
     "supabase": "^2.122.1",
