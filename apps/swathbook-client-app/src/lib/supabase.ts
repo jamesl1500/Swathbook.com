@@ -4,7 +4,7 @@ import { AppState, Platform } from 'react-native';
 import type { Database } from '@/data/database.types';
 
 import { config } from './config';
-import { deviceStorage } from './device-storage';
+import { deviceStorage } from '@swathbook/mobile/device-storage';
 
 /**
  * The app's Supabase client. Talks to the database as the signed-in customer

@@ -1,0 +1,57 @@
+{
+  "name": "@swathbook/mobile",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Shared code for Swathbook's mobile apps: the design system, secure session storage, URL rules and formatting.",
+  "exports": {
+    "./design-system": "./src/design-system/index.ts",
+    "./device-storage": "./src/device-storage.ts",
+    "./url": "./src/url.ts",
+    "./format": "./src/format.ts",
+    "./trades": "./src/trades.ts",
+    "./confirm": "./src/confirm.ts",
+    "./use-debounced-value": "./src/use-debounced-value.ts",
+    "./booking-status": "./src/booking-status.tsx",
+    "./query-state": "./src/query-state.tsx",
+    "./status": "./src/status.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@expo-google-fonts/bricolage-grotesque": "*",
+    "@expo-google-fonts/instrument-sans": "*",
+    "@expo-google-fonts/jetbrains-mono": "*",
+    "expo-font": "*",
+    "expo-image": "*",
+    "expo-router": "*",
+    "expo-secure-store": "*",
+    "lucide-react-native": "*",
+    "react": "*",
+    "react-native": "*",
+    "react-native-reanimated": "*",
+    "react-native-safe-area-context": "*",
+    "react-native-svg": "*"
+  },
+  "devDependencies": {
+    "@expo-google-fonts/bricolage-grotesque": "^0.4.1",
+    "@expo-google-fonts/instrument-sans": "^0.4.2",
+    "@expo-google-fonts/jetbrains-mono": "^0.4.1",
+    "@types/react": "~19.3.0",
+    "expo": "~58.0.23",
+    "expo-font": "~58.0.11",
+    "expo-image": "~58.0.18",
+    "expo-router": "~58.0.30",
+    "expo-secure-store": "~58.0.2",
+    "lucide-react-native": "^1.71.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-native": "0.88.1",
+    "react-native-reanimated": "4.7.1",
+    "react-native-safe-area-context": "~5.11.1",
+    "react-native-svg": "15.16.0",
+    "typescript": "~6.0.3",
+    "vitest": "5.1.0"
+  }
+}

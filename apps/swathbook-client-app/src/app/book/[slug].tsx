@@ -6,7 +6,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { AddressFields, toAddressValue, type AddressValue } from '@/components/address-fields';
 import { QuestionFields } from '@/components/question-fields';
-import { Loading, LoadError } from '@/components/query-state';
+import { Loading, LoadError } from '@swathbook/mobile/query-state';
 import { SlotPicker, useSlotDays } from '@/components/slot-picker';
 import { ApiError, useAvailableSlots, useBookingPage, useCreateBooking, useMyDetails } from '@/data/api';
 import { useAuth } from '@/data/auth';
@@ -25,8 +25,8 @@ import {
   space,
   Text,
   TextField,
-} from '@/design-system';
-import { formatCents, formatDuration, formatServicePrice, formatShortDate, formatTime } from '@/lib/format';
+} from '@swathbook/mobile/design-system';
+import { formatCents, formatDuration, formatServicePrice, formatShortDate, formatTime } from '@swathbook/mobile/format';
 import { answerErrors, answersToSend, questionsFor } from '@/lib/questions';
 
 export default function BookScreen() {

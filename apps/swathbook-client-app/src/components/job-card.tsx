@@ -1,11 +1,11 @@
 import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
-import { Badge, colors, PressableCard, radius, space, Text } from '@/design-system';
+import { Badge, colors, PressableCard, radius, space, Text } from '@swathbook/mobile/design-system';
 import type { CustomerBooking } from '@/data/types';
-import { formatDayOfMonth, formatMonth, formatRelativeDay, formatTimeRange } from '@/lib/format';
+import { formatDayOfMonth, formatMonth, formatRelativeDay, formatTimeRange } from '@swathbook/mobile/format';
 
-import { BookingStatusBadge, bookingStatusLabel } from './booking-status-badge';
+import { BookingStatusBadge, bookingStatusLabel } from '@swathbook/mobile/booking-status';
 
 export const serviceNames = (booking: CustomerBooking) => booking.items.map((item) => item.name).join(', ') || 'Booking';
 

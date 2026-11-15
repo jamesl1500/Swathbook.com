@@ -1,6 +1,6 @@
 import { LogIn, type LucideIcon } from 'lucide-react-native';
 
-import { Button, EmptyState } from '@/design-system';
+import { Button, EmptyState } from '@swathbook/mobile/design-system';
 
 /** Shown where a screen needs an account: says why, and offers sign-in. */
 export function SignInPrompt({ icon = LogIn, title, children }: { icon?: LucideIcon; title: string; children: string }) {

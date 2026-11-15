@@ -8,7 +8,7 @@ import { useEffect } from 'react';
 import { queryClient } from '@/data/api';
 import { AuthProvider, useAuth } from '@/data/auth';
 import { loadIntroState, useIntroState } from '@/data/intro';
-import { EmptyState, navigationTheme, Screen, stackScreenOptions, useBrandFonts } from '@/design-system';
+import { EmptyState, navigationTheme, Screen, stackScreenOptions, useBrandFonts } from '@swathbook/mobile/design-system';
 import { config } from '@/lib/config';
 
 SplashScreen.preventAutoHideAsync();

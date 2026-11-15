@@ -7,8 +7,8 @@ import { readAddress, withCoordinates } from "@/libs/address";
 import { authorizeBusiness, isFailure } from "@/libs/dashboard";
 import { checkbox, invalid, text, type FormState } from "@/libs/forms";
 import { bookingPath } from "@/libs/routes";
-import { getStripe, hasStripe } from "@/libs/stripe/server";
-import { createAdminClient } from "@/libs/supabase/admin";
+import { refundRemaining, resolveCancelRequest } from "@/libs/cancel-requests";
+import { hasStripe } from "@/libs/stripe/server";
 import { createClient } from "@/libs/supabase/server";
 import { sendQueuedEmailsSoon } from "@/libs/email/worker";
 import { isDateKey, zonedToUtc } from "@/libs/time";
@@ -103,52 +103,12 @@ export async function saveJobNotes(_prev: FormState, formData: FormData): Promis
 
 /** Starts a refund on Stripe; the webhook records the result. */
 /** Refunds whatever is left on one payment. Shared by the refund button and approved cancellations. */
-async function refundRemaining(auth: { businessId: string; user: { id: string } }, paymentId: string): Promise<string | null> {
-    const supabase = await createClient();
-    const { data: payment } = await supabase
-        .from("payments")
-        .select("id, business_id, amount_cents, amount_refunded_cents, stripe_payment_intent_id, stripe_account_id, status")
-        .eq("id", paymentId)
-        .eq("business_id", auth.businessId)
-        .maybeSingle();
-    if (!payment?.stripe_payment_intent_id || !["succeeded", "partially_refunded"].includes(payment.status)) {
-        return "That payment can't be refunded.";
-    }
-    const remaining = payment.amount_cents - payment.amount_refunded_cents;
-    if (remaining <= 0) return "That payment is already fully refunded.";
-
-    try {
-        const refund = await getStripe().refunds.create(
-            { payment_intent: payment.stripe_payment_intent_id, amount: remaining, reason: "requested_by_customer", metadata: { refunded_by: auth.user.id } },
-            { stripeAccount: payment.stripe_account_id, idempotencyKey: `refund:${payment.id}:${remaining}` },
-        );
-        await createAdminClient()
-            .from("refunds")
-            .upsert(
-                {
-                    business_id: auth.businessId,
-                    payment_id: payment.id,
-                    amount_cents: refund.amount,
-                    status: refund.status === "succeeded" ? "succeeded" : "pending",
-                    reason: "requested_by_customer",
-                    stripe_refund_id: refund.id,
-                    created_by: auth.user.id,
-                },
-                { onConflict: "stripe_refund_id" },
-            );
-    } catch (error) {
-        console.error("[schedule] refund failed", error);
-        return "Stripe couldn't refund that payment.";
-    }
-    return null;
-}
-
 export async function refundPayment(formData: FormData): Promise<FormState> {
     const auth = await authorizeBusiness(formData.get("businessId"), { manage: true });
     if (isFailure(auth)) return auth;
     if (!hasStripe()) return { error: "Payments aren't configured on this server." };
 
-    const error = await refundRemaining(auth, text(formData, "paymentId"));
+    const error = await refundRemaining(await createClient(), { businessId: auth.businessId, userId: auth.user.id }, text(formData, "paymentId"));
     if (error) return { error };
     refresh();
     return { success: "Refund started. It shows on the customer's card in 5–10 days." };
@@ -159,34 +119,16 @@ export async function resolveCancellation(formData: FormData): Promise<FormState
     const auth = await authorizeBusiness(formData.get("businessId"), { manage: true });
     if (isFailure(auth)) return auth;
     const bookingId = text(formData, "bookingId");
-    const approve = formData.get("approve") === "1";
-    const refund = checkbox(formData, "refund");
-
-    const supabase = await createClient();
-    const { error } = await supabase.rpc("resolve_cancel_request", {
-        p_booking_id: bookingId,
-        p_approve: approve,
-        p_note: text(formData, "note") || undefined,
+    const result = await resolveCancelRequest(await createClient(), { businessId: auth.businessId, userId: auth.user.id }, {
+        bookingId,
+        approve: formData.get("approve") === "1",
+        refund: checkbox(formData, "refund"),
+        note: text(formData, "note"),
     });
-    if (error) {
-        return { error: error.message.includes("no_cancel_request") ? "That request was already answered." : "We couldn't update the booking." };
-    }
-
-    let refundNote = "";
-    if (approve && refund && hasStripe()) {
-        const { data: payments } = await supabase
-            .from("payments")
-            .select("id")
-            .eq("booking_id", bookingId)
-            .eq("business_id", auth.businessId)
-            .in("status", ["succeeded", "partially_refunded"]);
-        const failures = (await Promise.all((payments ?? []).map((payment) => refundRemaining(auth, payment.id)))).filter(Boolean);
-        refundNote = payments?.length ? (failures.length ? " The refund didn't go through; try it from Payments." : " Refund started.") : "";
-    }
-
+    if (!result.ok) return { error: result.error };
     sendQueuedEmailsSoon(bookingId);
     refresh();
-    return { success: approve ? `Booking cancelled. The customer has been emailed.${refundNote}` : "Request declined. The booking stays on and the customer has been emailed." };
+    return { success: result.message };
 }
 
 async function businessTimezone(businessId: string) {

@@ -4,7 +4,8 @@
  * zone (like the website), falling back to the device's.
  */
 
-import type { PriceType } from '@/data/types';
+/** How a service is priced (matches the database's price_type). */
+export type PriceType = 'fixed' | 'starting_at' | 'quote';
 
 /** Cents as currency, e.g. 4550 -> "$45.50", 4500 -> "$45". */
 export function formatCents(cents: number, currency = 'usd') {

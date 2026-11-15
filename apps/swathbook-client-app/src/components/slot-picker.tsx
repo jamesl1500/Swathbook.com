@@ -2,8 +2,8 @@ import { useMemo, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import type { Slot } from '@/data/types';
-import { Chip, space } from '@/design-system';
-import { dayKey, formatShortDate, formatTime } from '@/lib/format';
+import { Chip, space } from '@swathbook/mobile/design-system';
+import { dayKey, formatShortDate, formatTime } from '@swathbook/mobile/format';
 
 export type SlotDays = {
   /** Openings grouped by the business's local day, in order. */

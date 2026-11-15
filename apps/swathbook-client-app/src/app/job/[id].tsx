@@ -5,8 +5,8 @@ import { useEffect, useState } from 'react';
 import { Linking, StyleSheet, View } from 'react-native';
 
 import { formatAddress } from '@/components/address';
-import { BookingStatusBadge } from '@/components/booking-status-badge';
-import { Loading, LoadError } from '@/components/query-state';
+import { BookingStatusBadge } from '@swathbook/mobile/booking-status';
+import { Loading, LoadError } from '@swathbook/mobile/query-state';
 import { SignInPrompt } from '@/components/sign-in-prompt';
 import { isUpcoming, useCancelBooking, useMyBooking } from '@/data/api';
 import { useAuth } from '@/data/auth';
@@ -27,11 +27,11 @@ import {
   Screen,
   space,
   Text,
-} from '@/design-system';
+} from '@swathbook/mobile/design-system';
 import { assetUrl, manageBookingUrl } from '@/lib/config';
-import { confirm } from '@/lib/confirm';
-import { formatCents, formatDuration, formatLongDate, formatTime, formatTimeRange, minutesBetween } from '@/lib/format';
-import { tradeName } from '@/lib/trades';
+import { confirm } from '@swathbook/mobile/confirm';
+import { formatCents, formatDuration, formatLongDate, formatTime, formatTimeRange, minutesBetween } from '@swathbook/mobile/format';
+import { tradeName } from '@swathbook/mobile/trades';
 
 /** How long to keep checking for a payment after the payment page closes. */
 const PAYMENT_CHECK_MS = 30_000;

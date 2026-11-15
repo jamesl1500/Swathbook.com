@@ -12,6 +12,7 @@
     "test": "turbo run test",
     "test:e2e": "pnpm --filter swathbook-web test:e2e",
     "app": "pnpm --filter swathbook-client-app start",
+    "owner": "pnpm --filter swathbook-owner-app start",
     "db:start": "supabase start -x vector,logflare,edge-runtime,imgproxy",
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",

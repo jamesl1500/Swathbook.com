@@ -5,7 +5,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { getMyDetails, queryClient } from '@/data/api';
 import { sendSignInCode, verifySignInCode } from '@/data/auth';
-import { Button, FormMessage, LogoMark, Screen, space, Text, TextField } from '@/design-system';
+import { Button, FormMessage, LogoMark, Screen, space, Text, TextField } from '@swathbook/mobile/design-system';
 
 // name@domain.tld. Dots only separate domain labels, so matching never backtracks.
 const EMAIL = /^[^@\s]+@[^@\s.]+(?:\.[^@\s.]+)+$/;

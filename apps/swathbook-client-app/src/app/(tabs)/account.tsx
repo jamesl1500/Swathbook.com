@@ -7,9 +7,9 @@ import { formatAddress } from '@/components/address';
 import { SignInPrompt } from '@/components/sign-in-prompt';
 import { useAvatarUrl, useDeleteAccount, useMyDetails, useRemoveMyAvatar, useSetMyAvatar } from '@/data/api';
 import { signOut, useAuth } from '@/data/auth';
-import { Avatar, Card, FormMessage, ListGroup, ListRow, Logo, PageHeader, Screen, SectionHeader, space, Text } from '@/design-system';
+import { Avatar, Card, FormMessage, ListGroup, ListRow, Logo, PageHeader, Screen, SectionHeader, space, Text } from '@swathbook/mobile/design-system';
 import { config } from '@/lib/config';
-import { confirm, notify } from '@/lib/confirm';
+import { confirm, notify } from '@swathbook/mobile/confirm';
 import { pickProfilePhoto } from '@/lib/photo';
 
 export default function AccountScreen() {

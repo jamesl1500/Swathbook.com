@@ -54,6 +54,6 @@ export const config = {
     // Everything except static assets, image optimization, Stripe webhooks
     // (signed server-to-server calls) and the customer app API (bearer
     // tokens). Neither of the last two has a cookie session to refresh.
-    "/((?!_next/static|_next/image|api/stripe|api/app|favicon.ico|icon.svg|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico)$).*)",
+    "/((?!_next/static|_next/image|api/stripe|api/app|api/owner|favicon.ico|icon.svg|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico)$).*)",
   ],
 };

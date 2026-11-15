@@ -8,7 +8,7 @@
  * the clear.
  */
 
-import { checkBaseUrl } from './url';
+import { checkBaseUrl } from '@swathbook/mobile/url';
 
 const dev = typeof __DEV__ !== 'undefined' && __DEV__;
 

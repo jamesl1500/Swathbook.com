@@ -5,7 +5,7 @@ import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { markIntroSeen } from '@/data/intro';
-import { BrandPin, Button, colors, Logo, MapGrid, maxContentWidth, PageDots, radius, Rise, space, Text } from '@/design-system';
+import { BrandPin, Button, colors, Logo, MapGrid, maxContentWidth, PageDots, radius, Rise, space, Text } from '@swathbook/mobile/design-system';
 
 type Panel = { icon: LucideIcon; eyebrow: string; title: string; body: string };
 
