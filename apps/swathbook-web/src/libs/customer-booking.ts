@@ -28,9 +28,10 @@ export const loadCustomerBooking = cache(async (token: string) => {
              cancel_requested_at, cancel_request_reason,
              businesses(name, slug, phone, email, timezone, brand_color, logo_path, cancellation_window_hours, deposit_refund_policy),
              booking_items(name, quantity, line_total_cents, sort_order),
+             booking_answers(service_name, prompt, answer, sort_order),
              customer_addresses(line1, line2, city, region, postal_code),
              customers(full_name, email),
-             payments(kind, status, amount_cents, amount_refunded_cents, succeeded_at, card_brand, card_last4)`,
+             payments(kind, status, amount_cents, amount_refunded_cents, succeeded_at, card_brand, card_last4, stripe_payment_intent_id)`,
         )
         .eq("public_token", token)
         .maybeSingle();

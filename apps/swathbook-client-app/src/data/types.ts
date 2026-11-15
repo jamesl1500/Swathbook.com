@@ -20,6 +20,16 @@ export type Slot = { slot_start: string; slot_end: string };
 
 // --- get_booking_page --------------------------------------------------------
 
+/** A question the business asks when a service is booked ("Make and model?"). */
+export type ServiceQuestion = {
+  id: string;
+  prompt: string;
+  kind: Public['Enums']['question_kind'];
+  /** The choices for a 'choice' question; empty for a written answer. */
+  options: string[];
+  required: boolean;
+};
+
 export type PublicService = {
   id: string;
   name: string;
@@ -28,6 +38,8 @@ export type PublicService = {
   price_cents: number;
   duration_minutes: number;
   deposit_cents: number;
+  /** Absent from servers older than service questions. */
+  questions?: ServiceQuestion[];
 };
 
 export type PublicBusiness = {
@@ -124,6 +136,8 @@ export type CustomerBooking = {
     is_bookable: boolean;
   };
   items: { name: string; quantity: number; line_total_cents: number; duration_minutes: number | null }[];
+  /** What they answered to the services' questions, in order. */
+  answers?: { service_name: string; prompt: string; answer: string }[];
   address: BookingAddress | null;
   options: BookingOptions | null;
 };

@@ -9,10 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Field, FormMessage, Input } from "@/components/ui/field";
 import type { PublicService } from "@/libs/booking-page";
 import { customerBookingPath } from "@/libs/routes";
+import { answerErrors, answersToSend, questionsFor } from "@/libs/service-questions";
 import type { PaymentSession } from "@/libs/stripe/payments";
 import { addDays, formatDateShort, formatTime, toDateKey } from "@/libs/time";
 import { brandTextColor, cn, formatCents, formatDuration } from "@/libs/utils";
 import { getAvailability, submitBooking, type Slot } from "./actions";
+import { QuestionFields } from "./question-fields";
 
 type Step = "services" | "time" | "details" | "pay";
 
@@ -52,6 +54,8 @@ export function BookingFlow({
   const [customer, setCustomer] = useState({ fullName: "", email: "", phone: "" });
   const [address, setAddress] = useState<AddressValue>(emptyAddress);
   const [notes, setNotes] = useState("");
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [questionErrors, setQuestionErrors] = useState<Record<string, string>>({});
   const [honeypot, setHoneypot] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<string, string[]>>>({});
@@ -60,6 +64,8 @@ export function BookingFlow({
   const [submitting, startSubmit] = useTransition();
 
   const chosen = services.filter((service) => selected.includes(service.id));
+  // The chosen services' questions, in the order the services were picked.
+  const questions = questionsFor(services, selected);
   const totals = useMemo(
     () => ({
       minutes: chosen.reduce((sum, service) => sum + service.duration_minutes, 0),
@@ -106,6 +112,14 @@ export function BookingFlow({
   function book() {
     setSubmitError(null);
     setFieldErrors({});
+    const problems = answerErrors(questions, answers);
+    setQuestionErrors(problems);
+    const firstProblem = questions.find((question) => problems[question.id]);
+    if (firstProblem) {
+      // Text boxes take focus; for choices, the first option does.
+      document.querySelector<HTMLElement>(`#question-${firstProblem.id}, input[name="question-${firstProblem.id}"]`)?.focus();
+      return;
+    }
     startSubmit(async () => {
       const result = await submitBooking({
         slug,
@@ -114,6 +128,7 @@ export function BookingFlow({
         customer,
         address: { ...address },
         notes,
+        answers: answersToSend(questions, answers),
         company: honeypot,
       });
       if (!result.ok) {
@@ -344,6 +359,21 @@ export function BookingFlow({
                 <Input id="phone" type="tel" autoComplete="tel" value={customer.phone} onChange={(event) => setCustomer({ ...customer, phone: event.target.value })} />
               </Field>
             </div>
+
+            <QuestionFields
+              questions={questions}
+              answers={answers}
+              errors={questionErrors}
+              onChange={(questionId, answer) => {
+                setAnswers((current) => ({ ...current, [questionId]: answer }));
+                setQuestionErrors((current) => {
+                  const next = { ...current };
+                  delete next[questionId];
+                  return next;
+                });
+              }}
+              brandColor={brandColor}
+            />
 
             <AddressInput
               value={address}

@@ -10,6 +10,7 @@
  */
 
 import { cache } from "react";
+import type { ServiceQuestion } from "./service-questions";
 import { createAdminClient, hasAdminClient } from "./supabase/admin";
 import { createClient } from "./supabase/server";
 
@@ -21,6 +22,8 @@ export type PublicService = {
     price_cents: number;
     duration_minutes: number;
     deposit_cents: number;
+    /** What the customer answers when booking this service ("Make and model?"). */
+    questions: ServiceQuestion[];
 };
 
 export type BookingPageData = {

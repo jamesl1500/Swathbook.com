@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Form from "next/form";
 import Link from "next/link";
 import { Suspense } from "react";
-import { ChevronLeft, ChevronRight, ClipboardList, Plus, Search } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, ClipboardList, Plus, Search, SlidersHorizontal, X } from "lucide-react";
 import { BookingStatusBadge, EmptyState, PageHeader } from "@/components/app/ui";
 import { buttonStyles } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/field";
@@ -12,9 +12,11 @@ import { bookingPath, routes } from "@/libs/routes";
 import { createClient } from "@/libs/supabase/server";
 import type { Database } from "@/libs/supabase/database.types";
 import { loadTeam } from "@/libs/team";
-import { addDays, dayRangeUtc, formatDateShort, formatTime, isDateKey, toDateKey, todayKey } from "@/libs/time";
-import { cn, formatCents } from "@/libs/utils";
+import { addDays, dayRangeUtc, formatDateShort, formatTime, isDateKey, todayKey } from "@/libs/time";
+import { cn, formatCents, formatDuration } from "@/libs/utils";
 import { CancelRequestControls, RequestControls } from "./booking-actions";
+import { RowActions } from "./row-actions";
+import { dayLabel, groupByDay } from "./day-groups";
 
 export const metadata: Metadata = { title: "Bookings" };
 
@@ -117,19 +119,37 @@ async function Bookings({ searchParams }: { searchParams: PageProps<"/dashboard/
     return qs ? `${routes.bookings}?${qs}` : routes.bookings;
   };
 
-  const tabs: Array<{ key: View; count?: number }> = [
+  // One tab bar, in the order people work through it. Counts that need a decision stand out.
+  const tabs: Array<{ key: View; count?: number; urgent?: boolean }> = [
     { key: "upcoming", count: tabCounts.upcoming },
-    ...(canManage ? [{ key: "requests" as const, count: tabCounts.requests }, { key: "cancel" as const, count: tabCounts.cancel_requests }] : []),
+    ...(canManage
+      ? [
+          { key: "requests" as const, count: tabCounts.requests, urgent: true },
+          { key: "cancel" as const, count: tabCounts.cancel_requests, urgent: true },
+        ]
+      : []),
     { key: "deposit", count: tabCounts.awaiting_deposit },
     { key: "past" },
     { key: "all" },
   ];
 
+  // Filters beyond search live in a panel; it starts open when one is in use.
+  const moreFilters = Boolean(status || from || to || (canManage && member));
+  // Each active filter as a removable chip: what it says, and which parameter it clears.
+  const chips: Array<{ label: string; param: string }> = [];
+  if (status) chips.push({ label: `Status: ${ALL_STATUSES.find((option) => option.value === status)?.label}`, param: "status" });
+  if (canManage && member) chips.push({ label: `Assigned: ${member === "unassigned" ? "Unassigned" : (names.get(member) ?? "Team member")}`, param: "member" });
+  if (from) chips.push({ label: `From ${formatDateShort(from)}`, param: "from" });
+  if (to) chips.push({ label: `To ${formatDateShort(to)}`, param: "to" });
+
+  const today = todayKey(tz);
+  const groups = groupByDay(rows ?? [], tz);
+
   return (
     <>
       <PageHeader
         title="Bookings"
-        description={canManage ? "Every booking in one list. Filter, find a customer, and handle requests." : "Your jobs, upcoming and past."}
+        description={canManage ? `${todaySummary(tabCounts.today)} Filter, find a customer, and handle requests.` : "Your jobs, upcoming and past."}
         actions={
           canManage ? (
             <Link href={routes.newBooking} className={buttonStyles({ size: "sm" })}>
@@ -140,93 +160,58 @@ async function Bookings({ searchParams }: { searchParams: PageProps<"/dashboard/
         }
       />
 
-      {/* Wraps on phones rather than scrolling, so every view stays in sight. */}
-      <nav aria-label="Booking views" className="mb-4">
-        <ul className="flex flex-wrap gap-1.5">
-          {tabs.map(({ key, count }) => {
-            const active = key === view;
-            return (
-              <li key={key}>
-                <Link
-                  href={href({ view: key, page: 1, status: null })}
-                  aria-current={active ? "page" : undefined}
-                  className={cn(
-                    "inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm font-semibold transition-colors",
-                    active ? "border-brand-600 bg-brand-600 text-paper" : "border-line bg-card text-ink-soft hover:text-ink",
-                  )}
-                >
-                  {VIEWS[key].label}
-                  {count ? (
-                    <span
-                      className={cn(
-                        "rounded-full px-2 py-0.5 text-xs",
-                        active ? "bg-paper/20 text-paper" : key === "requests" || key === "cancel" ? "bg-sun text-ink" : "bg-paper-deep text-ink-soft",
-                      )}
-                      data-testid={`count-${key}`}
-                    >
-                      {count}
-                    </span>
-                  ) : null}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+      {/* Scrolls sideways on narrow phones rather than wrapping, like the dashboard's other tabs. */}
+      <nav aria-label="Booking views" className="mb-5 border-b border-line">
+        <div data-allow-overflow className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden">
+          <ul className="flex min-w-max gap-1">
+            {tabs.map(({ key, count, urgent }) => {
+              const active = key === view;
+              return (
+                <li key={key}>
+                  <Link
+                    href={href({ view: key, page: 1, status: null })}
+                    aria-current={active ? "page" : undefined}
+                    className={cn(
+                      "-mb-px inline-flex h-12 items-center gap-2 border-b-2 px-3 text-[0.95rem] font-semibold whitespace-nowrap transition-colors sm:px-4",
+                      active ? "border-brand-600 text-ink" : "border-transparent text-ink-soft hover:border-line-strong hover:text-ink",
+                    )}
+                  >
+                    {VIEWS[key].label}
+                    {count ? (
+                      <span
+                        className={cn(
+                          "rounded-full px-2 py-0.5 text-xs",
+                          urgent ? "bg-sun text-ink" : active ? "bg-brand-50 text-brand-700" : "bg-paper-deep text-ink-soft",
+                        )}
+                        data-testid={`count-${key}`}
+                      >
+                        {count}
+                      </span>
+                    ) : null}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       </nav>
 
       {/* Keyed on the filters so the fields reset when "Clear" or a tab navigates. */}
-      <Form key={`${view}|${search}|${status ?? ""}|${from}|${to}|${member ?? ""}`} action={routes.bookings} className="mb-5 grid gap-3 rounded-[1.25rem] border border-line bg-card p-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.6fr)_repeat(4,minmax(0,1fr))_auto]">
+      <Form
+        key={`${view}|${search}|${status ?? ""}|${from}|${to}|${member ?? ""}`}
+        action={routes.bookings}
+        className="mb-5 rounded-[1.25rem] border border-line bg-card p-3 sm:p-4"
+      >
         <input type="hidden" name="view" value={view} />
-        <div className="relative sm:col-span-2 lg:col-span-1">
-          <label htmlFor="bookings-search" className="sr-only">
-            Search bookings
-          </label>
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-ink-faint" aria-hidden="true" />
-          <Input id="bookings-search" name="q" defaultValue={search} placeholder="Name, phone, email or #ref" className="pl-10" />
-        </div>
-        <div>
-          <label htmlFor="bookings-status" className="sr-only">
-            Status
-          </label>
-          <Select id="bookings-status" name="status" defaultValue={status ?? ""}>
-            <option value="">Any status</option>
-            {ALL_STATUSES.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </Select>
-        </div>
-        {canManage ? (
-          <div>
-            <label htmlFor="bookings-member" className="sr-only">
-              Assigned to
+        <div className="flex flex-wrap gap-2">
+          <div className="relative min-w-0 flex-1 basis-60">
+            <label htmlFor="bookings-search" className="sr-only">
+              Search bookings
             </label>
-            <Select id="bookings-member" name="member" defaultValue={member}>
-              <option value="">Anyone</option>
-              {team.map((person) => (
-                <option key={person.id} value={person.id}>
-                  {person.name}
-                </option>
-              ))}
-              <option value="unassigned">Unassigned</option>
-            </Select>
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-ink-faint" aria-hidden="true" />
+            <Input id="bookings-search" name="q" defaultValue={search} placeholder="Name, phone, email or #ref" className="pl-10" />
           </div>
-        ) : null}
-        <div>
-          <label htmlFor="bookings-from" className="sr-only">
-            From
-          </label>
-          <Input id="bookings-from" name="from" type="date" defaultValue={from} aria-label="From date" />
-        </div>
-        <div>
-          <label htmlFor="bookings-to" className="sr-only">
-            To
-          </label>
-          <Input id="bookings-to" name="to" type="date" defaultValue={to} aria-label="To date" />
-        </div>
-        <div className="flex gap-2">
-          <button type="submit" className={buttonStyles({ variant: "secondary", className: "min-h-11 flex-1 lg:flex-none" })}>
+          <button type="submit" className={buttonStyles({ variant: "secondary", className: "min-h-11" })}>
             Filter
           </button>
           {filtersActive ? (
@@ -235,6 +220,75 @@ async function Bookings({ searchParams }: { searchParams: PageProps<"/dashboard/
             </Link>
           ) : null}
         </div>
+
+        <details open={moreFilters} className="group mt-2">
+          <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-1.5 rounded-full px-2 text-sm font-semibold text-ink-soft hover:text-ink [&::-webkit-details-marker]:hidden">
+            <SlidersHorizontal className="size-4" aria-hidden="true" />
+            More filters
+            {chips.length ? <span className="rounded-full bg-brand-50 px-2 py-0.5 text-xs text-brand-700">{chips.length}</span> : null}
+            <ChevronDown className="size-4 transition-transform group-open:rotate-180" aria-hidden="true" />
+          </summary>
+          <div className="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <label htmlFor="bookings-status" className="mb-1 block text-xs font-semibold text-ink-soft">
+                Status
+              </label>
+              <Select id="bookings-status" name="status" defaultValue={status ?? ""}>
+                <option value="">Any status</option>
+                {ALL_STATUSES.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            {canManage ? (
+              <div>
+                <label htmlFor="bookings-member" className="mb-1 block text-xs font-semibold text-ink-soft">
+                  Assigned to
+                </label>
+                <Select id="bookings-member" name="member" defaultValue={member}>
+                  <option value="">Anyone</option>
+                  {team.map((person) => (
+                    <option key={person.id} value={person.id}>
+                      {person.name}
+                    </option>
+                  ))}
+                  <option value="unassigned">Unassigned</option>
+                </Select>
+              </div>
+            ) : null}
+            <div>
+              <label htmlFor="bookings-from" className="mb-1 block text-xs font-semibold text-ink-soft">
+                From
+              </label>
+              <Input id="bookings-from" name="from" type="date" defaultValue={from} />
+            </div>
+            <div>
+              <label htmlFor="bookings-to" className="mb-1 block text-xs font-semibold text-ink-soft">
+                To
+              </label>
+              <Input id="bookings-to" name="to" type="date" defaultValue={to} />
+            </div>
+          </div>
+        </details>
+
+        {chips.length ? (
+          <ul aria-label="Active filters" className="mt-3 flex flex-wrap gap-2">
+            {chips.map((chip) => (
+              <li key={chip.label}>
+                <Link
+                  href={href({ [chip.param]: null, page: 1 })}
+                  className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-paper-deep px-3 text-sm font-semibold text-ink-soft hover:text-ink"
+                  aria-label={`Remove filter ${chip.label}`}
+                >
+                  {chip.label}
+                  <X className="size-3.5" aria-hidden="true" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </Form>
 
       {rows?.length ? (
@@ -243,70 +297,93 @@ async function Bookings({ searchParams }: { searchParams: PageProps<"/dashboard/
             {total === 1 ? "1 booking" : `${total} bookings`}
             {total > PAGE_SIZE ? ` · showing ${(page - 1) * PAGE_SIZE + 1}–${Math.min(page * PAGE_SIZE, total)}` : ""}
           </p>
-          <ul className="space-y-3">
-            {rows.map((row) => {
-              const dateKey = toDateKey(new Date(row.scheduled_start), tz);
-              const isToday = dateKey === todayKey(tz);
-              return (
-                <li key={row.id} className="rounded-[1.25rem] border border-line bg-card p-4 sm:p-5" data-testid="booking-row">
-                  <div className="flex flex-wrap items-start gap-x-5 gap-y-3">
-                    <div className="w-28 shrink-0">
-                      <p className={cn("font-display text-lg font-bold leading-tight", isToday && "text-brand-600")}>
-                        {isToday ? "Today" : formatDateShort(dateKey)}
-                      </p>
-                      <p className="text-sm font-semibold text-ink-soft">{formatTime(row.scheduled_start, tz)}</p>
-                    </div>
-                    <div className="min-w-0 flex-1 basis-56">
-                      <Link href={bookingPath(row.id)} className="font-bold hover:underline">
-                        {row.customer_name}
-                      </Link>
-                      <p className="truncate text-sm text-ink-soft">{row.services || "Service visit"}</p>
-                      <p className="mt-1 text-xs text-ink-faint">
-                        #{row.reference}
-                        {canManage ? ` · ${row.assigned_member_id ? names.get(row.assigned_member_id) ?? "Team member" : "Unassigned"}` : ""}
-                        {row.source === "booking_page" ? " · Booked online" : ""}
-                      </p>
-                    </div>
-                    <div className="flex flex-col items-start gap-1.5 sm:items-end">
-                      <div className="flex flex-wrap gap-1.5">
-                        <BookingStatusBadge status={row.status} />
-                        {row.cancel_requested_at ? (
-                          <span className="rounded-full bg-clay-soft px-2.5 py-1 text-xs font-semibold text-clay-ink">Cancel requested</span>
-                        ) : null}
+          <div className="space-y-6">
+            {groups.map((group) => (
+              <section key={group.dateKey} aria-labelledby={`day-${group.dateKey}`}>
+                <h2 id={`day-${group.dateKey}`} className="mb-2 flex flex-wrap items-baseline gap-x-2">
+                  <span className={cn("font-display text-lg font-bold", group.dateKey === today && "text-brand-600")}>{dayLabel(group.dateKey, today)}</span>
+                  {dayLabel(group.dateKey, today) === formatDateShort(group.dateKey) ? null : (
+                    <span className="text-sm text-ink-soft">{formatDateShort(group.dateKey)}</span>
+                  )}
+                  <span className="text-sm text-ink-faint">· {group.rows.length === 1 ? "1 job" : `${group.rows.length} jobs`}</span>
+                </h2>
+                <ul className="space-y-3">
+                  {group.rows.map((row) => (
+                    <li key={row.id} className="rounded-[1.25rem] border border-line bg-card" data-testid="booking-row">
+                      <div className="flex flex-wrap items-center gap-x-5 gap-y-3 p-4 sm:p-5">
+                        <div className="w-20 shrink-0">
+                          <p className="font-display text-lg font-bold leading-tight">{formatTime(row.scheduled_start, tz)}</p>
+                          <p className="text-xs text-ink-faint">{formatDuration(minutesBetween(row.scheduled_start, row.scheduled_end))}</p>
+                        </div>
+                        <div className="min-w-0 flex-1 basis-48">
+                          <Link href={bookingPath(row.id)} className="font-bold hover:underline">
+                            {row.customer_name}
+                          </Link>
+                          <p className="truncate text-sm text-ink-soft">{row.services || "Service visit"}</p>
+                          <p className="mt-1 text-xs text-ink-faint">
+                            #{row.reference}
+                            {canManage ? ` · ${row.assigned_member_id ? names.get(row.assigned_member_id) ?? "Team member" : "Unassigned"}` : ""}
+                            {row.source === "booking_page" ? " · Booked online" : ""}
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-start gap-1 sm:items-end">
+                          <div className="flex flex-wrap gap-1.5">
+                            <BookingStatusBadge status={row.status} />
+                            {row.cancel_requested_at ? (
+                              <span className="rounded-full bg-clay-soft px-2.5 py-1 text-xs font-semibold text-clay-ink">Cancel requested</span>
+                            ) : null}
+                          </div>
+                          {canManage && (row.total_cents ?? 0) > 0 ? (
+                            <p className="text-sm text-ink-soft">
+                              {formatCents(row.total_cents ?? 0, row.currency)}
+                              {row.deposit_paid_cents > 0 ? ` · ${formatCents(row.deposit_paid_cents, row.currency)} paid` : ""}
+                            </p>
+                          ) : null}
+                        </div>
+                        <RowActions
+                          businessId={business.id}
+                          canManage={canManage}
+                          canWork={canManage || row.assigned_member_id === memberId}
+                          booking={{
+                            id: row.id,
+                            status: row.status,
+                            customerName: row.customer_name,
+                            customerPhone: row.customer_phone,
+                            customerEmail: row.customer_email,
+                            href: bookingPath(row.id),
+                            started: group.dateKey <= today,
+                            cancelRequested: Boolean(row.cancel_requested_at),
+                          }}
+                        />
                       </div>
-                      {canManage && (row.total_cents ?? 0) > 0 ? (
-                        <p className="text-sm text-ink-soft">
-                          {formatCents(row.total_cents ?? 0, row.currency)}
-                          {row.deposit_paid_cents > 0 ? ` · ${formatCents(row.deposit_paid_cents, row.currency)} paid` : ""}
+
+                      {row.cancel_requested_at && canManage ? (
+                        <DecisionStrip title={`${row.customer_name} asked to cancel`} detail={row.cancel_request_reason ? `“${row.cancel_request_reason}”` : null}>
+                          <CancelRequestControls
+                            businessId={business.id}
+                            bookingId={row.id}
+                            name={row.customer_name}
+                            paidCents={row.deposit_paid_cents}
+                            currency={row.currency}
+                            refundByDefault={refundByDefault(business.deposit_refund_policy, row.cancel_requested_at, row.scheduled_start, business.cancellation_window_hours)}
+                            compact
+                          />
+                        </DecisionStrip>
+                      ) : row.status === "requested" && canManage ? (
+                        <DecisionStrip title="Waiting for your OK" detail={`${row.customer_name} asked for this time.`}>
+                          <RequestControls businessId={business.id} bookingId={row.id} name={row.customer_name} />
+                        </DecisionStrip>
+                      ) : row.status === "pending_payment" && row.hold_expires_at ? (
+                        <p className="border-t border-line px-4 py-3 text-sm text-ink-soft sm:px-5">
+                          Waiting for the deposit until {formatTime(row.hold_expires_at, tz)}.
                         </p>
                       ) : null}
-                    </div>
-                  </div>
-
-                  {row.cancel_requested_at && canManage ? (
-                    <div className="mt-4 border-t border-line pt-4">
-                      {row.cancel_request_reason ? <p className="mb-3 text-sm">&ldquo;{row.cancel_request_reason}&rdquo;</p> : null}
-                      <CancelRequestControls
-                        businessId={business.id}
-                        bookingId={row.id}
-                        name={row.customer_name}
-                        paidCents={row.deposit_paid_cents}
-                        currency={row.currency}
-                        refundByDefault={refundByDefault(business.deposit_refund_policy, row.cancel_requested_at, row.scheduled_start, business.cancellation_window_hours)}
-                        compact
-                      />
-                    </div>
-                  ) : row.status === "requested" && canManage ? (
-                    <div className="mt-4 border-t border-line pt-4">
-                      <RequestControls businessId={business.id} bookingId={row.id} name={row.customer_name} />
-                    </div>
-                  ) : row.status === "pending_payment" && row.hold_expires_at ? (
-                    <p className="mt-3 text-sm text-ink-soft">Waiting for the deposit until {formatTime(row.hold_expires_at, tz)}.</p>
-                  ) : null}
-                </li>
-              );
-            })}
-          </ul>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ))}
+          </div>
 
           {total > PAGE_SIZE ? (
             <nav aria-label="Pages" className="mt-5 flex items-center justify-between gap-3">
@@ -338,5 +415,27 @@ async function Bookings({ searchParams }: { searchParams: PageProps<"/dashboard/
         </EmptyState>
       )}
     </>
+  );
+}
+
+function todaySummary(count: number | undefined) {
+  if (!count) return "Nothing on today.";
+  return count === 1 ? "1 job today." : `${count} jobs today.`;
+}
+
+function minutesBetween(start: string, end: string) {
+  return Math.round((Date.parse(end) - Date.parse(start)) / 60_000);
+}
+
+/** A decision waiting on the owner (a request, or a cancellation request), under its job. */
+function DecisionStrip({ title, detail, children }: { title: string; detail: string | null; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-b-[1.25rem] border-t border-sun/60 bg-sun-soft/60 px-4 py-3 sm:px-5">
+      <div className="min-w-0">
+        <p className="text-sm font-bold">{title}</p>
+        {detail ? <p className="text-sm text-ink-soft">{detail}</p> : null}
+      </div>
+      {children}
+    </div>
   );
 }

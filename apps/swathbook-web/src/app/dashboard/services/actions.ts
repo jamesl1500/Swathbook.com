@@ -4,6 +4,7 @@ import { refresh } from "next/cache";
 import { z } from "zod";
 import { authorizeBusiness, isFailure } from "@/libs/dashboard";
 import { checkbox, dollarsToCents, invalid, text, type FormState } from "@/libs/forms";
+import { parseQuestionsField } from "@/libs/service-questions";
 import { createClient } from "@/libs/supabase/server";
 
 const serviceSchema = z
@@ -50,6 +51,10 @@ export async function saveService(_prev: FormState, formData: FormData): Promise
     if (!parsed.success) return invalid(parsed.error);
     const values = parsed.data;
 
+    // Questions customers answer when booking. Only forms that include the editor send them.
+    const questions = formData.has("questions") ? parseQuestionsField(String(formData.get("questions"))) : null;
+    if (questions && !questions.ok) return { error: questions.error, fieldErrors: { questions: [questions.error] } };
+
     const row = {
         name: values.name,
         description: values.description ?? null,
@@ -64,18 +69,36 @@ export async function saveService(_prev: FormState, formData: FormData): Promise
     };
 
     const supabase = await createClient();
-    const serviceId = text(formData, "serviceId");
-    if (serviceId) {
-        const { error } = await supabase.from("services").update(row).eq("id", serviceId).eq("business_id", auth.businessId);
+    const editingId = text(formData, "serviceId");
+    let serviceId = editingId;
+    if (editingId) {
+        const { error } = await supabase.from("services").update(row).eq("id", editingId).eq("business_id", auth.businessId);
         if (error) return { error: "We couldn't save that service. Please try again." };
     } else {
         const { count } = await supabase.from("services").select("id", { count: "exact", head: true }).eq("business_id", auth.businessId);
-        const { error } = await supabase.from("services").insert({ ...row, business_id: auth.businessId, sort_order: count ?? 0 });
-        if (error) return { error: "We couldn't add that service. Please try again." };
+        const { data, error } = await supabase
+            .from("services")
+            .insert({ ...row, business_id: auth.businessId, sort_order: count ?? 0 })
+            .select("id")
+            .single();
+        if (error || !data) return { error: "We couldn't add that service. Please try again." };
+        serviceId = data.id;
+    }
+
+    if (questions?.ok) {
+        const { error } = await supabase.rpc("save_service_questions", {
+            p_service_id: serviceId,
+            p_questions: questions.questions.map(({ id, prompt, kind, options, required }) => ({ ...(id ? { id } : {}), prompt, kind, options, required })),
+        });
+        if (error) {
+            console.error("[services] saving questions failed", error.code ?? error.message);
+            refresh();
+            return { error: editingId ? "The service saved, but its questions didn't. Please try again." : "The service was added, but its questions weren't. Edit it to add them again." };
+        }
     }
 
     refresh();
-    return { success: serviceId ? "Service saved." : "Service added." };
+    return { success: editingId ? "Service saved." : "Service added." };
 }
 
 export async function deleteService(formData: FormData): Promise<FormState> {

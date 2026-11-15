@@ -25,7 +25,7 @@ async function Services() {
   const supabase = await createClient();
   const { data: services } = await supabase
     .from("services")
-    .select("*")
+    .select("*, service_questions(id, prompt, kind, options, is_required, sort_order)")
     .eq("business_id", business.id)
     .order("sort_order")
     .order("name");

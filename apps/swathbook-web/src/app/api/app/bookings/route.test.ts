@@ -107,6 +107,28 @@ describe("POST /api/app/bookings", () => {
         expect(placeBooking).not.toHaveBeenCalled();
     });
 
+    it("passes answers to the services' questions through", async () => {
+        const answers = [{ questionId: "6f1c1b0e-6d2a-4a52-9b8e-6f1c1b0e6d2a", answer: "Honda Civic" }];
+        await post({ ...body, answers });
+        expect(placeBooking).toHaveBeenCalledWith(expect.objectContaining({ answers }));
+    });
+
+    it("tells an app too old to show questions to update", async () => {
+        state.placed = { ok: false, code: "answers_required", error: "Answer the questions about your booking." };
+        const response = await post(body);
+        expect(response.status).toBe(409);
+        expect(await response.json()).toEqual({
+            code: "update_required",
+            error: "This service asks a few questions when you book. Update the Swathbook app to book it.",
+        });
+    });
+
+    it("passes the plain message to an app that does answer questions", async () => {
+        state.placed = { ok: false, code: "answers_required", error: "Answer the questions about your booking." };
+        const response = await post({ ...body, answers: [] });
+        expect(await response.json()).toMatchObject({ code: "answers_required" });
+    });
+
     it("explains a taken slot", async () => {
         state.placed = { ok: false, code: "slot_unavailable", error: "Someone just booked that time. Please pick another." };
         const response = await post(body);

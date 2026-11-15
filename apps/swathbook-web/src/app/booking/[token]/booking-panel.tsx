@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { CalendarPlus, CircleCheck, Clock, MapPin, Phone, TriangleAlert } from "lucide-react";
+import { BookingAnswers, sortAnswers } from "@/components/booking/booking-answers";
 import type { BookingOptions, CustomerBooking } from "@/libs/customer-booking";
+import { paymentReturnState, type PaymentReturn, type PaymentReturnState } from "@/libs/payment-return";
 import { businessPagePath } from "@/libs/routes";
 import { formatDateLong, formatTime, toDateKey, todayKey } from "@/libs/time";
 import { brandTextColor, formatCents } from "@/libs/utils";
 import { ManageBooking } from "./manage-booking";
 import { PayButton } from "./pay-button";
+import { PaymentWatcher } from "./payment-watcher";
 
 /**
  * Everything a customer sees and does with one booking: status, payment,
@@ -14,11 +17,20 @@ import { PayButton } from "./pay-button";
  * job page (/my/jobs/<id>), so both always follow the same rules.
  */
 
-export function statusBanner(booking: CustomerBooking, justPaid: boolean) {
+export function statusBanner(booking: CustomerBooking, payment: PaymentReturnState = { state: "none" }) {
   const holdActive = booking.hold_expires_at ? new Date(booking.hold_expires_at) > new Date() : false;
+  // Just back from paying: say where that payment stands first.
+  if (payment.state === "confirming") {
+    return { tone: "info", title: "Payment received", body: "We're confirming it with the bank. This page updates on its own." } as const;
+  }
+  if (payment.state === "failed") {
+    return { tone: "error", title: "Your payment didn't go through", body: "You haven't been charged. Try again below, or use a different card." } as const;
+  }
+  if (payment.state === "succeeded" && payment.kind === "balance") {
+    return { tone: "success", title: "Payment received", body: "Thanks! Your receipt is on its way by email." } as const;
+  }
   switch (booking.status) {
     case "pending_payment":
-      if (justPaid) return { tone: "info", title: "Payment received", body: "We're confirming it with the bank. This page updates in a moment." } as const;
       return holdActive
         ? ({
             tone: "info",
@@ -47,13 +59,14 @@ export function statusBanner(booking: CustomerBooking, justPaid: boolean) {
 export function BookingPanel({
   booking,
   options,
-  justPaid,
+  paymentReturn,
   paymentsEnabled,
   paymentReturnPath,
 }: {
   booking: CustomerBooking;
   options: BookingOptions | null;
-  justPaid: boolean;
+  /** Set when the customer has just come back from paying (see readPaymentReturn). */
+  paymentReturn: PaymentReturn | null;
   paymentsEnabled: boolean;
   /** Where Stripe sends the customer back after paying (`?paid=1` is added). */
   paymentReturnPath?: string;
@@ -61,13 +74,15 @@ export function BookingPanel({
   const business = booking.businesses!;
   const brand = business.brand_color ?? "#1c3d70";
   const timeZone = business.timezone;
-  const banner = statusBanner(booking, justPaid);
+  const payment = paymentReturnState(paymentReturn, booking);
+  const confirming = payment.state === "confirming";
+  const banner = statusBanner(booking, payment);
   const holdActive = booking.hold_expires_at ? new Date(booking.hold_expires_at) > new Date() : false;
   const depositOwed = Math.max(0, booking.deposit_due_cents - booking.deposit_paid_cents);
   const balanceOwed = Math.max(0, booking.balance_due_cents ?? 0);
-  const canPayDeposit = paymentsEnabled && !justPaid && booking.status === "pending_payment" && holdActive && depositOwed > 0;
+  const canPayDeposit = paymentsEnabled && !confirming && booking.status === "pending_payment" && holdActive && depositOwed > 0;
   const canPayBalance =
-    paymentsEnabled && !justPaid && ["confirmed", "in_progress", "completed"].includes(booking.status) && balanceOwed >= 50;
+    paymentsEnabled && !confirming && ["confirmed", "in_progress", "completed"].includes(booking.status) && balanceOwed >= 50;
   const address = booking.customer_addresses;
   const succeeded = booking.payments.filter((payment) => ["succeeded", "partially_refunded", "refunded"].includes(payment.status));
 
@@ -93,6 +108,7 @@ export function BookingPanel({
         <div>
           <h2 className="font-bold">{banner.title}</h2>
           <p className="mt-0.5 text-sm">{banner.body}</p>
+          <PaymentWatcher active={confirming} />
         </div>
       </section>
 
@@ -153,6 +169,12 @@ export function BookingPanel({
             </div>
           ) : null}
         </dl>
+        {booking.booking_answers.length ? (
+          <div className="mt-5 border-t border-line pt-4">
+            <h3 className="mb-3 text-sm font-bold">Your answers</h3>
+            <BookingAnswers answers={sortAnswers(booking.booking_answers)} />
+          </div>
+        ) : null}
       </section>
 
       <section className="flex flex-wrap gap-3">

@@ -30,7 +30,8 @@ export function emailBaseUrl() {
 const BOOKING_FIELDS = `id, reference, public_token, status, scheduled_start, scheduled_end, currency, total_cents,
     deposit_due_cents, deposit_paid_cents, hold_expires_at, cancellation_reason, cancel_request_reason,
     businesses(name, slug, brand_color, timezone, phone, email, cancellation_window_hours),
-    customers(full_name), customer_addresses(line1, line2, city, region, postal_code), booking_items(name, sort_order)`;
+    customers(full_name), customer_addresses(line1, line2, city, region, postal_code), booking_items(name, sort_order),
+    booking_answers(prompt, answer, sort_order)`;
 
 async function loadContext(admin: Admin, row: NotificationRow) {
     if (!row.booking_id) return null;
@@ -62,6 +63,7 @@ async function loadContext(admin: Admin, row: NotificationRow) {
             cancellationReason: data.cancellation_reason,
         },
         services: [...data.booking_items].sort((a, b) => a.sort_order - b.sort_order).map((item) => item.name),
+        answers: [...(data.booking_answers ?? [])].sort((a, b) => a.sort_order - b.sort_order).map(({ prompt, answer }) => ({ question: prompt, answer })),
         address: data.customer_addresses ? formatAddress(data.customer_addresses) : null,
         cancelRequestReason: data.cancel_request_reason,
         payload: (row.payload ?? {}) as Record<string, unknown>,

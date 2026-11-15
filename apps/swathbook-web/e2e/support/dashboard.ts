@@ -31,6 +31,7 @@ export function dashboardPaths({ bookingId, customerId }: { bookingId: string; c
         "/dashboard",
         `/dashboard/schedule?week=${date}`,
         `/dashboard/schedule/${bookingId}`,
+        ...(tabs ? [`/dashboard/schedule/${bookingId}?tab=payments`, `/dashboard/schedule/${bookingId}?tab=activity`] : []),
         "/dashboard/schedule/new",
         "/dashboard/schedule/availability",
         ...(tabs ? ["/dashboard/schedule/availability?tab=rules"] : []),

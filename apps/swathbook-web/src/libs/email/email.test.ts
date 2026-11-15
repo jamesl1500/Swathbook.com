@@ -73,6 +73,16 @@ describe("templates", () => {
         expect(bookingTemplates["owner.new_booking"](context).text).toContain("https://swathbook.test/dashboard/schedule/b1");
     });
 
+    it("includes the customer's answers to the service's questions, escaped", () => {
+        const withAnswers = { ...context, answers: [{ question: "Make and model?", answer: "Honda <Civic>" }] };
+        const email = bookingTemplates["owner.new_booking"](withAnswers);
+        expect(email.text).toContain("Make and model?");
+        expect(email.text).toContain("Honda <Civic>");
+        expect(email.html).toContain("Honda &lt;Civic&gt;");
+        expect(email.html).not.toContain("<Civic>");
+        expect(bookingTemplates["booking.confirmed"](withAnswers).text).toContain("Honda <Civic>");
+    });
+
     it("invites teammates with their role spelled out", () => {
         const email = teamInviteEmail({ businessName: "Shine On", inviterName: "Olive", role: "crew", url: "https://swathbook.test/invite/abc" });
         expect(email.subject).toBe("Olive invited you to Shine On on Swathbook");

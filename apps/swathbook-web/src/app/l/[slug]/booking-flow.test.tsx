@@ -18,9 +18,9 @@ vi.mock("@/components/booking/payment-form", () => ({
 
 import { BookingFlow } from "./booking-flow";
 
-const MOW: PublicService = { id: "11111111-1111-4111-8111-111111111111", name: "Lawn mowing", description: "Front and back", price_type: "fixed", price_cents: 4_500, duration_minutes: 45, deposit_cents: 1_000 };
-const QUOTE: PublicService = { id: "22222222-2222-4222-8222-222222222222", name: "Tree removal", description: null, price_type: "quote", price_cents: 0, duration_minutes: 120, deposit_cents: 0 };
-const EDGE: PublicService = { id: "33333333-3333-4333-8333-333333333333", name: "Edging", description: null, price_type: "starting_at", price_cents: 2_000, duration_minutes: 30, deposit_cents: 500 };
+const MOW: PublicService = { id: "11111111-1111-4111-8111-111111111111", name: "Lawn mowing", description: "Front and back", price_type: "fixed", price_cents: 4_500, duration_minutes: 45, deposit_cents: 1_000, questions: [] };
+const QUOTE: PublicService = { id: "22222222-2222-4222-8222-222222222222", name: "Tree removal", description: null, price_type: "quote", price_cents: 0, duration_minutes: 120, deposit_cents: 0, questions: [] };
+const EDGE: PublicService = { id: "33333333-3333-4333-8333-333333333333", name: "Edging", description: null, price_type: "starting_at", price_cents: 2_000, duration_minutes: 30, deposit_cents: 500, questions: [] };
 
 // 9:00 and 10:30 on Tue Nov 10 2026 in Chicago (UTC-6).
 const SLOTS = [
@@ -150,7 +150,59 @@ describe("BookingFlow", () => {
             customer: { fullName: "Ada Lovelace", email: "ada@example.com", phone: "" },
             address: expect.objectContaining({ line1: "1 Main St" }),
             notes: "",
+            answers: [],
             company: "",
+        });
+    });
+
+    describe("questions about the job", () => {
+        const DETAIL: PublicService = {
+            id: "44444444-4444-4444-8444-444444444444",
+            name: "Full detail",
+            description: null,
+            price_type: "fixed",
+            price_cents: 18_000,
+            duration_minutes: 60,
+            deposit_cents: 0,
+            questions: [
+                { id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", prompt: "Make and model?", kind: "text", options: [], required: true },
+                { id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", prompt: "What kind of car?", kind: "choice", options: ["Sedan", "SUV", "Truck"], required: true },
+                { id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc", prompt: "Anything to avoid?", kind: "text", options: [], required: false },
+            ],
+        };
+
+        it("asks the chosen service's questions and won't book until required ones are answered", async () => {
+            const { user, next } = setup({ services: [DETAIL, MOW], acceptsPayments: false });
+            await toDetails(user, next, ["Full detail"]);
+            await fillDetails(user);
+
+            const questions = screen.getByTestId("booking-questions");
+            expect(within(questions).getByLabelText("Make and model?")).toBeInTheDocument();
+            expect(within(questions).getByRole("group", { name: "What kind of car?" })).toBeInTheDocument();
+            expect(within(questions).getByLabelText(/Anything to avoid\?/)).not.toBeRequired();
+
+            await user.click(screen.getByRole("button", { name: "Book it" }));
+            expect(state.submitBooking).not.toHaveBeenCalled();
+            expect(within(questions).getByText("Please answer this.")).toBeInTheDocument();
+            expect(within(questions).getByText("Pick one.")).toBeInTheDocument();
+            expect(within(questions).getByLabelText("Make and model?")).toHaveFocus();
+
+            await user.type(within(questions).getByLabelText("Make and model?"), "Honda Civic");
+            await user.click(within(questions).getByRole("radio", { name: "SUV" }));
+            expect(within(questions).queryByText("Pick one.")).not.toBeInTheDocument();
+            await user.click(screen.getByRole("button", { name: "Book it" }));
+
+            await waitFor(() => expect(state.submitBooking).toHaveBeenCalledTimes(1));
+            expect(state.submitBooking.mock.calls[0][0].answers).toEqual([
+                { questionId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", answer: "Honda Civic" },
+                { questionId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", answer: "SUV" },
+            ]);
+        });
+
+        it("doesn't ask anything for services without questions", async () => {
+            const { user, next } = setup({ services: [DETAIL, MOW], acceptsPayments: false });
+            await toDetails(user, next, ["Lawn mowing"]);
+            expect(screen.queryByTestId("booking-questions")).not.toBeInTheDocument();
         });
     });
 

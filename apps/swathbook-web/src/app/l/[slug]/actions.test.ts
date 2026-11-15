@@ -65,6 +65,7 @@ describe("submitBooking", () => {
             p_address: { line1: "10 Oak Ln", line2: "", city: "Austin", region: "TX", postal_code: "78701", country: "US", lat: null, lng: null },
             p_customer_notes: undefined,
             p_source: "booking_page",
+            p_answers: [],
         });
         expect(createBookingPayment).not.toHaveBeenCalled();
     });

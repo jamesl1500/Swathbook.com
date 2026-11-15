@@ -2,6 +2,7 @@
 
 import { useActionState, useTransition } from "react";
 import { Ban, CircleCheck, Play, RotateCcw, ThumbsUp, UserX } from "lucide-react";
+import { ActionMenu, type MenuAction } from "@/components/app/action-menu";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select, inputStyles } from "@/components/ui/field";
@@ -28,30 +29,68 @@ function useRunner(businessId: string) {
   return { pending, run };
 }
 
-export function StatusActions({
+type StatusChange = {
+  /** Ask before doing it. */
+  confirm?: string;
+  /** Ask for a reason (cancelling); null from the prompt means "never mind". */
+  askReason?: string;
+  reason?: string;
+};
+
+/** Moves one job to another status, with the same checks as everywhere else (update_job_status). */
+export function useJobStatus(businessId: string, bookingId: string) {
+  const { pending, run } = useRunner(businessId);
+  function set(status: BookingStatus, { confirm, askReason, reason }: StatusChange = {}) {
+    let why = reason;
+    if (askReason) {
+      const answer = window.prompt(askReason);
+      if (answer === null) return;
+      why = answer;
+    }
+    run(updateJobStatus, { bookingId, status, ...(why ? { reason: why } : {}) }, confirm);
+  }
+  return { pending, set };
+}
+
+const ACTIVE: BookingStatus[] = ["pending_payment", "requested", "confirmed", "in_progress"];
+
+/**
+ * The job page's actions: the next step as buttons ("Accept request",
+ * "Start job", "Mark complete"), and the rest (no-show, decline, cancel)
+ * in a "More" menu, so a destructive action is never one stray tap away.
+ */
+export function JobActionBar({
   businessId,
   bookingId,
   status,
   canManage,
   isAssignedToMe,
+  customerName,
 }: {
   businessId: string;
   bookingId: string;
   status: BookingStatus;
   canManage: boolean;
   isAssignedToMe: boolean;
+  customerName: string;
 }) {
-  const { pending, run } = useRunner(businessId);
-  const set = (next: BookingStatus, confirmText?: string, reason?: string) =>
-    run(updateJobStatus, { bookingId, status: next, ...(reason ? { reason } : {}) }, confirmText);
+  const { pending, set } = useJobStatus(businessId, bookingId);
   const canWork = canManage || isAssignedToMe;
 
   const buttons: React.ReactNode[] = [];
-  if (canManage && (status === "requested" || status === "pending_payment")) {
+  if (canManage && status === "requested") {
     buttons.push(
-      <Button key="confirm" onClick={() => set("confirmed")} disabled={pending}>
+      <Button key="accept" onClick={() => set("confirmed")} disabled={pending}>
         <ThumbsUp className="size-4" aria-hidden="true" />
-        {status === "pending_payment" ? "Confirm without deposit" : "Accept request"}
+        Accept request
+      </Button>,
+    );
+  }
+  if (canManage && status === "pending_payment") {
+    buttons.push(
+      <Button key="confirm" variant="secondary" onClick={() => set("confirmed", { confirm: `Confirm ${customerName}'s booking without the deposit?` })} disabled={pending}>
+        <ThumbsUp className="size-4" aria-hidden="true" />
+        Confirm without deposit
       </Button>,
     );
   }
@@ -71,33 +110,36 @@ export function StatusActions({
       </Button>,
     );
   }
+
+  const menu: MenuAction[] = [];
   if (canWork && status === "confirmed") {
-    buttons.push(
-      <Button key="noshow" variant="ghost" onClick={() => set("no_show", "Mark this customer as a no-show?")} disabled={pending}>
-        <UserX className="size-4" aria-hidden="true" />
-        No-show
-      </Button>,
-    );
+    menu.push({ key: "noshow", label: "Mark as no-show", icon: UserX, onSelect: () => set("no_show", { confirm: `Mark ${customerName} as a no-show?` }) });
   }
-  if (canManage && ["pending_payment", "requested", "confirmed", "in_progress"].includes(status)) {
-    buttons.push(
-      <Button
-        key="cancel"
-        variant="ghost"
-        disabled={pending}
-        onClick={() => {
-          const reason = window.prompt("Cancel this job? Add a reason for your records (optional):");
-          if (reason !== null) set("cancelled", undefined, reason);
-        }}
-      >
-        <Ban className="size-4" aria-hidden="true" />
-        Cancel job
-      </Button>,
-    );
+  if (canManage && status === "requested") {
+    menu.push({
+      key: "decline",
+      label: "Decline request",
+      icon: Ban,
+      danger: true,
+      onSelect: () => set("cancelled", { confirm: `Decline ${customerName}'s request? They'll get an email.`, reason: "The business couldn't take this booking" }),
+    });
+  } else if (canManage && ACTIVE.includes(status)) {
+    menu.push({
+      key: "cancel",
+      label: "Cancel job",
+      icon: Ban,
+      danger: true,
+      onSelect: () => set("cancelled", { askReason: `Cancel ${customerName}'s job? Add a reason for your records (optional):` }),
+    });
   }
 
-  if (!buttons.length) return null;
-  return <div className="flex flex-wrap gap-2">{buttons}</div>;
+  if (!buttons.length && !menu.length) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {buttons}
+      <ActionMenu label={`More actions for this job`} actions={menu} disabled={pending} showText />
+    </div>
+  );
 }
 
 export function RescheduleForm({

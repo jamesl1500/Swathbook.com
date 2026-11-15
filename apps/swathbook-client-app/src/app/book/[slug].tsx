@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { AddressFields, toAddressValue, type AddressValue } from '@/components/address-fields';
+import { QuestionFields } from '@/components/question-fields';
 import { Loading, LoadError } from '@/components/query-state';
 import { SlotPicker, useSlotDays } from '@/components/slot-picker';
 import { ApiError, useAvailableSlots, useBookingPage, useCreateBooking, useMyDetails } from '@/data/api';
@@ -26,6 +27,7 @@ import {
   TextField,
 } from '@/design-system';
 import { formatCents, formatDuration, formatServicePrice, formatShortDate, formatTime } from '@/lib/format';
+import { answerErrors, answersToSend, questionsFor } from '@/lib/questions';
 
 export default function BookScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
@@ -76,6 +78,8 @@ function BookingFlow({ page, details }: { page: BookingPage; details: MyDetails 
   const phone = phoneInput ?? details?.phone ?? '';
   const address = addressInput ?? toAddressValue(details?.address);
   const [errors, setErrors] = useState<FormErrors>({});
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [questionErrors, setQuestionErrors] = useState<Record<string, string>>({});
   // Each page of openings covers 14 days from `from` (the business's local date).
   const [from, setFrom] = useState<string | null>(null);
 
@@ -83,6 +87,8 @@ function BookingFlow({ page, details }: { page: BookingPage; details: MyDetails 
   const booking = useCreateBooking();
 
   const chosen = services.filter((s) => serviceIds.includes(s.id));
+  // The chosen services' questions ("Make and model?"), in booking order.
+  const questions = questionsFor(services, serviceIds);
   const minutes = chosen.reduce((sum, s) => sum + s.duration_minutes, 0);
   const subtotal = chosen.reduce((sum, s) => sum + (s.price_type === 'quote' ? 0 : s.price_cents), 0);
   const deposit = business.accepts_online_payments ? chosen.reduce((sum, s) => sum + s.deposit_cents, 0) : 0;
@@ -115,7 +121,9 @@ function BookingFlow({ page, details }: { page: BookingPage; details: MyDetails 
       line1: address.line1.trim().length < 3 ? 'Enter the service address.' : undefined,
     };
     setErrors(next);
-    return !next.fullName && !next.phone && !next.line1;
+    const problems = answerErrors(questions, answers);
+    setQuestionErrors(problems);
+    return !next.fullName && !next.phone && !next.line1 && Object.keys(problems).length === 0;
   }
 
   function submit() {
@@ -134,6 +142,7 @@ function BookingFlow({ page, details }: { page: BookingPage; details: MyDetails 
           postalCode: address.postal_code.trim(),
         },
         notes: notes.trim(),
+        answers: answersToSend(questions, answers),
       },
       {
         onSuccess: async ({ booking: created, manageUrl }) => {
@@ -165,6 +174,11 @@ function BookingFlow({ page, details }: { page: BookingPage; details: MyDetails 
       edges={[]}
       footer={
         <View style={styles.footer}>
+          {Object.keys(questionErrors).length ? (
+            <Text variant="small" tone="clay" align="center" role="alert">
+              Answer the questions about the job above.
+            </Text>
+          ) : null}
           {slot ? (
             <Text variant="small" tone="soft" align="center">
               {formatShortDate(slot.slot_start, tz)} at {formatTime(slot.slot_start, tz)} · {formatDuration(minutes)}
@@ -283,8 +297,27 @@ function BookingFlow({ page, details }: { page: BookingPage; details: MyDetails 
             <AddressFields value={address} onChange={setAddress} error={errors.line1} />
           </View>
 
+          {questions.length ? (
+            <View style={styles.stack}>
+              <SectionHeader title="5. About the job" />
+              <QuestionFields
+                questions={questions}
+                answers={answers}
+                errors={questionErrors}
+                onChange={(questionId, answer) => {
+                  setAnswers((current) => ({ ...current, [questionId]: answer }));
+                  setQuestionErrors((current) => {
+                    const next = { ...current };
+                    delete next[questionId];
+                    return next;
+                  });
+                }}
+              />
+            </View>
+          ) : null}
+
           <View>
-            <SectionHeader title="5. Anything we should know?" />
+            <SectionHeader title={`${questions.length ? 6 : 5}. Anything we should know?`} />
             <TextField
               value={notes}
               onChangeText={setNotes}
