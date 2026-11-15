@@ -67,9 +67,15 @@ test.describe("bookings page", () => {
         // Past tab, filtered by status.
         await page.getByRole("link", { name: "Past" }).click();
         await expect(rows.filter({ hasText: "Pete Past" })).toContainText("Completed");
+        // Rows are grouped under a heading per day.
+        await expect(page.getByRole("heading", { level: 2, name: /· 1 job$/ }).first()).toBeVisible();
+        await page.getByText("More filters").click();
         await page.getByLabel("Status").selectOption("cancelled");
         await page.getByRole("button", { name: "Filter" }).click();
         await expect(page.getByText("No bookings match")).toBeVisible();
+        // The active filter shows as a chip that removes it.
+        await page.getByRole("link", { name: "Remove filter Status: Cancelled" }).click();
+        await expect(rows.filter({ hasText: "Pete Past" })).toBeVisible();
     });
 });
 

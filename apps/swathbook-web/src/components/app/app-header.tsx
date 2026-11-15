@@ -13,7 +13,16 @@ const headerAction =
  * Top bar for signed-in screens (onboarding, dashboard). `children` renders
  * next to the logo, e.g. the business switcher.
  */
-export function AppHeader({ children, compactOnMobile = false }: { children?: ReactNode; compactOnMobile?: boolean }) {
+export function AppHeader({
+  children,
+  compactOnMobile = false,
+  notifications,
+}: {
+  children?: ReactNode;
+  compactOnMobile?: boolean;
+  /** Shown on every screen size (the bell), unlike Account and Log out. */
+  notifications?: ReactNode;
+}) {
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-paper/90 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6">
@@ -21,6 +30,7 @@ export function AppHeader({ children, compactOnMobile = false }: { children?: Re
           <Logo href={routes.dashboard} className="shrink-0" wordmarkClassName={compactOnMobile ? "hidden sm:inline" : undefined} />
           {children}
         </div>
+        {notifications ? <div className="shrink-0">{notifications}</div> : null}
         {/* On phones the dashboard's tab bar "More" sheet holds these. */}
         <div className={cn("shrink-0 items-center gap-1", compactOnMobile ? "hidden lg:flex" : "flex")}>
           <Link href={routes.account} className={headerAction}>

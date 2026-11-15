@@ -7,6 +7,7 @@ import { loadBookingOptions, loadCustomerBooking, type BookingOptions, type Cust
 import { siteConfig } from "@/libs/globals/site";
 import { routes } from "@/libs/routes";
 import { noIndex } from "@/libs/seo";
+import { readPaymentReturn, type PaymentReturn } from "@/libs/payment-return";
 import { hasStripe } from "@/libs/stripe/server";
 import { brandTextColor } from "@/libs/utils";
 import { BookingPanel } from "./booking-panel";
@@ -28,21 +29,21 @@ async function BookingDetails({
   params: PageProps<"/booking/[token]">["params"];
   searchParams: PageProps<"/booking/[token]">["searchParams"];
 }) {
-  const [{ token }, { paid }] = await Promise.all([params, searchParams]);
+  const [{ token }, query] = await Promise.all([params, searchParams]);
   const [booking, options] = await Promise.all([loadCustomerBooking(token), loadBookingOptions(token)]);
   if (!booking || !booking.businesses) notFound();
-  return <BookingView booking={booking} options={options} justPaid={paid === "1"} paymentsEnabled={hasStripe()} />;
+  return <BookingView booking={booking} options={options} paymentReturn={readPaymentReturn(query)} paymentsEnabled={hasStripe()} />;
 }
 
 function BookingView({
   booking,
   options,
-  justPaid,
+  paymentReturn,
   paymentsEnabled,
 }: {
   booking: CustomerBooking;
   options: BookingOptions | null;
-  justPaid: boolean;
+  paymentReturn: PaymentReturn | null;
   paymentsEnabled: boolean;
 }) {
   const business = booking.businesses!;
@@ -61,7 +62,7 @@ function BookingView({
       </header>
 
       <main className="mx-auto max-w-2xl space-y-5 px-4 py-8 sm:px-6">
-        <BookingPanel booking={booking} options={options} justPaid={justPaid} paymentsEnabled={paymentsEnabled} />
+        <BookingPanel booking={booking} options={options} paymentReturn={paymentReturn} paymentsEnabled={paymentsEnabled} />
       </main>
 
       <footer className="py-8 text-center text-xs text-ink-faint">

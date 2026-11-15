@@ -8,6 +8,7 @@ import { BillingBanner } from "@/components/app/billing-banner";
 import { AppHeader } from "@/components/app/app-header";
 import { BusinessSwitcher } from "@/components/app/business-switcher";
 import { DashboardNav } from "@/components/app/dashboard-nav";
+import { NotificationsSlot } from "@/components/app/notifications-slot";
 
 export const metadata: Metadata = {
   title: { default: "Dashboard", template: "%s · Swathbook" },
@@ -25,7 +26,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     // pb-tabbar keeps the last content (and the footer) clear of the phone tab bar.
     <div className="flex min-h-dvh flex-col pb-tabbar lg:pb-0">
-      <AppHeader compactOnMobile>
+      <AppHeader
+        compactOnMobile
+        notifications={
+          <Suspense fallback={<div className="size-10" aria-hidden="true" />}>
+            <NotificationsSlot />
+          </Suspense>
+        }
+      >
         <Suspense fallback={<div className="h-9 w-40 animate-pulse rounded-full bg-paper-deep" />}>
           <BusinessSwitcher />
         </Suspense>

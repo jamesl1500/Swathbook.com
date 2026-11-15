@@ -10,8 +10,9 @@ import type { FormState } from "@/libs/forms";
 import type { Database } from "@/libs/supabase/database.types";
 import { cn, formatCents, formatDuration } from "@/libs/utils";
 import { deleteService, moveService, saveService } from "./actions";
+import { QuestionsEditor, type SavedQuestion } from "./questions-editor";
 
-type Service = Database["public"]["Tables"]["services"]["Row"];
+type Service = Database["public"]["Tables"]["services"]["Row"] & { service_questions?: SavedQuestion[] };
 
 const DURATIONS = [15, 30, 45, 60, 90, 120, 180, 240, 360, 480];
 
@@ -154,6 +155,8 @@ export function ServiceEditor({
         ) : null}
       </fieldset>
 
+      <QuestionsEditor idPrefix={id("questions")} initial={service?.service_questions} error={errors.questions?.[0]} />
+
       <div className="space-y-2 rounded-xl bg-paper px-3 py-3 text-sm">
         <label className="flex items-center gap-2.5 min-h-11">
           <input type="checkbox" name="isPublic" defaultChecked={service?.is_public ?? true} className="size-4 accent-[var(--color-brand-600)]" />
@@ -217,6 +220,9 @@ export function ServiceList({ businessId, services, currency }: { businessId: st
                 <p className="mt-2 text-sm text-ink-soft">
                   <strong className="text-ink">{priceLabel(service, currency)}</strong> · {formatDuration(service.duration_minutes)} ·{" "}
                   {depositLabel(service, currency)}
+                  {service.service_questions?.length
+                    ? ` · ${service.service_questions.length} ${service.service_questions.length === 1 ? "question" : "questions"}`
+                    : null}
                 </p>
               </div>
               <div className="flex items-center gap-1">

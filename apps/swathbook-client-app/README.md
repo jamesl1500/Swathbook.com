@@ -66,12 +66,12 @@ Screens only use the hooks in `src/data/api.ts` (TanStack Query). Everything per
 | What | How |
 | --- | --- |
 | Search, trades | `search_businesses`, `business_trades` (anyone) |
-| A business, open times | `get_booking_page`, `get_available_slots` (anyone) |
+| A business, open times | `get_booking_page` (each service lists its questions), `get_available_slots` (anyone) |
 | My jobs, one job, prefill | `my_bookings`, `my_booking`, `my_details` (signed in) |
 | Times to move a job to | `my_reschedule_slots` (signed in) |
 | Profile photo | Uploaded straight to the private `avatars` bucket (`<user_id>/<file>`, only you can use your folder), then `set_my_avatar`, which checks the file is yours; shown through a signed URL (`useAvatarUrl`). Picked, cropped square and shrunk to 512px in `src/lib/photo.ts`. Deleting the account removes the files |
 | Name, phone, home address, setup state | `save_my_details`, `finish_my_setup` (signed in). The home address lives in `customer_profiles`, readable only by its owner (teammates can read `profiles`, so it doesn't go there) |
-| Book | `POST /api/app/bookings` on the web app (geocodes, checks the service area, emails right away) |
+| Book | `POST /api/app/bookings` on the web app (geocodes, checks the service area, emails right away). Sends `answers` to the services' questions; required ones are checked in `create_booking`, and builds that don't send `answers` are told to update (`update_required`) when a service asks questions |
 | Reschedule, cancel | `POST /api/app/bookings/:id/reschedule`, `…/cancel` |
 | Delete account | `DELETE /api/app/account` |
 | Pay a deposit or balance | The booking's web page (`/booking/<token>`), opened in an in-app browser; Stripe's payment form lives there |

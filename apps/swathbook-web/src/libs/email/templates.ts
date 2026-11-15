@@ -42,6 +42,8 @@ export type BookingEmailContext = {
         cancellationReason: string | null;
     };
     services: string[];
+    /** The customer's answers to the services' questions, in order. */
+    answers?: Array<{ question: string; answer: string }>;
     address: string | null;
     /** Why the customer asked to cancel, while a request is open. */
     cancelRequestReason?: string | null;
@@ -64,6 +66,7 @@ function bookingDetails(context: BookingEmailContext) {
     const rows = [
         { label: "When", value: `${when(context)} – ${formatTime(context.booking.end, context.business.timezone)}` },
         { label: "Services", value: context.services.join(", ") || "Service visit" },
+        ...(context.answers ?? []).map(({ question, answer }) => ({ label: question, value: answer })),
     ];
     if (context.address) rows.push({ label: "Where", value: context.address });
     if (context.booking.totalCents > 0) rows.push({ label: "Total", value: money(context, context.booking.totalCents) });

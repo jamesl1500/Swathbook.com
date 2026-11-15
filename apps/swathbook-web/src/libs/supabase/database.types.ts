@@ -5,7 +5,33 @@ export type Database = {
   
   "public": {
           Tables: {
-            "booking_attachments": {
+            "booking_answers": {
+                  Row: {
+                    "answer": string,"booking_id": string,"business_id": string,"created_at": string,"id": string,"prompt": string,"question_id": string | null,"service_name": string,"sort_order": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "answer": string,"booking_id": string,"business_id": string,"created_at"?: string,"id"?: string,"prompt": string,"question_id"?: string | null,"service_name": string,"sort_order"?: number
+                  }
+                  Update: {
+                    "answer"?: string,"booking_id"?: string,"business_id"?: string,"created_at"?: string,"id"?: string,"prompt"?: string,"question_id"?: string | null,"service_name"?: string,"sort_order"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "booking_answers_business_id_booking_id_fkey"
+      columns: ["business_id","booking_id"]
+isOneToOne: false
+      referencedRelation: "bookings"
+      referencedColumns: ["business_id","id"]
+    },{
+      foreignKeyName: "booking_answers_question_id_fkey"
+      columns: ["question_id"]
+isOneToOne: false
+      referencedRelation: "service_questions"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"booking_attachments": {
                   Row: {
                     "booking_id": string,"business_id": string,"caption": string | null,"content_type": string | null,"created_at": string,"id": string,"kind": Database["public"]['Enums']["attachment_kind"],"size_bytes": number | null,"storage_path": string,"uploaded_by": string | null
                   }
@@ -295,6 +321,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"notification_reads": {
+                  Row: {
+                    "business_id": string,"last_read_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "business_id": string,"last_read_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "business_id"?: string,"last_read_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "notification_reads_business_id_fkey"
+      columns: ["business_id"]
+isOneToOne: false
+      referencedRelation: "businesses"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"notifications": {
                   Row: {
                     "attempts": number,"booking_id": string | null,"business_id": string,"channel": Database["public"]['Enums']["notification_channel"],"created_at": string,"customer_id": string | null,"error": string | null,"id": string,"payload": NonNullable<Json>,"provider": string | null,"provider_message_id": string | null,"scheduled_for": string,"sent_at": string | null,"status": Database["public"]['Enums']["notification_status"],"template": string,"to_address": string,"updated_at": string
@@ -495,6 +541,26 @@ isOneToOne: false
       referencedColumns: ["business_id","id"]
     }
                   ]
+                },"service_questions": {
+                  Row: {
+                    "business_id": string,"created_at": string,"id": string,"is_required": boolean,"kind": Database["public"]['Enums']["question_kind"],"options": (string)[],"prompt": string,"service_id": string,"sort_order": number,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "business_id": string,"created_at"?: string,"id"?: string,"is_required"?: boolean,"kind"?: Database["public"]['Enums']["question_kind"],"options"?: (string)[],"prompt": string,"service_id": string,"sort_order"?: number,"updated_at"?: string
+                  }
+                  Update: {
+                    "business_id"?: string,"created_at"?: string,"id"?: string,"is_required"?: boolean,"kind"?: Database["public"]['Enums']["question_kind"],"options"?: (string)[],"prompt"?: string,"service_id"?: string,"sort_order"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "service_questions_business_id_service_id_fkey"
+      columns: ["business_id","service_id"]
+isOneToOne: false
+      referencedRelation: "services"
+      referencedColumns: ["business_id","id"]
+    }
+                  ]
                 },"services": {
                   Row: {
                     "business_id": string,"created_at": string,"deposit_amount_cents": number,"deposit_percent": number,"deposit_type": Database["public"]['Enums']["deposit_type"],"description": string | null,"duration_minutes": number,"id": string,"is_active": boolean,"is_public": boolean,"name": string,"price_cents": number,"price_type": Database["public"]['Enums']["price_type"],"sort_order": number,"updated_at": string
@@ -653,7 +719,7 @@ isOneToOne: false
         isSetofReturn: true
       } },
 "create_booking":
-{ Args: { "p_address": Json,"p_business_id": string,"p_customer": Json,"p_customer_notes"?: string,"p_service_ids": (string)[],"p_source"?: Database["public"]['Enums']["booking_source"],"p_start": string }; Returns: {
+{ Args: { "p_address": Json,"p_answers"?: Json,"p_business_id": string,"p_customer": Json,"p_customer_notes"?: string,"p_service_ids": (string)[],"p_source"?: Database["public"]['Enums']["booking_source"],"p_start": string }; Returns: {
               "booking_id": string,"customer_id": string,"deposit_due_cents": number,"hold_expires_at": string,"public_token": string,"reference": string,"status": Database["public"]['Enums']["booking_status"],"stripe_account_id": string,"total_cents": number
             }[]
                            },
@@ -701,6 +767,9 @@ isOneToOne: false
 "is_slug_available":
 { Args: { "p_business_id"?: string,"p_slug": string }; Returns: boolean
                            },
+"mark_notifications_read":
+{ Args: { "p_business_id": string }; Returns: undefined
+                           },
 "my_booking":
 { Args: { "p_booking_id": string }; Returns: Json
                            },
@@ -709,6 +778,9 @@ isOneToOne: false
                            },
 "my_details":
 { Args: Record<PropertyKey, never>; Returns: Json
+                           },
+"my_notifications":
+{ Args: { "p_business_id": string,"p_limit"?: number }; Returns: Json
                            },
 "my_pending_invitations":
 { Args: Record<PropertyKey, never>; Returns: {
@@ -731,6 +803,9 @@ isOneToOne: false
                            },
 "save_my_details":
 { Args: { "p_address"?: Json,"p_finish_setup"?: boolean,"p_full_name": string,"p_phone"?: string }; Returns: Json
+                           },
+"save_service_questions":
+{ Args: { "p_questions": Json,"p_service_id": string }; Returns: undefined
                            },
 "search_businesses":
 { Args: { "p_limit"?: number,"p_offset"?: number,"p_query"?: string,"p_trade"?: string }; Returns: {
@@ -758,7 +833,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "attachment_kind": "photo"|"document","booking_source": "booking_page"|"manual"|"recurring"|"import","booking_status": "pending_payment"|"requested"|"confirmed"|"in_progress"|"completed"|"cancelled"|"no_show","deposit_type": "none"|"percent"|"fixed","invoice_status": "draft"|"open"|"paid"|"void"|"uncollectible","member_role": "owner"|"admin"|"crew","member_status": "active"|"suspended","notification_channel": "email"|"sms","notification_status": "queued"|"sent"|"delivered"|"failed"|"canceled","payment_kind": "deposit"|"balance"|"full"|"tip","payment_status": "requires_payment"|"processing"|"succeeded"|"failed"|"canceled"|"refunded"|"partially_refunded","price_type": "fixed"|"starting_at"|"quote","recurrence_frequency": "weekly"|"biweekly"|"every_4_weeks"|"monthly","refund_policy": "refundable"|"refundable_before_window"|"non_refundable","refund_status": "pending"|"succeeded"|"failed"|"canceled","route_status": "draft"|"optimized"|"in_progress"|"completed","stop_status": "pending"|"en_route"|"arrived"|"completed"|"skipped","subscription_plan": "solo"|"crew"|"fleet","subscription_status": "trialing"|"active"|"past_due"|"canceled"|"incomplete"|"incomplete_expired"|"unpaid"|"paused"
+            "attachment_kind": "photo"|"document","booking_source": "booking_page"|"manual"|"recurring"|"import","booking_status": "pending_payment"|"requested"|"confirmed"|"in_progress"|"completed"|"cancelled"|"no_show","deposit_type": "none"|"percent"|"fixed","invoice_status": "draft"|"open"|"paid"|"void"|"uncollectible","member_role": "owner"|"admin"|"crew","member_status": "active"|"suspended","notification_channel": "email"|"sms","notification_status": "queued"|"sent"|"delivered"|"failed"|"canceled","payment_kind": "deposit"|"balance"|"full"|"tip","payment_status": "requires_payment"|"processing"|"succeeded"|"failed"|"canceled"|"refunded"|"partially_refunded","price_type": "fixed"|"starting_at"|"quote","question_kind": "text"|"choice","recurrence_frequency": "weekly"|"biweekly"|"every_4_weeks"|"monthly","refund_policy": "refundable"|"refundable_before_window"|"non_refundable","refund_status": "pending"|"succeeded"|"failed"|"canceled","route_status": "draft"|"optimized"|"in_progress"|"completed","stop_status": "pending"|"en_route"|"arrived"|"completed"|"skipped","subscription_plan": "solo"|"crew"|"fleet","subscription_status": "trialing"|"active"|"past_due"|"canceled"|"incomplete"|"incomplete_expired"|"unpaid"|"paused"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -874,7 +949,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "attachment_kind": ["photo", "document"],"booking_source": ["booking_page", "manual", "recurring", "import"],"booking_status": ["pending_payment", "requested", "confirmed", "in_progress", "completed", "cancelled", "no_show"],"deposit_type": ["none", "percent", "fixed"],"invoice_status": ["draft", "open", "paid", "void", "uncollectible"],"member_role": ["owner", "admin", "crew"],"member_status": ["active", "suspended"],"notification_channel": ["email", "sms"],"notification_status": ["queued", "sent", "delivered", "failed", "canceled"],"payment_kind": ["deposit", "balance", "full", "tip"],"payment_status": ["requires_payment", "processing", "succeeded", "failed", "canceled", "refunded", "partially_refunded"],"price_type": ["fixed", "starting_at", "quote"],"recurrence_frequency": ["weekly", "biweekly", "every_4_weeks", "monthly"],"refund_policy": ["refundable", "refundable_before_window", "non_refundable"],"refund_status": ["pending", "succeeded", "failed", "canceled"],"route_status": ["draft", "optimized", "in_progress", "completed"],"stop_status": ["pending", "en_route", "arrived", "completed", "skipped"],"subscription_plan": ["solo", "crew", "fleet"],"subscription_status": ["trialing", "active", "past_due", "canceled", "incomplete", "incomplete_expired", "unpaid", "paused"]
+            "attachment_kind": ["photo", "document"],"booking_source": ["booking_page", "manual", "recurring", "import"],"booking_status": ["pending_payment", "requested", "confirmed", "in_progress", "completed", "cancelled", "no_show"],"deposit_type": ["none", "percent", "fixed"],"invoice_status": ["draft", "open", "paid", "void", "uncollectible"],"member_role": ["owner", "admin", "crew"],"member_status": ["active", "suspended"],"notification_channel": ["email", "sms"],"notification_status": ["queued", "sent", "delivered", "failed", "canceled"],"payment_kind": ["deposit", "balance", "full", "tip"],"payment_status": ["requires_payment", "processing", "succeeded", "failed", "canceled", "refunded", "partially_refunded"],"price_type": ["fixed", "starting_at", "quote"],"question_kind": ["text", "choice"],"recurrence_frequency": ["weekly", "biweekly", "every_4_weeks", "monthly"],"refund_policy": ["refundable", "refundable_before_window", "non_refundable"],"refund_status": ["pending", "succeeded", "failed", "canceled"],"route_status": ["draft", "optimized", "in_progress", "completed"],"stop_status": ["pending", "en_route", "arrived", "completed", "skipped"],"subscription_plan": ["solo", "crew", "fleet"],"subscription_status": ["trialing", "active", "past_due", "canceled", "incomplete", "incomplete_expired", "unpaid", "paused"]
           }
         }
 } as const

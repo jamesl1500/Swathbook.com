@@ -334,3 +334,45 @@ async function makeJpeg(page: Page, label: string) {
     }, label);
     return Buffer.from(base64, "base64");
 }
+
+test.describe("job page", () => {
+    test("sections live in tabs, and the next step is a button with the rest in a menu", async ({ page }) => {
+        const { owner, business } = await ownerWithBusiness(page);
+        const memberId = await memberIdFor(business.id, owner.id);
+        const { bookingId } = await addJob(business.id, { start: tomorrowAt(9).at, memberId, customerName: "Tess Tabs", lat: 30.2, lng: -97.7 });
+
+        // From the list: the row's menu leads to the job.
+        await page.goto("/dashboard/bookings");
+        await page.getByRole("button", { name: "More actions for Tess Tabs" }).click();
+        await page.getByRole("menuitem", { name: "Open job" }).click();
+        await expectOnPath(page, `/dashboard/schedule/${bookingId}`);
+
+        await expect(page.getByRole("heading", { level: 1, name: "Tess Tabs" })).toBeVisible();
+        const tabs = page.getByRole("tablist", { name: "Job sections" });
+        await expect(tabs.getByRole("tab", { name: "Overview" })).toHaveAttribute("aria-selected", "true");
+        await expect(page.getByText("What's booked")).toBeVisible();
+
+        await tabs.getByRole("tab", { name: /Payments/ }).click();
+        await expect(page).toHaveURL(/\?tab=payments$/);
+        await expect(page.getByRole("tabpanel").filter({ visible: true })).toContainText("Balance due");
+
+        await tabs.getByRole("tab", { name: "Schedule" }).click();
+        await expect(page.getByRole("heading", { name: "Who's on it" })).toBeVisible();
+
+        await tabs.getByRole("tab", { name: /Activity/ }).click();
+        await expect(page.getByTestId("job-timeline")).toContainText(/Booked online|Added by the team/);
+
+        // The open tab survives a reload.
+        await page.reload();
+        await expect(page.getByRole("tab", { name: /Activity/ })).toHaveAttribute("aria-selected", "true");
+
+        // The next step is a button; cancelling sits in the menu and asks why.
+        await expect(page.getByRole("button", { name: "Start job" })).toBeVisible();
+        await expect(page.getByRole("button", { name: "Cancel job" })).toHaveCount(0);
+        page.once("dialog", (dialog) => dialog.accept("Rained out"));
+        await page.getByRole("button", { name: "More actions for this job" }).click();
+        await page.getByRole("menuitem", { name: "Cancel job" }).click();
+        await expect(page.getByTestId("cancel-reason")).toContainText("Rained out");
+        await expect(page.getByRole("button", { name: "Start job" })).toHaveCount(0);
+    });
+});

@@ -32,6 +32,7 @@ describe("saveService", () => {
 
     it("creates a service in cents at the end of the list", async () => {
         state.supabase.respond("services.select", { data: null });
+        state.supabase.respond("services.insert", { data: { id: "svc_new" } });
         const result = await saveService({}, form(valid));
         expect(result).toEqual({ success: "Service added." });
         expect(state.supabase.callsTo("services", "insert")[0].values).toMatchObject({

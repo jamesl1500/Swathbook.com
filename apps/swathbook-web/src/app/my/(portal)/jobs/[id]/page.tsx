@@ -7,6 +7,7 @@ import { BookingPanel } from "@/app/booking/[token]/booking-panel";
 import { loadMyJob } from "@/libs/customer";
 import { loadBookingOptions, loadCustomerBooking } from "@/libs/customer-booking";
 import { businessPagePath, customerJobPath, routes } from "@/libs/routes";
+import { readPaymentReturn } from "@/libs/payment-return";
 import { hasStripe } from "@/libs/stripe/server";
 
 export const metadata: Metadata = { title: "Job details" };
@@ -32,7 +33,7 @@ async function JobDetail({
   params: PageProps<"/my/jobs/[id]">["params"];
   searchParams: PageProps<"/my/jobs/[id]">["searchParams"];
 }) {
-  const [{ id }, { paid }] = await Promise.all([params, searchParams]);
+  const [{ id }, query] = await Promise.all([params, searchParams]);
   // my_booking answers only for the signed-in customer's own bookings, so this
   // is the ownership check. Someone else's id looks exactly like a missing one.
   const job = await loadMyJob(id);
@@ -52,7 +53,7 @@ async function JobDetail({
       <BookingPanel
         booking={booking}
         options={options}
-        justPaid={paid === "1"}
+        paymentReturn={readPaymentReturn(query)}
         paymentsEnabled={hasStripe()}
         paymentReturnPath={customerJobPath(job.id)}
       />

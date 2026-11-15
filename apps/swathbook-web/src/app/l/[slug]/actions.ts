@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { bookingAddressSchema, bookingCustomerSchema, placeBooking } from "@/libs/public-booking";
+import { bookingAnswersSchema } from "@/libs/service-questions";
 import { isDateKey } from "@/libs/time";
 import { createBookingPayment, type PaymentSession } from "@/libs/stripe/payments";
 import { getStripe, hasStripe } from "@/libs/stripe/server";
@@ -39,6 +40,7 @@ const bookingSchema = z.object({
     customer: bookingCustomerSchema,
     address: bookingAddressSchema,
     notes: z.string().trim().max(2000).default(""),
+    answers: bookingAnswersSchema,
     /** Honeypot: real people never see or fill this field. */
     company: z.string().max(0).default(""),
 });
@@ -59,9 +61,9 @@ export async function submitBooking(input: BookingRequest): Promise<BookingResul
         }
         return { ok: false, error: flat.formErrors[0] ?? "Check the highlighted fields.", fieldErrors };
     }
-    const { slug, serviceIds, start, customer, address, notes } = parsed.data;
+    const { slug, serviceIds, start, customer, address, notes, answers } = parsed.data;
 
-    const placed = await placeBooking({ slug, serviceIds, start, customer, address, notes });
+    const placed = await placeBooking({ slug, serviceIds, start, customer, address, notes, answers });
     if (!placed.ok) return { ok: false, error: placed.error };
     const booking = placed.booking;
 

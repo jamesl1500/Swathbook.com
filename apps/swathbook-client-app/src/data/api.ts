@@ -218,6 +218,8 @@ export type NewBooking = {
   customer: { fullName: string; phone: string };
   address: { line1: string; line2: string; city: string; region: string; postalCode: string };
   notes: string;
+  /** Answers to the chosen services' questions. */
+  answers: { questionId: string; answer: string }[];
 };
 
 export const createBooking = (booking: NewBooking) =>

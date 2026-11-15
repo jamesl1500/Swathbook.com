@@ -13,6 +13,7 @@
 
 import { z } from "zod";
 import { geocodeAddress, hasGoogleMaps, placeDetails } from "@/libs/google/maps";
+import { type BookingAnswerInput } from "@/libs/service-questions";
 import { createAdminClient } from "@/libs/supabase/admin";
 
 export const bookingCustomerSchema = z.object({
@@ -39,6 +40,8 @@ export type PlaceBookingInput = {
     customer: z.output<typeof bookingCustomerSchema>;
     address: z.output<typeof bookingAddressSchema>;
     notes: string;
+    /** Answers to the chosen services' questions (create_booking checks them). */
+    answers?: BookingAnswerInput[];
 };
 
 export type PlacedBooking = {
@@ -61,13 +64,15 @@ export const BOOKING_ERRORS = {
     invalid_email: "Enter a valid email address.",
     invalid_services: "One of those services is no longer available. Refresh and try again.",
     business_not_found: "This business isn't taking bookings right now.",
+    answers_required: "Answer the questions about your booking.",
+    invalid_answers: "One of your answers isn't valid. Check them and try again.",
 } as const;
 
 export type BookingErrorCode = keyof typeof BOOKING_ERRORS;
 
 const FAILED = "We couldn't complete your booking. Please try again.";
 
-export async function placeBooking({ slug, serviceIds, start, customer, address, notes }: PlaceBookingInput): Promise<PlaceBookingResult> {
+export async function placeBooking({ slug, serviceIds, start, customer, address, notes, answers = [] }: PlaceBookingInput): Promise<PlaceBookingResult> {
     const admin = createAdminClient();
     const { data: business } = await admin.from("businesses").select("id").eq("slug", slug).eq("is_published", true).maybeSingle();
     if (!business) return { ok: false, code: "business_not_found", error: BOOKING_ERRORS.business_not_found };
@@ -110,6 +115,7 @@ export async function placeBooking({ slug, serviceIds, start, customer, address,
         },
         p_customer_notes: notes || undefined,
         p_source: "booking_page",
+        p_answers: answers.map(({ questionId, answer }) => ({ question_id: questionId, answer })),
     });
     if (error) {
         const code = (Object.keys(BOOKING_ERRORS) as BookingErrorCode[]).find((key) => error.message.includes(key));

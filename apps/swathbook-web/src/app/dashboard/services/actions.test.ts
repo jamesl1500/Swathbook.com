@@ -26,8 +26,62 @@ beforeEach(() => {
 describe("saveService (new)", () => {
     it("adds new services at the end of the list", async () => {
         state.supabase.respond("services.select", { count: 3 });
+        state.supabase.respond("services.insert", { data: { id: "svc_new" } });
         expect(await saveService({}, form({ name: "Leaf cleanup", priceType: "fixed", price: "60", durationMinutes: "60", depositType: "none" }))).toEqual({ success: "Service added." });
         expect(state.supabase.callsTo("services", "insert")[0].values).toMatchObject({ business_id: BUSINESS_ID, sort_order: 3 });
+    });
+});
+
+describe("saveService: questions for customers", () => {
+    const detail = { serviceId: "svc_1", name: "Full detail", priceType: "fixed", price: "180", durationMinutes: "180", depositType: "none" };
+
+    it("saves the questions with the service, keeping ids and cleaning options", async () => {
+        const questions = [
+            { id: "6f1c1b0e-6d2a-4a52-9b8e-6f1c1b0e6d2a", prompt: " Make and model? ", kind: "text", options: ["ignored"], required: true },
+            { prompt: "What kind of car?", kind: "choice", options: ["Sedan", " SUV ", "suv", ""], required: false },
+        ];
+        expect(await saveService({}, form({ ...detail, questions: JSON.stringify(questions) }))).toEqual({ success: "Service saved." });
+        expect(state.supabase.rpc).toHaveBeenCalledWith("save_service_questions", {
+            p_service_id: "svc_1",
+            p_questions: [
+                { id: "6f1c1b0e-6d2a-4a52-9b8e-6f1c1b0e6d2a", prompt: "Make and model?", kind: "text", options: [], required: true },
+                { prompt: "What kind of car?", kind: "choice", options: ["Sedan", "SUV"], required: false },
+            ],
+        });
+    });
+
+    it("saves questions on a brand-new service using its new id", async () => {
+        state.supabase.respond("services.select", { count: 0 });
+        state.supabase.respond("services.insert", { data: { id: "svc_new" } });
+        const fresh = { ...detail, serviceId: "" };
+        await saveService({}, form({ ...fresh, questions: JSON.stringify([{ prompt: "Make and model?", kind: "text" }]) }));
+        expect(state.supabase.rpc.mock.calls[0]).toMatchObject(["save_service_questions", { p_service_id: "svc_new" }]);
+    });
+
+    it("rejects a choice question without two options before saving anything", async () => {
+        const result = await saveService({}, form({ ...detail, questions: JSON.stringify([{ prompt: "Color?", kind: "choice", options: ["Red", "red"] }]) }));
+        expect(result).toEqual({
+            error: "Question 1: Give at least two choices (up to 20).",
+            fieldErrors: { questions: ["Question 1: Give at least two choices (up to 20)."] },
+        });
+        expect(state.supabase.callsTo("services")).toHaveLength(0);
+        expect(state.supabase.rpc).not.toHaveBeenCalled();
+    });
+
+    it("caps questions per service", async () => {
+        const many = Array.from({ length: 11 }, (_, index) => ({ prompt: `Question ${index + 1}?`, kind: "text" }));
+        expect((await saveService({}, form({ ...detail, questions: JSON.stringify(many) }))).error).toBe("Ask up to 10 questions per service.");
+    });
+
+    it("says when the service saved but its questions didn't", async () => {
+        state.supabase.rpc.mockResolvedValueOnce({ data: null, error: { message: "boom" } });
+        vi.spyOn(console, "error").mockImplementation(() => {});
+        expect((await saveService({}, form({ ...detail, questions: "[]" }))).error).toBe("The service saved, but its questions didn't. Please try again.");
+    });
+
+    it("leaves questions alone when the form has no questions editor", async () => {
+        await saveService({}, form(detail));
+        expect(state.supabase.rpc).not.toHaveBeenCalled();
     });
 });
 

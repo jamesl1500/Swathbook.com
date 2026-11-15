@@ -239,6 +239,22 @@ function JobDetail({
         </View>
       </Card>
 
+      {booking.answers?.length ? (
+        <Card variant="deep">
+          <Text variant="label">Your answers</Text>
+          <View style={styles.answers}>
+            {booking.answers.map((item, index) => (
+              <View key={`${index}-${item.prompt}`}>
+                <Text variant="small" tone="soft">
+                  {item.prompt}
+                </Text>
+                <Text variant="bodyStrong">{item.answer}</Text>
+              </View>
+            ))}
+          </View>
+        </Card>
+      ) : null}
+
       {booking.customer_notes ? (
         <Card variant="deep">
           <Text variant="label">Your notes</Text>
@@ -343,6 +359,10 @@ function changeNote(booking: CustomerBooking) {
 }
 
 const styles = StyleSheet.create({
+  answers: {
+    gap: space[3],
+    marginTop: space[2],
+  },
   payCard: {
     gap: space[2.5],
     borderColor: colors.sun,

@@ -2,6 +2,7 @@ import { z } from "zod";
 import { appError, appJson, appPreflight, authenticateApp, readJson } from "@/libs/app-api";
 import { sendQueuedEmailsSoon } from "@/libs/email/worker";
 import { bookingAddressSchema, bookingCustomerSchema, placeBooking } from "@/libs/public-booking";
+import { bookingAnswersListSchema } from "@/libs/service-questions";
 import { customerBookingPath } from "@/libs/routes";
 import { createAdminClient } from "@/libs/supabase/admin";
 
@@ -21,6 +22,8 @@ const schema = z.object({
     customer: bookingCustomerSchema.pick({ fullName: true, phone: true }),
     address: bookingAddressSchema,
     notes: z.string().trim().max(2000).default(""),
+    /** Missing from app builds made before services had questions. */
+    answers: bookingAnswersListSchema.optional(),
 });
 
 export type AppBookingRequest = z.input<typeof schema>;
@@ -38,7 +41,7 @@ export async function POST(request: Request) {
         const issue = parsed.error.issues[0];
         return appJson({ error: issue?.message ?? "Check your booking details.", code: "invalid", field: issue?.path.join(".") }, 422);
     }
-    const { slug, serviceIds, start, customer, address, notes } = parsed.data;
+    const { slug, serviceIds, start, customer, address, notes, answers } = parsed.data;
 
     const placed = await placeBooking({
         slug,
@@ -47,8 +50,13 @@ export async function POST(request: Request) {
         customer: { ...customer, email: auth.user.email.toLowerCase() },
         address,
         notes,
+        answers,
     });
     if (!placed.ok) {
+        // An app too old to show questions can't answer them: say how to fix that.
+        if (placed.code === "answers_required" && answers === undefined) {
+            return appError(409, "update_required", "This service asks a few questions when you book. Update the Swathbook app to book it.");
+        }
         const status = placed.code === "failed" ? 500 : placed.code === "business_not_found" ? 404 : 409;
         return appError(status, placed.code, placed.error);
     }
