@@ -5,7 +5,7 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-n
 import { BusinessCard } from '@/components/business-card';
 import { JobCard } from '@/components/job-card';
 import { NextJobHero } from '@/components/next-job-hero';
-import { Loading, LoadError } from '@/components/query-state';
+import { Loading, LoadError } from '@swathbook/mobile/query-state';
 import { isUpcoming, useBusinessSearch, useMyBookings, useMyDetails } from '@/data/api';
 import { useAuth } from '@/data/auth';
 import type { CustomerBooking } from '@/data/types';
@@ -25,9 +25,9 @@ import {
   space,
   Stat,
   Text,
-} from '@/design-system';
+} from '@swathbook/mobile/design-system';
 import { assetUrl } from '@/lib/config';
-import { tradeName } from '@/lib/trades';
+import { tradeName } from '@swathbook/mobile/trades';
 
 export default function HomeScreen() {
   const { signedIn } = useAuth();

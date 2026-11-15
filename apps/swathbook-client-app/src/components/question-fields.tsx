@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
-import { Chip, space, Text, TextField } from '@/design-system';
+import { Chip, space, Text, TextField } from '@swathbook/mobile/design-system';
 import { MAX_ANSWER_LENGTH, type QuestionToAsk } from '@/lib/questions';
 
 /**

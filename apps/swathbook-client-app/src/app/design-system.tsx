@@ -2,7 +2,7 @@ import { ArrowRight, Bell, CalendarCheck, Inbox, Phone, Plus, Sparkles } from 'l
 import { useState, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { BookingStatusBadge } from '@/components/booking-status-badge';
+import { BookingStatusBadge } from '@swathbook/mobile/booking-status';
 import type { BookingStatus } from '@/data/types';
 import {
   Avatar,
@@ -34,7 +34,7 @@ import {
   TextField,
   type ButtonVariant,
   type TextVariant,
-} from '@/design-system';
+} from '@swathbook/mobile/design-system';
 
 /**
  * A living catalogue of the design system: every token and component as it

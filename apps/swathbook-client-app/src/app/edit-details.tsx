@@ -4,10 +4,10 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { AddressFields, toAddressValue, type AddressValue } from '@/components/address-fields';
-import { Loading } from '@/components/query-state';
+import { Loading } from '@swathbook/mobile/query-state';
 import { useMyDetails, useSaveMyDetails } from '@/data/api';
 import type { MyDetails } from '@/data/types';
-import { Button, FormMessage, Screen, SectionHeader, space, Text, TextField } from '@/design-system';
+import { Button, FormMessage, Screen, SectionHeader, space, Text, TextField } from '@swathbook/mobile/design-system';
 
 const PHONE = /^\+?[0-9 ().-]{7,20}$/;
 

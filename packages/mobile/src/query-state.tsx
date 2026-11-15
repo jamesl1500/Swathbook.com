@@ -1,7 +1,7 @@
 import { CircleAlert } from 'lucide-react-native';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
-import { Button, colors, EmptyState, space } from '@/design-system';
+import { Button, colors, EmptyState, space } from './design-system';
 
 /** Centered spinner while a screen's data loads. */
 export function Loading({ label = 'Loading' }: { label?: string }) {

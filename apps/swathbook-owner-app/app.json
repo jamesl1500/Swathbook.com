@@ -1,0 +1,53 @@
+{
+  "expo": {
+    "name": "Swathbook for Business",
+    "slug": "swathbook-owner-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "swathbookbusiness",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#f6f3ee",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#1c3d70",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "single",
+      "favicon": "./assets/images/favicon.png",
+      "name": "Swathbook for Business",
+      "themeColor": "#f6f3ee",
+      "backgroundColor": "#f6f3ee"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#f6f3ee",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 96
+        }
+      ],
+      "expo-secure-store"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "8dab669d-2f34-46f4-9dc1-8c0bd42033ee"
+      }
+    },
+    "owner": "foundry-frame"
+  }
+}

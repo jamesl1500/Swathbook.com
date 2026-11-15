@@ -2,7 +2,7 @@ import { MapPin } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
 import type { BookingAddress } from '@/data/types';
-import { space, TextField } from '@/design-system';
+import { space, TextField } from '@swathbook/mobile/design-system';
 
 export type AddressValue = { line1: string; line2: string; city: string; region: string; postal_code: string };
 

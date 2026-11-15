@@ -4,12 +4,12 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { serviceNames } from '@/components/job-card';
-import { Loading, LoadError } from '@/components/query-state';
+import { Loading, LoadError } from '@swathbook/mobile/query-state';
 import { SlotPicker, useSlotDays } from '@/components/slot-picker';
 import { ApiError, useMyBooking, useRescheduleBooking, useRescheduleSlots } from '@/data/api';
 import type { CustomerBooking, Slot } from '@/data/types';
-import { Button, EmptyState, FormMessage, Screen, SectionHeader, space, Text } from '@/design-system';
-import { formatLongDate, formatShortDate, formatTime } from '@/lib/format';
+import { Button, EmptyState, FormMessage, Screen, SectionHeader, space, Text } from '@swathbook/mobile/design-system';
+import { formatLongDate, formatShortDate, formatTime } from '@swathbook/mobile/format';
 
 export default function RescheduleScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

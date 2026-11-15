@@ -3,7 +3,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { CalendarCheck, Globe, Mail, MapPin, Phone, SearchX } from 'lucide-react-native';
 import { Linking, StyleSheet, View } from 'react-native';
 
-import { Loading, LoadError } from '@/components/query-state';
+import { Loading, LoadError } from '@swathbook/mobile/query-state';
 import { useBookingPage } from '@/data/api';
 import type { BookingPage, RefundPolicy } from '@/data/types';
 import {
@@ -19,10 +19,10 @@ import {
   Screen,
   space,
   Text,
-} from '@/design-system';
+} from '@swathbook/mobile/design-system';
 import { assetUrl } from '@/lib/config';
-import { formatClock, formatDuration, formatServicePrice, weekdayNames } from '@/lib/format';
-import { tradeName } from '@/lib/trades';
+import { formatClock, formatDuration, formatServicePrice, weekdayNames } from '@swathbook/mobile/format';
+import { tradeName } from '@swathbook/mobile/trades';
 
 const refundCopy: Record<RefundPolicy, string> = {
   refundable: 'Deposits are always refunded if you cancel.',

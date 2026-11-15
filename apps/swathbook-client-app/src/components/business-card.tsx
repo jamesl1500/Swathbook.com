@@ -2,11 +2,11 @@ import { router } from 'expo-router';
 import { ChevronRight, MapPin } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
-import { Avatar, Badge, colors, PressableCard, space, Text } from '@/design-system';
+import { Avatar, Badge, colors, PressableCard, space, Text } from '@swathbook/mobile/design-system';
 import type { BusinessSummary } from '@/data/types';
 import { assetUrl } from '@/lib/config';
-import { formatCents } from '@/lib/format';
-import { tradeName } from '@/lib/trades';
+import { formatCents } from '@swathbook/mobile/format';
+import { tradeName } from '@swathbook/mobile/trades';
 
 /** A business in search results. */
 export function BusinessCard({ business }: { business: BusinessSummary }) {

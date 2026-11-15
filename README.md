@@ -9,6 +9,8 @@ Requires Node 24, pnpm and Docker (for the local Supabase stack).
 | --- | --- |
 | `apps/swathbook-web` | Next.js: marketing site, owner dashboard, public booking pages, the business directory (`/businesses`, `/businesses/<trade>`) and the customer area (`/my`) |
 | `apps/swathbook-client-app` | Expo: the customer app for finding businesses and managing jobs (see its README) |
+| `apps/swathbook-owner-app` | Expo: the business app for owners, admins and crew: today's jobs, requests, cancellations, live alerts (see its README) |
+| `packages/mobile` | `@swathbook/mobile`: the design system and helpers both Expo apps share |
 
 | Command | What it does |
 | --- | --- |
@@ -20,6 +22,7 @@ Requires Node 24, pnpm and Docker (for the local Supabase stack).
 | `pnpm test` | Unit and component tests (Vitest), for the web app and the customer app |
 | `pnpm stripe:listen` | Forward the Swathbook sandbox's Stripe events (platform and connected accounts) to the local web app's webhook. Set `STRIPE_WEBHOOK_SECRET` to the `whsec_` it prints, in the shell that runs the web app |
 | `pnpm app` | Start the customer app's Expo dev server (press i, a or w) |
+| `pnpm owner` | Start the business app's Expo dev server |
 | `pnpm test:e2e` | End-to-end tests (Playwright) against a production build wired to local Supabase; needs `pnpm db:start` first |
 
 E2E tests read real confirmation and password-reset emails from Mailpit. The email templates in `supabase/templates` are the ones to paste into the hosted project's Auth > Email Templates. That includes **Magic Link** (`magic_link.html`), which carries the customer app's sign-in code. Confirm Signup (`confirmation.html`) shows the code to app sign-ups and the usual link to everyone else.
@@ -27,5 +30,7 @@ E2E tests read real confirmation and password-reset emails from Mailpit. The ema
 Customers sign in on the website at `/my/sign-in` with the same emailed code as the app (the same Supabase account), then see and manage their jobs at `/my/jobs` and their details at `/my/profile`. Job pages check ownership with `my_booking` and then reuse the manage-booking panel from `/booking/<token>`, so both follow the same reschedule, cancel and payment rules.
 
 The free trial is 7 days (`private.start_trial()` and `TRIAL_DAYS` in `apps/swathbook-web/src/libs/billing/plans.ts`; change both together).
+
+The business app answers cancellation requests through the web app's `/api/owner/*` routes (they can refund through Stripe); everything else goes straight to Supabase as the signed-in member.
 
 The customer app talks to the web app's `/api/app/*` routes, so deploy the web app (and `pnpm db:push` its migrations) before shipping an app build that needs them.

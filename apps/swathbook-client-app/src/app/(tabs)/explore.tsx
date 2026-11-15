@@ -3,11 +3,11 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { BusinessCard } from '@/components/business-card';
-import { Loading, LoadError } from '@/components/query-state';
+import { Loading, LoadError } from '@swathbook/mobile/query-state';
 import { useBusinessSearch, useTrades } from '@/data/api';
-import { Button, Chip, EmptyState, PageHeader, Screen, SearchField, space, Text } from '@/design-system';
-import { tradeName } from '@/lib/trades';
-import { useDebouncedValue } from '@/lib/use-debounced-value';
+import { Button, Chip, EmptyState, PageHeader, Screen, SearchField, space, Text } from '@swathbook/mobile/design-system';
+import { tradeName } from '@swathbook/mobile/trades';
+import { useDebouncedValue } from '@swathbook/mobile/use-debounced-value';
 
 export default function ExploreScreen() {
   const [query, setQuery] = useState('');

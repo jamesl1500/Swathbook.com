@@ -4,12 +4,12 @@ import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { JobCard } from '@/components/job-card';
-import { Loading, LoadError } from '@/components/query-state';
+import { Loading, LoadError } from '@swathbook/mobile/query-state';
 import { SignInPrompt } from '@/components/sign-in-prompt';
 import { isUpcoming, useMyBookings } from '@/data/api';
 import { useAuth } from '@/data/auth';
 import type { CustomerBooking } from '@/data/types';
-import { Button, colors, EmptyState, maxContentWidth, PageHeader, Screen, SegmentedTabs, space } from '@/design-system';
+import { Button, colors, EmptyState, maxContentWidth, PageHeader, Screen, SegmentedTabs, space } from '@swathbook/mobile/design-system';
 
 type JobsView = 'upcoming' | 'past';
 

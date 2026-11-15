@@ -1,10 +1,10 @@
 import { ArrowRight, Clock, MapPin } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
-import { Avatar, BrandPin, Button, colors, Eyebrow, MapGrid, radius, shadows, space, Text } from '@/design-system';
+import { Avatar, BrandPin, Button, colors, Eyebrow, MapGrid, radius, shadows, space, Text } from '@swathbook/mobile/design-system';
 import type { CustomerBooking } from '@/data/types';
 import { assetUrl } from '@/lib/config';
-import { formatRelativeDay, formatTimeRange } from '@/lib/format';
+import { formatRelativeDay, formatTimeRange } from '@swathbook/mobile/format';
 
 import { formatAddress } from './address';
 import { serviceNames } from './job-card';

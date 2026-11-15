@@ -4,7 +4,7 @@ import { CalendarDays, CircleUser, House, Search } from 'lucide-react-native';
 
 import { useAuth } from '@/data/auth';
 import { useIntroState } from '@/data/intro';
-import { TabBar } from '@/design-system';
+import { TabBar } from '@swathbook/mobile/design-system';
 
 const icons = { index: House, explore: Search, jobs: CalendarDays, account: CircleUser };
 

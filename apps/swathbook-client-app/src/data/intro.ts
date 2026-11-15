@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react';
 
-import { deviceStorage } from '@/lib/device-storage';
+import { deviceStorage } from '@swathbook/mobile/device-storage';
 
 /**
  * Whether this device has seen the welcome intro. A tiny store rather than
