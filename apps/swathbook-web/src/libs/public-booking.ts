@@ -12,9 +12,10 @@
  */
 
 import { z } from "zod";
-import { geocodeAddress, hasGoogleMaps, placeDetails } from "@/libs/google/maps";
+import { geocodeAddress, hasGoogleMaps } from "@/libs/google/maps";
 import { checkArea, checkMeasurement, distanceMeters, MAX_POLYGON_POINTS, MAX_POLYGONS, type LatLng } from "@/libs/measure/geo";
 import { type BookingAnswerInput } from "@/libs/service-questions";
+import { verifyLocation } from "@/libs/signing";
 import { createAdminClient } from "@/libs/supabase/admin";
 
 export const bookingCustomerSchema = z.object({
@@ -32,6 +33,8 @@ export const bookingAddressSchema = z.object({
     placeId: z.string().max(300).default(""),
     lat: z.number().min(-90).max(90).nullable().default(null),
     lng: z.number().min(-180).max(180).nullable().default(null),
+    /** The server's signature on lat/lng (see signLocation); without it they're only a hint. */
+    locationToken: z.string().max(200).nullable().default(null),
 });
 
 /** For services priced by area: the outline drawn on the map, or a size the customer typed. */
@@ -86,31 +89,26 @@ const FAILED = "We couldn't complete your booking. Please try again.";
 export type ResolvedLocation = { location: LatLng | null; placeId: string | null; formatted: string | null };
 
 /**
- * Coordinates for a booking address: the ones the browser already has (from
- * a picked suggestion), else Google's, else none. They power the
- * service-area check, the neighbor discount, measuring and route planning.
+ * Coordinates for a booking address. They power the service-area check, the
+ * neighbor discount, measuring and route planning, so the browser's own
+ * lat/lng (and place id) never decide them: only coordinates the server
+ * signed for this street and ZIP earlier (a picked suggestion, or the
+ * "Where" step), else Google's geocode of the address as typed. Without maps
+ * there's nothing to check against, so typed coordinates are taken as given
+ * (development and tests).
  */
 export async function resolveLocation(address: z.output<typeof bookingAddressSchema>): Promise<ResolvedLocation> {
-    let location = address.lat != null && address.lng != null ? { lat: address.lat, lng: address.lng } : null;
-    let formatted: string | null = null;
-    let placeId = address.placeId || null;
-    if (hasGoogleMaps()) {
-        if (!location && placeId) {
-            const resolved = await placeDetails(placeId);
-            if (resolved?.lat != null && resolved.lng != null) location = { lat: resolved.lat, lng: resolved.lng };
-            formatted = resolved?.formatted ?? null;
-        }
-        if (!location) {
-            const text = [address.line1, address.city, address.region, address.postalCode].filter(Boolean).join(", ");
-            const geocoded = await geocodeAddress(text);
-            if (geocoded) {
-                location = { lat: geocoded.lat, lng: geocoded.lng };
-                placeId ??= geocoded.placeId;
-                formatted = geocoded.formatted;
-            }
-        }
+    const signed = verifyLocation(address.locationToken, address);
+    if (signed) return { location: signed, placeId: address.placeId || null, formatted: null };
+    if (!hasGoogleMaps()) {
+        const typed = address.lat != null && address.lng != null ? { lat: address.lat, lng: address.lng } : null;
+        return { location: typed, placeId: address.placeId || null, formatted: null };
     }
-    return { location, placeId, formatted };
+    const text = [address.line1, address.city, address.region, address.postalCode].filter(Boolean).join(", ");
+    const geocoded = await geocodeAddress(text);
+    return geocoded
+        ? { location: { lat: geocoded.lat, lng: geocoded.lng }, placeId: geocoded.placeId, formatted: geocoded.formatted }
+        : { location: null, placeId: null, formatted: null };
 }
 
 const METERS_PER_MILE = 1609.344;

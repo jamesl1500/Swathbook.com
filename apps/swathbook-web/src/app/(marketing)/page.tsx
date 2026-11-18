@@ -19,7 +19,7 @@ import { PillarVisual } from "@/components/marketing/pillar-visual";
 import { Container, Eyebrow, SectionHeading } from "@/components/marketing/section";
 import { TradeMarquee } from "@/components/marketing/trade-marquee";
 import { siteConfig } from "@/libs/globals/site";
-import { patchwork, pillars, supportingFeatures, trades } from "@/libs/marketing/content";
+import { patchwork, pillars, standoutFeatures, supportingFeatures, trades } from "@/libs/marketing/content";
 import { routes } from "@/libs/routes";
 import { faqJsonLd, softwareJsonLd } from "@/libs/seo";
 import { formatPrice } from "@/libs/utils";
@@ -303,6 +303,18 @@ function SupportingFeatures() {
             );
           })}
         </div>
+        <nav aria-label="Only on Swathbook" className="mt-8 flex flex-wrap items-center gap-2 text-sm">
+          <span className="font-semibold text-ink-soft">Only on {siteConfig.name}:</span>
+          {standoutFeatures.map((feature) => (
+            <Link
+              key={feature.id}
+              href={`${routes.features}#${feature.id}`}
+              className="inline-flex min-h-11 items-center rounded-full border border-line bg-card px-3.5 font-semibold text-ink hover:border-brand-200 hover:text-brand-700"
+            >
+              {feature.title}
+            </Link>
+          ))}
+        </nav>
       </Container>
     </section>
   );

@@ -2,7 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
-import { loadStripe } from "@stripe/stripe-js";
+// The /pure entry only fetches Stripe.js when loadStripe runs (when the payment
+// step opens), not on every booking page view.
+import { loadStripe } from "@stripe/stripe-js/pure";
 import { LoaderCircle, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FormMessage } from "@/components/ui/field";

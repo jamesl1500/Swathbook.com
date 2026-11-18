@@ -16,6 +16,8 @@ export type AddressValue = {
   placeId: string;
   lat: number | null;
   lng: number | null;
+  /** The server's signature on lat/lng, from a picked suggestion. */
+  locationToken?: string | null;
 };
 
 export const emptyAddress: AddressValue = { line1: "", line2: "", city: "", region: "", postalCode: "", placeId: "", lat: null, lng: null };
@@ -54,7 +56,7 @@ export function AddressInput({
 
   function onStreetChange(text: string) {
     // Typing a new street invalidates the previous lookup's coordinates.
-    update({ line1: text, placeId: "", lat: null, lng: null });
+    update({ line1: text, placeId: "", lat: null, lng: null, locationToken: null });
     if (!googleEnabled) return;
     clearTimeout(debounce.current);
     if (text.trim().length < 3) {
@@ -85,6 +87,7 @@ export function AddressInput({
       placeId: resolved.placeId ?? suggestion.placeId,
       lat: resolved.lat,
       lng: resolved.lng,
+      locationToken: resolved.locationToken,
     });
   }
 

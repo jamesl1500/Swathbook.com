@@ -6,7 +6,7 @@ import { slugField } from "@/app/onboarding/schema";
 import { authorizeBusiness, isFailure } from "@/libs/dashboard";
 import { checkbox, invalid, text, type FormState } from "@/libs/forms";
 import { createClient } from "@/libs/supabase/server";
-import { BUSINESS_ASSETS_BUCKET, IMAGE_TYPES, MAX_IMAGE_BYTES, MAX_PHOTOS } from "@/libs/supabase/storage";
+import { BUSINESS_ASSETS_BUCKET, IMAGE_TYPES, isDeclaredImage, MAX_IMAGE_BYTES, MAX_PHOTOS } from "@/libs/supabase/storage";
 
 const optionalUrl = z
     .string()
@@ -92,11 +92,12 @@ export async function setPublished(formData: FormData): Promise<FormState> {
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 type ImageColumn = "logo_path" | "cover_path";
 
-function readImage(formData: FormData): File | string {
+async function readImage(formData: FormData): Promise<File | string> {
     const file = formData.get("image");
     if (!(file instanceof File) || file.size === 0) return "Choose an image to upload.";
     if (!IMAGE_TYPES[file.type]) return "Use a PNG, JPG or WebP image.";
     if (file.size > MAX_IMAGE_BYTES) return "That image is too large. Try a smaller one.";
+    if (!(await isDeclaredImage(file))) return "That file isn't a PNG, JPG or WebP image.";
     return file;
 }
 
@@ -123,7 +124,7 @@ function capitalize(label: string) {
 async function replaceBusinessImage(formData: FormData, column: ImageColumn, label: string): Promise<FormState> {
     const auth = await authorizeBusiness(formData.get("businessId"), { manage: true });
     if (isFailure(auth)) return auth;
-    const file = readImage(formData);
+    const file = await readImage(formData);
     if (typeof file === "string") return { error: file };
 
     const supabase = await createClient();
@@ -174,7 +175,7 @@ const PHOTO_LIMIT_MESSAGE = `Your page can show up to ${MAX_PHOTOS} photos. Remo
 export async function uploadPhoto(formData: FormData): Promise<FormState> {
     const auth = await authorizeBusiness(formData.get("businessId"), { manage: true });
     if (isFailure(auth)) return auth;
-    const file = readImage(formData);
+    const file = await readImage(formData);
     if (typeof file === "string") return { error: file };
 
     const supabase = await createClient();

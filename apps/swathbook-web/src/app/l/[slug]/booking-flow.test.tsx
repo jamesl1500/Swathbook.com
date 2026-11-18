@@ -124,7 +124,7 @@ beforeEach(() => {
     state.push.mockReset();
     state.getAvailability.mockReset().mockResolvedValue({ slots: SLOTS });
     state.submitBooking.mockReset().mockResolvedValue({ ok: true, token: "t".repeat(64) });
-    state.locateAddress.mockReset().mockResolvedValue({ ok: true, location: { lat: 30.27, lng: -97.74 }, satellite: null });
+    state.locateAddress.mockReset().mockResolvedValue({ ok: true, location: { lat: 30.27, lng: -97.74 }, locationToken: "signed-spot", satellite: null });
 });
 
 describe("BookingFlow", () => {
@@ -168,7 +168,7 @@ describe("BookingFlow", () => {
             serviceIds: [MOW.id],
             from: "2026-11-09",
             days: 7,
-            location: { lat: 30.27, lng: -97.74 },
+            locationToken: "signed-spot",
         });
         expect(state.locateAddress).toHaveBeenCalledWith({ slug: "green-acres", address: expect.objectContaining({ line1: "1 Main St" }), wantsMap: false });
 

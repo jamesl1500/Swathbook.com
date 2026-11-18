@@ -12,7 +12,7 @@ import { formatDateShort } from "@/libs/time";
  */
 export async function RainBanner({ business }: { business: RainBusiness }) {
   if (!business.rain_alerts_enabled) return null;
-  const outlook = await loadRainOutlook(await createClient(), business, 3);
+  const outlook = await loadRainOutlook(await createClient(), business, 3, { onlyIfRainy: true });
   const day = nextRainDay(outlook, 3);
   if (!day?.forecast) return null;
 

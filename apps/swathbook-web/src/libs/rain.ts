@@ -70,21 +70,46 @@ export function buildOutlook(
 }
 
 /** The week ahead, or null when rain alerts are off or there's no base to forecast for. */
-export async function loadRainOutlook(supabase: Client, business: RainBusiness, days = 7): Promise<RainOutlook | null> {
+/** Days of forecast fetched for every outlook (callers use the first few). */
+const FORECAST_DAYS = 7;
+
+export async function loadRainOutlook(
+    supabase: Client,
+    business: RainBusiness,
+    days = 7,
+    /** Skip loading jobs when no day reaches the threshold (the banner only cares about wet days). */
+    { onlyIfRainy = false }: { onlyIfRainy?: boolean } = {},
+): Promise<RainOutlook | null> {
     const from = todayKey(business.timezone);
     const { start, end } = dayRangeUtc(from, addDays(from, days), business.timezone);
     const point = business.base_lat != null && business.base_lng != null ? { lat: business.base_lat, lng: business.base_lng } : null;
-
-    const [forecast, { data: jobs }] = await Promise.all([
-        point ? dailyForecast(point, days) : Promise.resolve({ days: [] as ForecastDay[], problem: null }),
+    // Always the same window, so the banner and the planner share one cached (and billed) forecast.
+    const loadForecast = async () => {
+        if (!point) return { days: [] as ForecastDay[], problem: null };
+        const forecast = await dailyForecast(point, FORECAST_DAYS);
+        return { ...forecast, days: forecast.days.slice(0, days) };
+    };
+    const loadJobs = () =>
         supabase
             .from("bookings")
             .select("scheduled_start, booking_items(service_id, services(weather_dependent))")
             .eq("business_id", business.id)
             .in("status", ["requested", "confirmed"])
             .gte("scheduled_start", start.toISOString())
-            .lt("scheduled_start", end.toISOString()),
-    ]);
+            .lt("scheduled_start", end.toISOString());
+
+    let forecast: Awaited<ReturnType<typeof loadForecast>>;
+    let jobs: JobRow[] | null;
+    if (onlyIfRainy) {
+        // The forecast is cached, so checking it first saves a query on dry days.
+        forecast = await loadForecast();
+        if (!forecast.days.some((day) => day.rainChance >= business.rain_alert_percent)) return null;
+        jobs = ((await loadJobs()).data ?? null) as JobRow[] | null;
+    } else {
+        const [loaded, { data }] = await Promise.all([loadForecast(), loadJobs()]);
+        forecast = loaded;
+        jobs = (data ?? null) as JobRow[] | null;
+    }
 
     return {
         days: buildOutlook({ from, days, timeZone: business.timezone, threshold: business.rain_alert_percent }, forecast.days, (jobs ?? []) as JobRow[]),

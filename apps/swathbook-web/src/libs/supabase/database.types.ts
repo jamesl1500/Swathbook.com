@@ -785,6 +785,9 @@ isOneToOne: false
               "slot_end": string,"slot_start": string
             }[]
                            },
+"hit_rate_limit":
+{ Args: { "p_bucket": string,"p_limit": number,"p_window_seconds": number }; Returns: boolean
+                           },
 "invitation_preview":
 { Args: { "p_token": string }; Returns: {
               "business_name": string,"email": string,"expired": boolean,"role": Database["public"]['Enums']["member_role"]
