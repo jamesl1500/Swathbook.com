@@ -82,6 +82,8 @@ export function staleReason(template: string, status: string, context: BookingEm
             if (status !== "confirmed") return "booking no longer confirmed";
             if (Date.parse(context.booking.start) <= now) return "already started";
             return null;
+        case "booking.job_report":
+            return status === "completed" ? null : "job isn't completed";
         case "booking.cancelled":
         case "booking.hold_expired":
         case "owner.customer_cancelled":

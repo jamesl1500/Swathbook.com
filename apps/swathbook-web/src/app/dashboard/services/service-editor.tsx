@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState, useTransition } from "react";
-import { ArrowDown, ArrowUp, EyeOff, Pencil, Trash } from "lucide-react";
+import { ArrowDown, ArrowUp, EyeOff, Pencil, Ruler, Trash } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Field, FormMessage, Input, Select } from "@/components/ui/field";
@@ -20,8 +20,11 @@ function centsToInput(cents: number) {
   return cents % 100 === 0 ? String(cents / 100) : (cents / 100).toFixed(2);
 }
 
-export function priceLabel(service: Pick<Service, "price_type" | "price_cents">, currency: string) {
+export function priceLabel(service: Pick<Service, "price_type" | "price_cents"> & Partial<Pick<Service, "price_per_1000_sqft_cents">>, currency: string) {
   if (service.price_type === "quote") return "Quote";
+  if (service.price_per_1000_sqft_cents) {
+    return `${formatCents(service.price_per_1000_sqft_cents, currency)} per 1,000 sq ft (min ${formatCents(service.price_cents, currency)})`;
+  }
   const amount = formatCents(service.price_cents, currency);
   return service.price_type === "starting_at" ? `From ${amount}` : amount;
 }
@@ -46,6 +49,7 @@ export function ServiceEditor({
 }) {
   const [formKey, setFormKey] = useState(0);
   const [depositType, setDepositType] = useState(service?.deposit_type ?? "none");
+  const [byArea, setByArea] = useState(Boolean(service?.price_per_1000_sqft_cents));
   const [state, formAction] = useActionState(async (prev: FormState, formData: FormData) => {
     const result = await saveService(prev, formData);
     if (result.success) {
@@ -54,6 +58,7 @@ export function ServiceEditor({
       else {
         setFormKey((key) => key + 1);
         setDepositType("none");
+        setByArea(false);
       }
     }
     return result;
@@ -82,15 +87,57 @@ export function ServiceEditor({
         />
       </Field>
 
+      <label className="flex min-h-11 items-start gap-2.5 rounded-xl border border-line px-3 py-2.5 text-sm has-checked:border-brand-500 has-checked:bg-brand-50">
+        <input
+          type="checkbox"
+          name="byArea"
+          checked={byArea}
+          onChange={(event) => setByArea(event.target.checked)}
+          className="mt-0.5 size-4 accent-[var(--color-brand-600)]"
+        />
+        <span>
+          <strong className="inline-flex items-center gap-1.5">
+            <Ruler className="size-4" aria-hidden="true" />
+            Charge by the square foot
+          </strong>
+          <span className="block text-ink-soft">Customers outline their yard on a satellite photo when booking and see the cost right away.</span>
+        </span>
+      </label>
+
+      {byArea ? (
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Per 1,000 sq ft" htmlFor={id("areaRate")} error={errors.areaRateCents?.[0]}>
+            <div className="relative">
+              <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-ink-faint">$</span>
+              <Input
+                id={id("areaRate")}
+                name="areaRate"
+                inputMode="decimal"
+                defaultValue={service?.price_per_1000_sqft_cents ? centsToInput(service.price_per_1000_sqft_cents) : ""}
+                className="pl-7"
+              />
+            </div>
+          </Field>
+          <Field
+            label={<>Minutes per 1,000 sq ft <span className="font-normal text-ink-faint">(optional)</span></>}
+            htmlFor={id("minutesPer1000")}
+            hint="Bigger yards book longer slots."
+            error={errors.minutesPer1000?.[0]}
+          >
+            <Input id={id("minutesPer1000")} name="minutesPer1000" inputMode="numeric" defaultValue={service?.minutes_per_1000_sqft ?? ""} />
+          </Field>
+        </div>
+      ) : null}
+
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Price" htmlFor={id("price")} error={errors.priceCents?.[0]}>
+        <Field label={byArea ? "Minimum price" : "Price"} htmlFor={id("price")} error={errors.priceCents?.[0]}>
           <div className="relative">
             <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-ink-faint">$</span>
             <Input id={id("price")} name="price" inputMode="decimal" defaultValue={service ? centsToInput(service.price_cents) : ""} className="pl-7" />
           </div>
         </Field>
-        <Field label="Pricing" htmlFor={id("priceType")}>
-          <Select id={id("priceType")} name="priceType" defaultValue={service?.price_type ?? "fixed"}>
+        <Field label="Pricing" htmlFor={id("priceType")} hint={byArea ? "Starts at the minimum." : undefined}>
+          <Select id={id("priceType")} name="priceType" defaultValue={service?.price_type ?? "fixed"} disabled={byArea}>
             <option value="fixed">Fixed price</option>
             <option value="starting_at">Starting at</option>
             <option value="quote">Quote on site</option>
@@ -98,7 +145,7 @@ export function ServiceEditor({
         </Field>
       </div>
 
-      <Field label="Takes about" htmlFor={id("duration")} error={errors.durationMinutes?.[0]}>
+      <Field label={byArea ? "Takes at least" : "Takes about"} htmlFor={id("duration")} error={errors.durationMinutes?.[0]}>
         <Select id={id("duration")} name="durationMinutes" defaultValue={service?.duration_minutes ?? 60}>
           {DURATIONS.map((minutes) => (
             <option key={minutes} value={minutes}>

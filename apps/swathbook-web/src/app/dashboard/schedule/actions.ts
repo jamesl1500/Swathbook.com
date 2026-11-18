@@ -339,6 +339,17 @@ const rulesSchema = z.object({
     depositRefundPolicy: z.enum(["refundable", "refundable_before_window", "non_refundable"]),
     autoConfirm: z.boolean(),
     allowCustomerReschedule: z.boolean(),
+    neighborDiscountPercent: z.coerce.number().int().min(0).max(50),
+    neighborRadiusMiles: z.coerce.number().min(0.1).max(3),
+    googleReviewUrl: z.union([
+        z.literal(""),
+        z
+            .string()
+            .trim()
+            .max(300)
+            .pipe(z.url({ protocol: /^https$/, error: "Paste the full https:// link from Google." })),
+    ]),
+    tipsEnabled: z.boolean(),
 });
 
 export async function saveBookingRules(_prev: FormState, formData: FormData): Promise<FormState> {
@@ -354,6 +365,10 @@ export async function saveBookingRules(_prev: FormState, formData: FormData): Pr
         depositRefundPolicy: text(formData, "depositRefundPolicy"),
         autoConfirm: formData.get("autoConfirm") === "on",
         allowCustomerReschedule: formData.get("allowCustomerReschedule") === "on",
+        neighborDiscountPercent: text(formData, "neighborDiscountPercent") || "0",
+        neighborRadiusMiles: text(formData, "neighborRadiusMiles") || "0.5",
+        googleReviewUrl: text(formData, "googleReviewUrl"),
+        tipsEnabled: formData.get("tipsEnabled") === "on",
     });
     if (!parsed.success) return invalid(parsed.error);
     const values = parsed.data;
@@ -371,6 +386,10 @@ export async function saveBookingRules(_prev: FormState, formData: FormData): Pr
             deposit_refund_policy: values.depositRefundPolicy,
             auto_confirm: values.autoConfirm,
             allow_customer_reschedule: values.allowCustomerReschedule,
+            neighbor_discount_percent: values.neighborDiscountPercent,
+            neighbor_radius_miles: values.neighborRadiusMiles,
+            google_review_url: values.googleReviewUrl || null,
+            tips_enabled: values.tipsEnabled,
         })
         .eq("id", auth.businessId);
     if (error) return { error: "We couldn't save your booking rules." };

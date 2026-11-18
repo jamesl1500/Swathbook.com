@@ -26,6 +26,13 @@ test.describe("public booking page", () => {
         await page.getByRole("checkbox", { name: /Weekly mow/ }).check();
         await page.getByRole("button", { name: "Continue" }).click();
 
+        await expect(page.getByRole("heading", { name: "Where should we come?" })).toBeVisible();
+        await page.getByLabel("Street address").fill("10 Oak Ln");
+        await page.getByLabel("City").fill("Austin");
+        await page.getByLabel("State").fill("TX");
+        await page.getByLabel("ZIP").fill("78701");
+        await page.getByRole("button", { name: "Continue" }).click();
+
         await expect(page.getByRole("heading", { name: "Pick a time" })).toBeVisible();
         const firstTime = page.getByRole("button", { name: /^\d{1,2}:\d{2} [AP]M$/ }).first();
         await expect(firstTime).toBeVisible();
@@ -35,10 +42,6 @@ test.describe("public booking page", () => {
 
         await page.getByLabel("Your name").fill("Pat Customer");
         await page.getByLabel("Email").fill(email);
-        await page.getByLabel("Street address").fill("10 Oak Ln");
-        await page.getByLabel("City").fill("Austin");
-        await page.getByLabel("State").fill("TX");
-        await page.getByLabel("ZIP").fill("78701");
         await page.getByLabel(/Anything we should know/).fill("Gate code 1234");
         await page.getByRole("button", { name: "Book it" }).click();
 
@@ -67,13 +70,16 @@ test.describe("public booking page", () => {
         await page.goto(`/l/${business.slug}`);
         await page.getByRole("checkbox", { name: /Weekly mow/ }).check();
         await page.getByRole("button", { name: "Continue" }).click();
+        // No address, no going on.
+        await expect(page.getByRole("button", { name: "Continue" })).toBeDisabled();
+        await page.getByLabel("Street address").fill("10 Oak Ln");
+        await page.getByRole("button", { name: "Continue" }).click();
         await page.getByRole("button", { name: /^\d{1,2}:\d{2} [AP]M$/ }).first().click();
         await page.getByRole("button", { name: "Continue" }).click();
         await page.getByRole("button", { name: "Book it" }).click();
 
         await expect(page.getByText("Enter your name.")).toBeVisible();
         await expect(page.getByText("Enter a valid email.")).toBeVisible();
-        await expect(page.getByText("Enter the service address.")).toBeVisible();
     });
 
     // With partial prerendering the shell streams before the lookup finishes, so

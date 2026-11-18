@@ -11,6 +11,10 @@
  */
 
 export const BUSINESS_ASSETS_BUCKET = "business-assets";
+export const JOB_FILES_BUCKET = "job-files";
+
+/** Before and after photos on one job report. */
+export const MAX_JOB_PHOTOS = 30;
 export const AVATARS_BUCKET = "avatars";
 
 export function publicAssetUrl(path: string | null | undefined) {

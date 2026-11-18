@@ -302,8 +302,32 @@ describe("saveBookingRules", () => {
             deposit_refund_policy: "refundable_before_window",
             auto_confirm: true,
             allow_customer_reschedule: false,
+            neighbor_discount_percent: 0,
+            neighbor_radius_miles: 0.5,
+            google_review_url: null,
+            tips_enabled: false,
         });
         expect(update.filters).toContainEqual(["eq", "id", BUSINESS_ID]);
+    });
+
+    it("saves neighbor pricing and the after-the-job settings", async () => {
+        const result = await saveBookingRules(
+            {},
+            form({ ...rules, neighborDiscountPercent: "10", neighborRadiusMiles: "1", googleReviewUrl: "https://g.page/r/abc/review", tipsEnabled: "on" }),
+        );
+        expect(result).toEqual({ success: "Booking rules saved." });
+        expect(state.supabase.callsTo("businesses", "update")[0].values).toMatchObject({
+            neighbor_discount_percent: 10,
+            neighbor_radius_miles: 1,
+            google_review_url: "https://g.page/r/abc/review",
+            tips_enabled: true,
+        });
+    });
+
+    it("only takes an https review link", async () => {
+        const result = await saveBookingRules({}, form({ ...rules, googleReviewUrl: "http://example.com" }));
+        expect(result.fieldErrors?.googleReviewUrl).toBeTruthy();
+        expect(state.supabase.callsTo("businesses", "update")).toHaveLength(0);
     });
 
     it("rejects odd slot sizes and out-of-range values", async () => {

@@ -13,6 +13,9 @@
  */
 
 import { estimateMatrix, type LatLng, type TravelMatrix } from "@/libs/routing/optimizer";
+import { classifyMapsError, MAPS_PROBLEM_HINTS, networkProblem, type MapsProblem } from "./problems";
+
+export type { MapsProblem } from "./problems";
 
 const TIMEOUT_MS = 8000;
 
@@ -43,10 +46,17 @@ export type ResolvedAddress = {
     lng: number | null;
 };
 
-async function googleFetch<T>(url: string, init: RequestInit & { fieldMask?: string } = {}): Promise<T | null> {
+type GoogleInit = RequestInit & { fieldMask?: string; api: string };
+type GoogleResult<T> = { data: T; problem: null } | { data: null; problem: MapsProblem | null };
+
+function logProblem(url: string, problem: MapsProblem) {
+    console.error(`[google] ${problem.api} refused (${problem.reason}: ${MAPS_PROBLEM_HINTS[problem.reason]}) at ${url.split("?")[0]}: ${problem.detail}`);
+}
+
+/** A Maps request that says why it failed. `problem` is null only when there's no key at all. */
+async function googleRequest<T>(url: string, { fieldMask, headers, api, ...rest }: GoogleInit): Promise<GoogleResult<T>> {
     const key = apiKey();
-    if (!key) return null;
-    const { fieldMask, headers, ...rest } = init;
+    if (!key) return { data: null, problem: null };
     try {
         const response = await fetch(url, {
             ...rest,
@@ -60,14 +70,20 @@ async function googleFetch<T>(url: string, init: RequestInit & { fieldMask?: str
             },
         });
         if (!response.ok) {
-            console.error(`[google] ${response.status} ${url.split("?")[0]}: ${(await response.text()).slice(0, 300)}`);
-            return null;
+            const problem = classifyMapsError(api, response.status, await response.text());
+            logProblem(url, problem);
+            return { data: null, problem };
         }
-        return (await response.json()) as T;
+        return { data: (await response.json()) as T, problem: null };
     } catch (error) {
-        console.error(`[google] request failed for ${url.split("?")[0]}`, error);
-        return null;
+        const problem = networkProblem(api, error);
+        logProblem(url, problem);
+        return { data: null, problem };
     }
+}
+
+async function googleFetch<T>(url: string, init: GoogleInit): Promise<T | null> {
+    return (await googleRequest<T>(url, init)).data;
 }
 
 type AutocompleteResponse = {
@@ -84,6 +100,7 @@ export async function autocompleteAddress(input: string, sessionToken: string): 
     const query = input.trim();
     if (query.length < 3) return [];
     const data = await googleFetch<AutocompleteResponse>("https://places.googleapis.com/v1/places:autocomplete", {
+        api: "Places API (New)",
         method: "POST",
         body: JSON.stringify({
             input: query.slice(0, 200),
@@ -129,6 +146,7 @@ export async function placeDetails(placeId: string, sessionToken?: string): Prom
         addressComponents?: AddressComponent[];
         location?: { latitude: number; longitude: number };
     }>(`https://places.googleapis.com/v1/places/${placeId}${query}`, {
+        api: "Places API (New)",
         fieldMask: "id,formattedAddress,addressComponents,location",
     });
     if (!data) return null;
@@ -143,13 +161,26 @@ export async function placeDetails(placeId: string, sessionToken?: string): Prom
     };
 }
 
-export async function geocodeAddress(address: string): Promise<(LatLng & { placeId: string; formatted: string }) | null> {
+export async function geocodeAddress(
+    address: string,
+    report?: (problem: MapsProblem) => void,
+): Promise<(LatLng & { placeId: string; formatted: string }) | null> {
     const key = apiKey();
     if (!key || address.trim().length < 5) return null;
-    const data = await googleFetch<{
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${key}`;
+    const { data, problem } = await googleRequest<{
         status: string;
+        error_message?: string;
         results: Array<{ place_id: string; formatted_address: string; geometry: { location: LatLng } }>;
-    }>(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${key}`, { method: "GET" });
+    }>(url, { api: "Geocoding API", method: "GET" });
+    if (problem) report?.(problem);
+    // Geocoding refuses with a 200 and a status, not an HTTP error.
+    if (data && !["OK", "ZERO_RESULTS"].includes(data.status)) {
+        const refused = classifyMapsError("Geocoding API", 200, JSON.stringify(data));
+        logProblem(url, refused);
+        report?.(refused);
+        return null;
+    }
     const result = data?.status === "OK" ? data.results[0] : undefined;
     return result
         ? { lat: result.geometry.location.lat, lng: result.geometry.location.lng, placeId: result.place_id, formatted: result.formatted_address }
@@ -162,15 +193,19 @@ function waypoint(point: LatLng) {
 
 /**
  * Drive times between every pair of points (max 25). Missing pairs, or no API
- * key at all, fall back to the straight-line estimate.
+ * key at all, fall back to the straight-line estimate; `problem` says why
+ * Google didn't answer, when it refused.
  */
-export async function travelMatrix(points: LatLng[]): Promise<{ matrix: TravelMatrix; source: "google" | "estimate" }> {
+export async function travelMatrix(
+    points: LatLng[],
+): Promise<{ matrix: TravelMatrix; source: "google" | "estimate"; problem: MapsProblem | null }> {
     const estimate = estimateMatrix(points);
-    if (!hasGoogleMaps() || points.length < 2 || points.length > 25) return { matrix: estimate, source: "estimate" };
+    if (!hasGoogleMaps() || points.length < 2 || points.length > 25) return { matrix: estimate, source: "estimate", problem: null };
 
-    const elements = await googleFetch<
+    const { data: elements, problem } = await googleRequest<
         Array<{ originIndex: number; destinationIndex: number; duration?: string; distanceMeters?: number; condition?: string }>
     >("https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix", {
+        api: "Routes API",
         method: "POST",
         fieldMask: "originIndex,destinationIndex,duration,distanceMeters,condition",
         body: JSON.stringify({
@@ -180,7 +215,7 @@ export async function travelMatrix(points: LatLng[]): Promise<{ matrix: TravelMa
             routingPreference: "TRAFFIC_UNAWARE",
         }),
     });
-    if (!elements?.length) return { matrix: estimate, source: "estimate" };
+    if (!elements?.length) return { matrix: estimate, source: "estimate", problem };
 
     const durations = estimate.durations.map((row) => [...row]);
     const distances = estimate.distances.map((row) => [...row]);
@@ -189,17 +224,18 @@ export async function travelMatrix(points: LatLng[]): Promise<{ matrix: TravelMa
         durations[element.originIndex][element.destinationIndex] = Number.parseInt(element.duration ?? "0", 10);
         distances[element.originIndex][element.destinationIndex] = element.distanceMeters ?? 0;
     }
-    return { matrix: { durations, distances }, source: "google" };
+    return { matrix: { durations, distances }, source: "google", problem: null };
 }
 
-/** Encoded polyline of the driving route through `points` in order. */
-export async function routePolyline(points: LatLng[]): Promise<string | null> {
+/** Encoded polyline of the driving route through `points` in order. `report` hears why Google refused, if it did. */
+export async function routePolyline(points: LatLng[], report?: (problem: MapsProblem) => void): Promise<string | null> {
     if (points.length < 2 || points.length > 27) return null;
     const [origin, ...rest] = points;
     const destination = rest[rest.length - 1];
-    const data = await googleFetch<{ routes?: Array<{ polyline?: { encodedPolyline?: string } }> }>(
+    const { data, problem } = await googleRequest<{ routes?: Array<{ polyline?: { encodedPolyline?: string } }> }>(
         "https://routes.googleapis.com/directions/v2:computeRoutes",
         {
+            api: "Routes API",
             method: "POST",
             fieldMask: "routes.polyline.encodedPolyline",
             body: JSON.stringify({
@@ -211,6 +247,7 @@ export async function routePolyline(points: LatLng[]): Promise<string | null> {
             }),
         },
     );
+    if (problem) report?.(problem);
     return data?.routes?.[0]?.polyline?.encodedPolyline ?? null;
 }
 

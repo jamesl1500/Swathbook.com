@@ -22,12 +22,13 @@ test.describe("booking emails", () => {
         await page.goto(`/l/${business.slug}`);
         await page.getByRole("checkbox", { name: /Weekly mow/ }).check();
         await page.getByRole("button", { name: "Continue" }).click();
+        await page.getByLabel("Street address").fill("10 Oak Ln");
+        await page.getByLabel("City").fill("Austin");
+        await page.getByRole("button", { name: "Continue" }).click();
         await page.getByRole("button", { name: /^\d{1,2}:\d{2} [AP]M$/ }).first().click();
         await page.getByRole("button", { name: "Continue" }).click();
         await page.getByLabel("Your name").fill("Pat Customer");
         await page.getByLabel("Email").fill(customerEmail);
-        await page.getByLabel("Street address").fill("10 Oak Ln");
-        await page.getByLabel("City").fill("Austin");
         await page.getByRole("button", { name: "Book it" }).click();
         await expect(page.getByRole("heading", { name: "You're booked!" })).toBeVisible();
         const bookingPath = new URL(page.url()).pathname;

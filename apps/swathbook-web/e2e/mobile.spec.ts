@@ -88,6 +88,8 @@ test.describe("public pages on phones and tablets", () => {
         await page.goto(`/l/${business.slug}`);
         await page.getByRole("checkbox").first().check();
         await page.getByRole("button", { name: /continue/i }).click();
+        await page.getByLabel("Street address").fill("10 Oak Ln");
+        await page.getByRole("button", { name: /continue/i }).click();
         await expect(page.getByRole("heading", { name: "Pick a time" })).toBeVisible();
         expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
     });

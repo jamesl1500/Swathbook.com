@@ -85,6 +85,24 @@ describe("planDayRoute", () => {
         expect(await plan()).toEqual({ ok: false, error: "We couldn't load that day's jobs." });
     });
 
+    it("still plans when Google refuses, and keeps why so the owner can fix it", async () => {
+        const problem = { api: "Routes API", reason: "denied", detail: "Permission denied on the service." };
+        maps.travelMatrix.mockImplementation(async (points) => ({ matrix: matrixFor(points), source: "estimate", problem }));
+        maps.routePolyline.mockImplementation(async (_points, report) => {
+            report?.({ api: "Routes API", reason: "billing", detail: "later problem" });
+            return null;
+        });
+        db.respond("bookings.select", { data: [job("a", 9, { lat: 30.1, lng: -97.0 }), job("b", 10, { lat: 30.2, lng: -97.0 })] });
+
+        const result = await plan();
+        // The first refusal is the one reported.
+        expect(result).toMatchObject({ ok: true, stopCount: 2, source: "estimate", mapsProblem: problem });
+        expect(admin.callsTo("routes", "upsert")[0].values).toMatchObject({
+            optimization_provider: "estimate",
+            optimization_meta: { maps_problem: problem },
+        });
+    });
+
     it("plans from the depot, saves the stops in order, and reports time saved", async () => {
         // Booked far-near-far: driving near first saves time.
         db.respond("bookings.select", {
@@ -133,7 +151,7 @@ describe("planDayRoute", () => {
 
         const result = await plan();
         expect(result).toMatchObject({ ok: true, stopCount: 2, excluded: ["Ada Lovelace"] });
-        expect(maps.geocodeAddress).toHaveBeenCalledWith("lookup St, Austin, TX");
+        expect(maps.geocodeAddress).toHaveBeenCalledWith("lookup St, Austin, TX", expect.any(Function));
         expect(db.callsTo("customer_addresses", "update")[0]).toMatchObject({
             values: { lat: 30.4, lng: -97.1, google_place_id: "pl_1" },
             filters: [["eq", "id", "addr-lookup"]],

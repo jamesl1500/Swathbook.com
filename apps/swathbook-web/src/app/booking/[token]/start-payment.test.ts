@@ -29,7 +29,8 @@ describe("startPayment", () => {
 
     it("rejects bad tokens and payment kinds before looking anything up", async () => {
         expect(await startPayment("nope", "deposit")).toEqual({ error: "That payment link isn't valid." });
-        expect(await startPayment(TOKEN, "tip" as never)).toEqual({ error: "That payment link isn't valid." });
+        expect(await startPayment(TOKEN, "refund" as never)).toEqual({ error: "That payment link isn't valid." });
+        expect(await startPayment(TOKEN, "tip")).toEqual({ error: "Pick a tip amount." });
         expect(state.admin.calls).toHaveLength(0);
     });
 

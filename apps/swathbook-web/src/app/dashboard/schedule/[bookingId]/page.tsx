@@ -16,6 +16,8 @@ import {
   Navigation,
   NotebookPen,
   Phone,
+  Ruler,
+  Images,
   UserRound,
 } from "lucide-react";
 import { CopyButton } from "@/components/app/copy-button";
@@ -30,10 +32,13 @@ import { getSiteUrl } from "@/libs/site-url";
 import { createClient } from "@/libs/supabase/server";
 import { loadTeam } from "@/libs/team";
 import { formatDateLong, formatDateTime, formatTime, toDateKey, toTimeKey } from "@/libs/time";
+import { formatSqft } from "@/libs/measure/geo";
+import { JOB_FILES_BUCKET } from "@/libs/supabase/storage";
 import { formatCents, formatDuration } from "@/libs/utils";
 import { CancelRequestControls } from "../../bookings/booking-actions";
 import { AssignForm, JobActionBar, NotesForm, RefundButton, RescheduleForm } from "../job-actions";
 import { describeJobEvent } from "./job-events";
+import { ReportPanel, type ReportPhoto } from "./report-panel";
 
 export const metadata: Metadata = { title: "Job" };
 
@@ -48,7 +53,7 @@ export default function BookingPage({ params }: PageProps<"/dashboard/schedule/[
 async function BookingDetail({ params }: { params: PageProps<"/dashboard/schedule/[bookingId]">["params"] }) {
   const { bookingId } = await params;
   if (!/^[0-9a-f-]{36}$/.test(bookingId)) notFound();
-  const { business, canManage, memberId } = await requireBusinessContext(routes.schedule);
+  const { business, canManage, memberId, user } = await requireBusinessContext(routes.schedule);
 
   const supabase = await createClient();
   const [{ data: booking }, team, siteUrl] = await Promise.all([
@@ -59,7 +64,8 @@ async function BookingDetail({ params }: { params: PageProps<"/dashboard/schedul
          booking_items(id, name, quantity, unit_price_cents, line_total_cents, duration_minutes, sort_order),
          booking_answers(service_name, prompt, answer, sort_order),
          payments(id, kind, status, amount_cents, amount_refunded_cents, succeeded_at, created_at, card_brand, card_last4),
-         booking_events(id, event_type, from_status, to_status, created_at, data)`,
+         booking_events(id, event_type, from_status, to_status, created_at, data),
+         booking_attachments(id, storage_path, phase, uploaded_by, created_at)`,
       )
       .eq("id", bookingId)
       .eq("business_id", business.id)
@@ -82,6 +88,21 @@ async function BookingDetail({ params }: { params: PageProps<"/dashboard/schedul
   const events = [...booking.booking_events].sort((a, b) => b.created_at.localeCompare(a.created_at));
   const balance = Math.max(0, booking.balance_due_cents ?? 0);
   const money = (cents: number) => formatCents(cents, booking.currency);
+  const hasOutline = Array.isArray(booking.measurement) && booking.measurement.length > 0;
+
+  // Report photos, oldest first, with short-lived links (the bucket is private).
+  const reportFiles = [...booking.booking_attachments]
+    .filter((file): file is typeof file & { phase: "before" | "after" } => file.phase === "before" || file.phase === "after")
+    .sort((a, b) => a.created_at.localeCompare(b.created_at));
+  const { data: signed } = reportFiles.length
+    ? await supabase.storage.from(JOB_FILES_BUCKET).createSignedUrls(reportFiles.map((file) => file.storage_path), 60 * 60)
+    : { data: [] };
+  const photos: ReportPhoto[] = reportFiles.map((file, index) => ({
+    id: file.id,
+    url: signed?.[index]?.signedUrl ?? null,
+    phase: file.phase,
+    canDelete: canManage || file.uploaded_by === user.id,
+  }));
 
   const tabs: TabItem[] = [
     {
@@ -105,12 +126,42 @@ async function BookingDetail({ params }: { params: PageProps<"/dashboard/schedul
                   </li>
                 ))}
               </ul>
+              {canManage && booking.discount_cents > 0 ? (
+                <p className="mt-2 flex justify-between gap-3 border-t border-line pt-2 text-sm text-brand-700">
+                  <span>{booking.discount_reason ?? "Discount"}</span>
+                  <span className="font-semibold">−{money(booking.discount_cents)}</span>
+                </p>
+              ) : null}
               {booking.customer_notes ? (
                 <p className="mt-4 rounded-xl bg-paper px-4 py-3 text-sm">
                   <strong>Customer note:</strong> {booking.customer_notes}
                 </p>
               ) : null}
             </Card>
+
+            {booking.measured_area_sqft ? (
+              <Card>
+                <CardTitle>
+                  <span className="inline-flex items-center gap-2">
+                    <Ruler className="size-4" aria-hidden="true" />
+                    Measured area
+                  </span>
+                </CardTitle>
+                <p className="text-sm">
+                  <strong>{formatSqft(booking.measured_area_sqft)}</strong>
+                  <span className="text-ink-soft">{hasOutline ? " · outlined by the customer on the map" : " · entered by the customer"}</span>
+                </p>
+                {hasOutline ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- proxied Static Maps image
+                  <img
+                    src={`/api/maps/measurement/${booking.id}`}
+                    alt="The area the customer outlined"
+                    loading="lazy"
+                    className="mt-3 aspect-[16/10] w-full rounded-xl border border-line bg-paper-deep object-cover"
+                  />
+                ) : null}
+              </Card>
+            ) : null}
 
             {answers.length ? (
               <Card>
@@ -228,6 +279,18 @@ async function BookingDetail({ params }: { params: PageProps<"/dashboard/schedul
               <Card>
                 <CardTitle>Summary</CardTitle>
                 <dl className="space-y-2 text-sm">
+                  {booking.discount_cents > 0 ? (
+                    <div className="flex justify-between text-brand-700">
+                      <dt>{booking.discount_reason ?? "Discount"}</dt>
+                      <dd>−{money(booking.discount_cents)}</dd>
+                    </div>
+                  ) : null}
+                  {booking.tip_cents > 0 ? (
+                    <div className="flex justify-between">
+                      <dt className="text-ink-soft">Tip</dt>
+                      <dd>{money(booking.tip_cents)}</dd>
+                    </div>
+                  ) : null}
                   <div className="flex justify-between">
                     <dt className="text-ink-soft">Total</dt>
                     <dd className="font-semibold">{money(booking.total_cents ?? 0)}</dd>
@@ -275,6 +338,28 @@ async function BookingDetail({ params }: { params: PageProps<"/dashboard/schedul
         ),
       },
     );
+  }
+
+  if (booking.status !== "cancelled") {
+    tabs.push({
+      id: "report",
+      label: "Report",
+      icon: <Images />,
+      badge: photos.length ? String(photos.length) : undefined,
+      content: (
+        <Card className="max-w-4xl">
+          <CardTitle>Job report</CardTitle>
+          <ReportPanel
+            businessId={business.id}
+            bookingId={booking.id}
+            photos={photos}
+            note={booking.report_note ?? ""}
+            reportUrl={`${payLink}/report`}
+            completed={booking.status === "completed"}
+          />
+        </Card>
+      ),
+    });
   }
 
   if (canManage || booking.internal_notes) {

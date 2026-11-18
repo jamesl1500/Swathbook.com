@@ -21,7 +21,15 @@ export type PublicService = {
     price_type: "fixed" | "starting_at" | "quote";
     price_cents: number;
     duration_minutes: number;
+    /** The deposit at the service's own (minimum) price. */
     deposit_cents: number;
+    /** How the deposit is worked out, for prices that change with a measured area. "none" without online payments. */
+    deposit_type: "none" | "percent" | "fixed";
+    deposit_percent: number;
+    deposit_amount_cents: number;
+    /** Set when the price follows the area the customer measures; price_cents is then the minimum. */
+    price_per_1000_sqft_cents: number | null;
+    minutes_per_1000_sqft: number | null;
     /** What the customer answers when booking this service ("Make and model?"). */
     questions: ServiceQuestion[];
 };
@@ -46,6 +54,8 @@ export type BookingPageData = {
         cancellation_window_hours: number;
         deposit_refund_policy: "refundable" | "refundable_before_window" | "non_refundable";
         accepts_online_payments: boolean;
+        /** Percent off on days the business already works nearby; 0 when not offered. */
+        neighbor_discount_percent: number;
     };
     services: PublicService[];
     hours: Array<{ weekday: number; opens_at: string; closes_at: string }>;

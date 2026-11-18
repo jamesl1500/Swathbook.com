@@ -134,6 +134,18 @@ export const bookingTemplates: Record<string, Template> = {
             footer: contactLine(context),
         }),
 
+    "booking.job_report": (context) =>
+        customerEmail(context, `Your job report from ${context.business.name}`, {
+            preheader: "Photos from the job and a note from the crew.",
+            heading: "All done!",
+            paragraphs: [
+                `Hi ${context.customer.name}, ${context.business.name} finished the job: ${context.services.join(", ") || "your service visit"}.`,
+                "Your job report has before and after photos and a note from the crew.",
+            ],
+            button: { label: "See your job report", url: `${bookingUrl(context)}/report` },
+            footer: contactLine(context),
+        }),
+
     "booking.deposit_reminder": (context) => {
         const holdUntil = context.booking.holdExpiresAt ? formatTime(context.booking.holdExpiresAt, context.business.timezone) : null;
         return customerEmail(context, `Finish booking with ${context.business.name}`, {

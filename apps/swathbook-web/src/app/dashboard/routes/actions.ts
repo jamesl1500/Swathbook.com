@@ -9,7 +9,12 @@ import { createAdminClient } from "@/libs/supabase/admin";
 import { createClient } from "@/libs/supabase/server";
 import { isDateKey } from "@/libs/time";
 
-export async function planRoute(formData: FormData): Promise<FormState> {
+export type PlanRouteState = FormState & {
+    /** Google Maps didn't help, so the route uses straight-line estimates. Why is in the server log. */
+    mapsFallback?: boolean;
+};
+
+export async function planRoute(formData: FormData): Promise<PlanRouteState> {
     const auth = await authorizeBusiness(formData.get("businessId"), { manage: true });
     if (isFailure(auth)) return auth;
     const parsed = z
@@ -32,7 +37,10 @@ export async function planRoute(formData: FormData): Promise<FormState> {
     const parts = [`Planned ${result.stopCount} ${result.stopCount === 1 ? "stop" : "stops"}`];
     if (saved > 0) parts.push(`saving about ${saved} min of driving`);
     if (result.excluded.length) parts.push(`${result.excluded.length} without a mappable address were left off`);
-    return { success: `${parts.join(", ")}.` };
+    return {
+        success: `${parts.join(", ")}.`,
+        ...(result.mapsProblem ? { mapsFallback: true } : {}),
+    };
 }
 
 const STOP_STATUSES = ["pending", "en_route", "arrived", "completed", "skipped"] as const;
