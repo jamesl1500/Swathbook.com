@@ -31,6 +31,7 @@ export const routes = {
     bookings: "/dashboard/bookings",
     newBooking: "/dashboard/schedule/new",
     availability: "/dashboard/schedule/availability",
+    rainDays: "/dashboard/schedule/rain",
     customers: "/dashboard/customers",
     newCustomer: "/dashboard/customers/new",
     dayRoutes: "/dashboard/routes",

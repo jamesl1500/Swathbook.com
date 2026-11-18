@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarPlus, CircleCheck, Clock, Images, MapPin, Phone, TriangleAlert } from "lucide-react";
+import { CalendarPlus, CircleCheck, Clock, CloudRain, Images, MapPin, Phone, TriangleAlert } from "lucide-react";
 import { BookingAnswers, sortAnswers } from "@/components/booking/booking-answers";
 import type { BookingOptions, CustomerBooking } from "@/libs/customer-booking";
 import { paymentReturnState, type PaymentReturn, type PaymentReturnState } from "@/libs/payment-return";
@@ -124,6 +124,13 @@ export function BookingPanel({
             returnPath={paymentReturnPath}
           />
         </section>
+      ) : null}
+
+      {booking.rain_delays && ["confirmed", "requested"].includes(booking.status) ? (
+        <p className="flex gap-2.5 rounded-[1.25rem] border border-line bg-card px-5 py-4 text-sm" data-testid="rain-moved">
+          <CloudRain className="mt-0.5 size-4 shrink-0 text-ink-faint" aria-hidden="true" />
+          Moved from {formatDateLong(booking.rain_delays.rain_date)} because rain was forecast.
+        </p>
       ) : null}
 
       <section className="rounded-[1.25rem] border border-line bg-card p-5 sm:p-6">

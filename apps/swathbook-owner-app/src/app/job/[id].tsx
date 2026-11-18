@@ -3,7 +3,7 @@ import { Badge, Button, Card, CardTitle, colors, Divider, EmptyState, FormMessag
 import { formatCents, formatDuration, formatLongDate, formatTimeRange } from '@swathbook/mobile/format';
 import { LoadError, Loading } from '@swathbook/mobile/query-state';
 import { useLocalSearchParams } from 'expo-router';
-import { MapPin, MessageSquareText, Navigation, Phone, SearchX } from 'lucide-react-native';
+import { KeyRound, MapPin, MessageSquareText, Navigation, PawPrint, Phone, SearchX } from 'lucide-react-native';
 import { useState } from 'react';
 import { Linking, StyleSheet, View } from 'react-native';
 
@@ -12,6 +12,7 @@ import { useJob, useTeam, type Job } from '@/data/api';
 import { useActiveBusiness } from '@/data/business';
 import { describeJobEvent } from '@/lib/job-events';
 import { jobSteps } from '@/lib/job-rules';
+import { propertyItems } from '@/lib/property';
 import { dateKeyIn } from '@/lib/time';
 
 export default function JobScreen() {
@@ -164,11 +165,41 @@ function JobDetail({ job }: { job: Job }) {
             <MapPin size={16} color={colors.inkFaint} aria-hidden />
             <Text style={styles.flex}>{addressText(address)}</Text>
           </View>
+          {address.gate_code ? (
+            <Card variant="deep" padding={3} style={styles.access}>
+              <View style={styles.addressRow}>
+                <KeyRound size={16} color={colors.ink} aria-hidden />
+                <Text variant="smallStrong">Gate code</Text>
+              </View>
+              <Text variant="heading" selectable accessibilityLabel={`Gate code ${address.gate_code.split("").join(" ")}`}>
+                {address.gate_code}
+              </Text>
+            </Card>
+          ) : null}
+          {address.pets ? (
+            <View style={[styles.addressRow, styles.access]}>
+              <PawPrint size={16} color={colors.inkFaint} aria-hidden />
+              <Text style={styles.flex}>{address.pets}</Text>
+            </View>
+          ) : null}
           {address.access_notes ? (
             <Card variant="deep" padding={3} style={styles.access}>
-              <Text variant="smallStrong">Access notes</Text>
+              <Text variant="smallStrong">Notes for the crew</Text>
               <Text variant="small">{address.access_notes}</Text>
             </Card>
+          ) : null}
+          {propertyItems(address.property_map).length ? (
+            <View style={styles.access}>
+              <Text variant="smallStrong">On the property</Text>
+              {propertyItems(address.property_map).map((item) => (
+                <Text key={item.key} variant="small">
+                  {item.label}
+                </Text>
+              ))}
+              <Text variant="small" tone="soft">
+                See the map on the job page on the web.
+              </Text>
+            </View>
           ) : null}
         </Card>
       ) : null}

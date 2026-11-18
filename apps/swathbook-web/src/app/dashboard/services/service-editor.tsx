@@ -210,6 +210,15 @@ export function ServiceEditor({
           Show on my booking page
         </label>
         <label className="flex items-center gap-2.5 min-h-11">
+          <input
+            type="checkbox"
+            name="weatherDependent"
+            defaultChecked={service?.weather_dependent ?? true}
+            className="size-4 accent-[var(--color-brand-600)]"
+          />
+          Rain stops this job (offer to move it on rain days)
+        </label>
+        <label className="flex items-center gap-2.5 min-h-11">
           <input type="checkbox" name="isActive" defaultChecked={service?.is_active ?? true} className="size-4 accent-[var(--color-brand-600)]" />
           Active (uncheck to retire it without deleting)
         </label>

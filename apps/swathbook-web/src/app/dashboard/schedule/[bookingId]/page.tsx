@@ -39,6 +39,9 @@ import { CancelRequestControls } from "../../bookings/booking-actions";
 import { AssignForm, JobActionBar, NotesForm, RefundButton, RescheduleForm } from "../job-actions";
 import { describeJobEvent } from "./job-events";
 import { ReportPanel, type ReportPhoto } from "./report-panel";
+import { PropertyNotes } from "@/components/property/property-notes";
+import { canMeasure, satelliteLinks } from "@/libs/google/satellite";
+import { readPropertyMap } from "@/libs/property";
 
 export const metadata: Metadata = { title: "Job" };
 
@@ -60,7 +63,7 @@ async function BookingDetail({ params }: { params: PageProps<"/dashboard/schedul
     supabase
       .from("bookings")
       .select(
-        `*, customers(id, full_name, email, phone), customer_addresses(line1, line2, city, region, postal_code, lat, lng, access_notes),
+        `*, customers(id, full_name, email, phone), customer_addresses(id, line1, line2, city, region, postal_code, lat, lng, access_notes, gate_code, pets, property_map),
          booking_items(id, name, quantity, unit_price_cents, line_total_cents, duration_minutes, sort_order),
          booking_answers(service_name, prompt, answer, sort_order),
          payments(id, kind, status, amount_cents, amount_refunded_cents, succeeded_at, created_at, card_brand, card_last4),
@@ -89,6 +92,8 @@ async function BookingDetail({ params }: { params: PageProps<"/dashboard/schedul
   const balance = Math.max(0, booking.balance_due_cents ?? 0);
   const money = (cents: number) => formatCents(cents, booking.currency);
   const hasOutline = Array.isArray(booking.measurement) && booking.measurement.length > 0;
+  const addressPoint = address?.lat != null && address.lng != null ? { lat: address.lat, lng: address.lng } : null;
+  const propertyLinks = addressPoint && canMeasure() ? satelliteLinks(addressPoint) : null;
 
   // Report photos, oldest first, with short-lived links (the bucket is private).
   const reportFiles = [...booking.booking_attachments]
@@ -170,6 +175,26 @@ async function BookingDetail({ params }: { params: PageProps<"/dashboard/schedul
               </Card>
             ) : null}
 
+            {address ? (
+              <Card>
+                <CardTitle>Property</CardTitle>
+                <PropertyNotes
+                  businessId={business.id}
+                  compact
+                  canEdit
+                  center={addressPoint}
+                  links={propertyLinks}
+                  value={{
+                    addressId: address.id,
+                    gateCode: address.gate_code ?? "",
+                    pets: address.pets ?? "",
+                    accessNotes: address.access_notes ?? "",
+                    map: readPropertyMap(address.property_map),
+                  }}
+                />
+              </Card>
+            ) : null}
+
             <Card>
               <CardTitle>Where</CardTitle>
               {address ? (
@@ -178,11 +203,6 @@ async function BookingDetail({ params }: { params: PageProps<"/dashboard/schedul
                     <MapPin className="mt-0.5 size-4 shrink-0 text-ink-faint" aria-hidden="true" />
                     <span>{formatAddress(address)}</span>
                   </p>
-                  {address.access_notes ? (
-                    <p className="mt-3 rounded-xl bg-sun-soft px-4 py-3 text-sm">
-                      <strong>Access notes:</strong> {address.access_notes}
-                    </p>
-                  ) : null}
                   <a
                     href={directionsUrl(address)}
                     target="_blank"

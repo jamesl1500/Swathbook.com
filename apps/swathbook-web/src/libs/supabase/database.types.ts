@@ -99,14 +99,14 @@ isOneToOne: false
                   ]
                 },"bookings": {
                   Row: {
-                    "address_id": string | null,"amount_paid_cents": number,"amount_refunded_cents": number,"assigned_member_id": string | null,"balance_due_cents": number | null,"business_id": string,"cancel_request_reason": string | null,"cancel_requested_at": string | null,"cancellation_reason": string | null,"cancelled_at": string | null,"completed_at": string | null,"confirmed_at": string | null,"created_at": string,"created_by": string | null,"currency": string,"customer_id": string,"customer_notes": string | null,"customer_reschedule_count": number,"deposit_due_cents": number,"deposit_paid_cents": number,"discount_cents": number,"discount_reason": string | null,"hold_expires_at": string | null,"id": string,"internal_notes": string | null,"measured_area_sqft": number | null,"measurement": Json | null,"public_token": string,"recurring_series_id": string | null,"reference": string,"report_note": string | null,"scheduled_end": string,"scheduled_range": unknown,"scheduled_start": string,"source": Database["public"]['Enums']["booking_source"],"started_at": string | null,"status": Database["public"]['Enums']["booking_status"],"subtotal_cents": number,"tax_cents": number,"tip_cents": number,"total_cents": number | null,"updated_at": string
+                    "address_id": string | null,"amount_paid_cents": number,"amount_refunded_cents": number,"assigned_member_id": string | null,"balance_due_cents": number | null,"business_id": string,"cancel_request_reason": string | null,"cancel_requested_at": string | null,"cancellation_reason": string | null,"cancelled_at": string | null,"completed_at": string | null,"confirmed_at": string | null,"created_at": string,"created_by": string | null,"currency": string,"customer_id": string,"customer_notes": string | null,"customer_reschedule_count": number,"deposit_due_cents": number,"deposit_paid_cents": number,"discount_cents": number,"discount_reason": string | null,"hold_expires_at": string | null,"id": string,"internal_notes": string | null,"measured_area_sqft": number | null,"measurement": Json | null,"public_token": string,"rain_delay_id": string | null,"recurring_series_id": string | null,"reference": string,"report_note": string | null,"scheduled_end": string,"scheduled_range": unknown,"scheduled_start": string,"source": Database["public"]['Enums']["booking_source"],"started_at": string | null,"status": Database["public"]['Enums']["booking_status"],"subtotal_cents": number,"tax_cents": number,"tip_cents": number,"total_cents": number | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "address_id"?: string | null,"amount_paid_cents"?: number,"amount_refunded_cents"?: number,"assigned_member_id"?: string | null,"balance_due_cents"?: never,"business_id": string,"cancel_request_reason"?: string | null,"cancel_requested_at"?: string | null,"cancellation_reason"?: string | null,"cancelled_at"?: string | null,"completed_at"?: string | null,"confirmed_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"customer_id": string,"customer_notes"?: string | null,"customer_reschedule_count"?: number,"deposit_due_cents"?: number,"deposit_paid_cents"?: number,"discount_cents"?: number,"discount_reason"?: string | null,"hold_expires_at"?: string | null,"id"?: string,"internal_notes"?: string | null,"measured_area_sqft"?: number | null,"measurement"?: Json | null,"public_token"?: string,"recurring_series_id"?: string | null,"reference"?: string,"report_note"?: string | null,"scheduled_end": string,"scheduled_range"?: never,"scheduled_start": string,"source"?: Database["public"]['Enums']["booking_source"],"started_at"?: string | null,"status"?: Database["public"]['Enums']["booking_status"],"subtotal_cents"?: number,"tax_cents"?: number,"tip_cents"?: number,"total_cents"?: never,"updated_at"?: string
+                    "address_id"?: string | null,"amount_paid_cents"?: number,"amount_refunded_cents"?: number,"assigned_member_id"?: string | null,"balance_due_cents"?: never,"business_id": string,"cancel_request_reason"?: string | null,"cancel_requested_at"?: string | null,"cancellation_reason"?: string | null,"cancelled_at"?: string | null,"completed_at"?: string | null,"confirmed_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"customer_id": string,"customer_notes"?: string | null,"customer_reschedule_count"?: number,"deposit_due_cents"?: number,"deposit_paid_cents"?: number,"discount_cents"?: number,"discount_reason"?: string | null,"hold_expires_at"?: string | null,"id"?: string,"internal_notes"?: string | null,"measured_area_sqft"?: number | null,"measurement"?: Json | null,"public_token"?: string,"rain_delay_id"?: string | null,"recurring_series_id"?: string | null,"reference"?: string,"report_note"?: string | null,"scheduled_end": string,"scheduled_range"?: never,"scheduled_start": string,"source"?: Database["public"]['Enums']["booking_source"],"started_at"?: string | null,"status"?: Database["public"]['Enums']["booking_status"],"subtotal_cents"?: number,"tax_cents"?: number,"tip_cents"?: number,"total_cents"?: never,"updated_at"?: string
                   }
                   Update: {
-                    "address_id"?: string | null,"amount_paid_cents"?: number,"amount_refunded_cents"?: number,"assigned_member_id"?: string | null,"balance_due_cents"?: never,"business_id"?: string,"cancel_request_reason"?: string | null,"cancel_requested_at"?: string | null,"cancellation_reason"?: string | null,"cancelled_at"?: string | null,"completed_at"?: string | null,"confirmed_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"customer_id"?: string,"customer_notes"?: string | null,"customer_reschedule_count"?: number,"deposit_due_cents"?: number,"deposit_paid_cents"?: number,"discount_cents"?: number,"discount_reason"?: string | null,"hold_expires_at"?: string | null,"id"?: string,"internal_notes"?: string | null,"measured_area_sqft"?: number | null,"measurement"?: Json | null,"public_token"?: string,"recurring_series_id"?: string | null,"reference"?: string,"report_note"?: string | null,"scheduled_end"?: string,"scheduled_range"?: never,"scheduled_start"?: string,"source"?: Database["public"]['Enums']["booking_source"],"started_at"?: string | null,"status"?: Database["public"]['Enums']["booking_status"],"subtotal_cents"?: number,"tax_cents"?: number,"tip_cents"?: number,"total_cents"?: never,"updated_at"?: string
+                    "address_id"?: string | null,"amount_paid_cents"?: number,"amount_refunded_cents"?: number,"assigned_member_id"?: string | null,"balance_due_cents"?: never,"business_id"?: string,"cancel_request_reason"?: string | null,"cancel_requested_at"?: string | null,"cancellation_reason"?: string | null,"cancelled_at"?: string | null,"completed_at"?: string | null,"confirmed_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"customer_id"?: string,"customer_notes"?: string | null,"customer_reschedule_count"?: number,"deposit_due_cents"?: number,"deposit_paid_cents"?: number,"discount_cents"?: number,"discount_reason"?: string | null,"hold_expires_at"?: string | null,"id"?: string,"internal_notes"?: string | null,"measured_area_sqft"?: number | null,"measurement"?: Json | null,"public_token"?: string,"rain_delay_id"?: string | null,"recurring_series_id"?: string | null,"reference"?: string,"report_note"?: string | null,"scheduled_end"?: string,"scheduled_range"?: never,"scheduled_start"?: string,"source"?: Database["public"]['Enums']["booking_source"],"started_at"?: string | null,"status"?: Database["public"]['Enums']["booking_status"],"subtotal_cents"?: number,"tax_cents"?: number,"tip_cents"?: number,"total_cents"?: never,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -138,6 +138,12 @@ isOneToOne: false
       columns: ["business_id","recurring_series_id"]
 isOneToOne: false
       referencedRelation: "recurring_series"
+      referencedColumns: ["business_id","id"]
+    },{
+      foreignKeyName: "bookings_rain_delay_fk"
+      columns: ["business_id","rain_delay_id"]
+isOneToOne: false
+      referencedRelation: "rain_delays"
       referencedColumns: ["business_id","id"]
     }
                   ]
@@ -223,28 +229,28 @@ isOneToOne: false
                   ]
                 },"businesses": {
                   Row: {
-                    "allow_customer_reschedule": boolean,"arrival_window_minutes": number,"auto_confirm": boolean,"base_address": string | null,"base_lat": number | null,"base_lng": number | null,"booking_lead_time_minutes": number,"booking_window_days": number,"brand_color": string | null,"buffer_minutes": number,"cancellation_window_hours": number,"cover_path": string | null,"created_at": string,"currency": string,"deposit_refund_policy": Database["public"]['Enums']["refund_policy"],"description": string | null,"email": string | null,"email_reminders_enabled": boolean,"google_review_url": string | null,"id": string,"is_published": boolean,"logo_path": string | null,"name": string,"neighbor_discount_percent": number,"neighbor_radius_miles": number,"next_invoice_number": number,"onboarding_completed_at": string | null,"owner_id": string,"phone": string | null,"reminder_hours_before": number,"service_area": string | null,"service_radius_miles": number | null,"slot_interval_minutes": number,"slug": string,"sms_reminders_enabled": boolean,"stripe_customer_id": string | null,"timezone": string,"tips_enabled": boolean,"trade": string,"trial_ends_at": string | null,"updated_at": string,"website_url": string | null
+                    "allow_customer_reschedule": boolean,"arrival_window_minutes": number,"auto_confirm": boolean,"base_address": string | null,"base_lat": number | null,"base_lng": number | null,"booking_lead_time_minutes": number,"booking_window_days": number,"brand_color": string | null,"buffer_minutes": number,"cancellation_window_hours": number,"cover_path": string | null,"created_at": string,"currency": string,"deposit_refund_policy": Database["public"]['Enums']["refund_policy"],"description": string | null,"email": string | null,"email_reminders_enabled": boolean,"google_review_url": string | null,"id": string,"is_published": boolean,"logo_path": string | null,"name": string,"neighbor_discount_percent": number,"neighbor_radius_miles": number,"next_invoice_number": number,"onboarding_completed_at": string | null,"owner_id": string,"phone": string | null,"rain_alert_percent": number,"rain_alerts_enabled": boolean,"reminder_hours_before": number,"service_area": string | null,"service_radius_miles": number | null,"slot_interval_minutes": number,"slug": string,"sms_reminders_enabled": boolean,"stripe_customer_id": string | null,"timezone": string,"tips_enabled": boolean,"trade": string,"trial_ends_at": string | null,"updated_at": string,"website_url": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "allow_customer_reschedule"?: boolean,"arrival_window_minutes"?: number,"auto_confirm"?: boolean,"base_address"?: string | null,"base_lat"?: number | null,"base_lng"?: number | null,"booking_lead_time_minutes"?: number,"booking_window_days"?: number,"brand_color"?: string | null,"buffer_minutes"?: number,"cancellation_window_hours"?: number,"cover_path"?: string | null,"created_at"?: string,"currency"?: string,"deposit_refund_policy"?: Database["public"]['Enums']["refund_policy"],"description"?: string | null,"email"?: string | null,"email_reminders_enabled"?: boolean,"google_review_url"?: string | null,"id"?: string,"is_published"?: boolean,"logo_path"?: string | null,"name": string,"neighbor_discount_percent"?: number,"neighbor_radius_miles"?: number,"next_invoice_number"?: number,"onboarding_completed_at"?: string | null,"owner_id": string,"phone"?: string | null,"reminder_hours_before"?: number,"service_area"?: string | null,"service_radius_miles"?: number | null,"slot_interval_minutes"?: number,"slug": string,"sms_reminders_enabled"?: boolean,"stripe_customer_id"?: string | null,"timezone"?: string,"tips_enabled"?: boolean,"trade": string,"trial_ends_at"?: string | null,"updated_at"?: string,"website_url"?: string | null
+                    "allow_customer_reschedule"?: boolean,"arrival_window_minutes"?: number,"auto_confirm"?: boolean,"base_address"?: string | null,"base_lat"?: number | null,"base_lng"?: number | null,"booking_lead_time_minutes"?: number,"booking_window_days"?: number,"brand_color"?: string | null,"buffer_minutes"?: number,"cancellation_window_hours"?: number,"cover_path"?: string | null,"created_at"?: string,"currency"?: string,"deposit_refund_policy"?: Database["public"]['Enums']["refund_policy"],"description"?: string | null,"email"?: string | null,"email_reminders_enabled"?: boolean,"google_review_url"?: string | null,"id"?: string,"is_published"?: boolean,"logo_path"?: string | null,"name": string,"neighbor_discount_percent"?: number,"neighbor_radius_miles"?: number,"next_invoice_number"?: number,"onboarding_completed_at"?: string | null,"owner_id": string,"phone"?: string | null,"rain_alert_percent"?: number,"rain_alerts_enabled"?: boolean,"reminder_hours_before"?: number,"service_area"?: string | null,"service_radius_miles"?: number | null,"slot_interval_minutes"?: number,"slug": string,"sms_reminders_enabled"?: boolean,"stripe_customer_id"?: string | null,"timezone"?: string,"tips_enabled"?: boolean,"trade": string,"trial_ends_at"?: string | null,"updated_at"?: string,"website_url"?: string | null
                   }
                   Update: {
-                    "allow_customer_reschedule"?: boolean,"arrival_window_minutes"?: number,"auto_confirm"?: boolean,"base_address"?: string | null,"base_lat"?: number | null,"base_lng"?: number | null,"booking_lead_time_minutes"?: number,"booking_window_days"?: number,"brand_color"?: string | null,"buffer_minutes"?: number,"cancellation_window_hours"?: number,"cover_path"?: string | null,"created_at"?: string,"currency"?: string,"deposit_refund_policy"?: Database["public"]['Enums']["refund_policy"],"description"?: string | null,"email"?: string | null,"email_reminders_enabled"?: boolean,"google_review_url"?: string | null,"id"?: string,"is_published"?: boolean,"logo_path"?: string | null,"name"?: string,"neighbor_discount_percent"?: number,"neighbor_radius_miles"?: number,"next_invoice_number"?: number,"onboarding_completed_at"?: string | null,"owner_id"?: string,"phone"?: string | null,"reminder_hours_before"?: number,"service_area"?: string | null,"service_radius_miles"?: number | null,"slot_interval_minutes"?: number,"slug"?: string,"sms_reminders_enabled"?: boolean,"stripe_customer_id"?: string | null,"timezone"?: string,"tips_enabled"?: boolean,"trade"?: string,"trial_ends_at"?: string | null,"updated_at"?: string,"website_url"?: string | null
+                    "allow_customer_reschedule"?: boolean,"arrival_window_minutes"?: number,"auto_confirm"?: boolean,"base_address"?: string | null,"base_lat"?: number | null,"base_lng"?: number | null,"booking_lead_time_minutes"?: number,"booking_window_days"?: number,"brand_color"?: string | null,"buffer_minutes"?: number,"cancellation_window_hours"?: number,"cover_path"?: string | null,"created_at"?: string,"currency"?: string,"deposit_refund_policy"?: Database["public"]['Enums']["refund_policy"],"description"?: string | null,"email"?: string | null,"email_reminders_enabled"?: boolean,"google_review_url"?: string | null,"id"?: string,"is_published"?: boolean,"logo_path"?: string | null,"name"?: string,"neighbor_discount_percent"?: number,"neighbor_radius_miles"?: number,"next_invoice_number"?: number,"onboarding_completed_at"?: string | null,"owner_id"?: string,"phone"?: string | null,"rain_alert_percent"?: number,"rain_alerts_enabled"?: boolean,"reminder_hours_before"?: number,"service_area"?: string | null,"service_radius_miles"?: number | null,"slot_interval_minutes"?: number,"slug"?: string,"sms_reminders_enabled"?: boolean,"stripe_customer_id"?: string | null,"timezone"?: string,"tips_enabled"?: boolean,"trade"?: string,"trial_ends_at"?: string | null,"updated_at"?: string,"website_url"?: string | null
                   }
                   Relationships: [
                     
                   ]
                 },"customer_addresses": {
                   Row: {
-                    "access_notes": string | null,"business_id": string,"city": string | null,"country": string,"created_at": string,"customer_id": string,"formatted_address": string | null,"google_place_id": string | null,"id": string,"is_primary": boolean,"label": string | null,"lat": number | null,"line1": string,"line2": string | null,"lng": number | null,"postal_code": string | null,"region": string | null,"updated_at": string
+                    "access_notes": string | null,"business_id": string,"city": string | null,"country": string,"created_at": string,"customer_id": string,"formatted_address": string | null,"gate_code": string | null,"google_place_id": string | null,"id": string,"is_primary": boolean,"label": string | null,"lat": number | null,"line1": string,"line2": string | null,"lng": number | null,"pets": string | null,"postal_code": string | null,"property_map": Json | null,"region": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "access_notes"?: string | null,"business_id": string,"city"?: string | null,"country"?: string,"created_at"?: string,"customer_id": string,"formatted_address"?: string | null,"google_place_id"?: string | null,"id"?: string,"is_primary"?: boolean,"label"?: string | null,"lat"?: number | null,"line1": string,"line2"?: string | null,"lng"?: number | null,"postal_code"?: string | null,"region"?: string | null,"updated_at"?: string
+                    "access_notes"?: string | null,"business_id": string,"city"?: string | null,"country"?: string,"created_at"?: string,"customer_id": string,"formatted_address"?: string | null,"gate_code"?: string | null,"google_place_id"?: string | null,"id"?: string,"is_primary"?: boolean,"label"?: string | null,"lat"?: number | null,"line1": string,"line2"?: string | null,"lng"?: number | null,"pets"?: string | null,"postal_code"?: string | null,"property_map"?: Json | null,"region"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "access_notes"?: string | null,"business_id"?: string,"city"?: string | null,"country"?: string,"created_at"?: string,"customer_id"?: string,"formatted_address"?: string | null,"google_place_id"?: string | null,"id"?: string,"is_primary"?: boolean,"label"?: string | null,"lat"?: number | null,"line1"?: string,"line2"?: string | null,"lng"?: number | null,"postal_code"?: string | null,"region"?: string | null,"updated_at"?: string
+                    "access_notes"?: string | null,"business_id"?: string,"city"?: string | null,"country"?: string,"created_at"?: string,"customer_id"?: string,"formatted_address"?: string | null,"gate_code"?: string | null,"google_place_id"?: string | null,"id"?: string,"is_primary"?: boolean,"label"?: string | null,"lat"?: number | null,"line1"?: string,"line2"?: string | null,"lng"?: number | null,"pets"?: string | null,"postal_code"?: string | null,"property_map"?: Json | null,"region"?: string | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -419,6 +425,26 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"rain_delays": {
+                  Row: {
+                    "business_id": string,"created_at": string,"created_by": string | null,"forecast": Json | null,"id": string,"left_count": number,"moved_count": number,"moved_to": string,"rain_date": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "business_id": string,"created_at"?: string,"created_by"?: string | null,"forecast"?: Json | null,"id"?: string,"left_count"?: number,"moved_count"?: number,"moved_to": string,"rain_date": string
+                  }
+                  Update: {
+                    "business_id"?: string,"created_at"?: string,"created_by"?: string | null,"forecast"?: Json | null,"id"?: string,"left_count"?: number,"moved_count"?: number,"moved_to"?: string,"rain_date"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "rain_delays_business_id_fkey"
+      columns: ["business_id"]
+isOneToOne: false
+      referencedRelation: "businesses"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"recurring_series": {
                   Row: {
                     "address_id": string | null,"assigned_member_id": string | null,"business_id": string,"created_at": string,"customer_id": string,"duration_minutes": number,"ends_on": string | null,"frequency": Database["public"]['Enums']["recurrence_frequency"],"generated_through": string | null,"id": string,"is_active": boolean,"price_cents": number,"service_id": string | null,"start_time": string,"starts_on": string,"updated_at": string
@@ -563,14 +589,14 @@ isOneToOne: false
                   ]
                 },"services": {
                   Row: {
-                    "business_id": string,"created_at": string,"deposit_amount_cents": number,"deposit_percent": number,"deposit_type": Database["public"]['Enums']["deposit_type"],"description": string | null,"duration_minutes": number,"id": string,"is_active": boolean,"is_public": boolean,"minutes_per_1000_sqft": number | null,"name": string,"price_cents": number,"price_per_1000_sqft_cents": number | null,"price_type": Database["public"]['Enums']["price_type"],"sort_order": number,"updated_at": string
+                    "business_id": string,"created_at": string,"deposit_amount_cents": number,"deposit_percent": number,"deposit_type": Database["public"]['Enums']["deposit_type"],"description": string | null,"duration_minutes": number,"id": string,"is_active": boolean,"is_public": boolean,"minutes_per_1000_sqft": number | null,"name": string,"price_cents": number,"price_per_1000_sqft_cents": number | null,"price_type": Database["public"]['Enums']["price_type"],"sort_order": number,"updated_at": string,"weather_dependent": boolean
                   }
                   ComputedFields: never
                   Insert: {
-                    "business_id": string,"created_at"?: string,"deposit_amount_cents"?: number,"deposit_percent"?: number,"deposit_type"?: Database["public"]['Enums']["deposit_type"],"description"?: string | null,"duration_minutes": number,"id"?: string,"is_active"?: boolean,"is_public"?: boolean,"minutes_per_1000_sqft"?: number | null,"name": string,"price_cents": number,"price_per_1000_sqft_cents"?: number | null,"price_type"?: Database["public"]['Enums']["price_type"],"sort_order"?: number,"updated_at"?: string
+                    "business_id": string,"created_at"?: string,"deposit_amount_cents"?: number,"deposit_percent"?: number,"deposit_type"?: Database["public"]['Enums']["deposit_type"],"description"?: string | null,"duration_minutes": number,"id"?: string,"is_active"?: boolean,"is_public"?: boolean,"minutes_per_1000_sqft"?: number | null,"name": string,"price_cents": number,"price_per_1000_sqft_cents"?: number | null,"price_type"?: Database["public"]['Enums']["price_type"],"sort_order"?: number,"updated_at"?: string,"weather_dependent"?: boolean
                   }
                   Update: {
-                    "business_id"?: string,"created_at"?: string,"deposit_amount_cents"?: number,"deposit_percent"?: number,"deposit_type"?: Database["public"]['Enums']["deposit_type"],"description"?: string | null,"duration_minutes"?: number,"id"?: string,"is_active"?: boolean,"is_public"?: boolean,"minutes_per_1000_sqft"?: number | null,"name"?: string,"price_cents"?: number,"price_per_1000_sqft_cents"?: number | null,"price_type"?: Database["public"]['Enums']["price_type"],"sort_order"?: number,"updated_at"?: string
+                    "business_id"?: string,"created_at"?: string,"deposit_amount_cents"?: number,"deposit_percent"?: number,"deposit_type"?: Database["public"]['Enums']["deposit_type"],"description"?: string | null,"duration_minutes"?: number,"id"?: string,"is_active"?: boolean,"is_public"?: boolean,"minutes_per_1000_sqft"?: number | null,"name"?: string,"price_cents"?: number,"price_per_1000_sqft_cents"?: number | null,"price_type"?: Database["public"]['Enums']["price_type"],"sort_order"?: number,"updated_at"?: string,"weather_dependent"?: boolean
                   }
                   Relationships: [
                     {
@@ -792,6 +818,9 @@ isOneToOne: false
               "slot_end": string,"slot_start": string
             }[]
                            },
+"plan_rain_delay":
+{ Args: { "p_apply"?: boolean,"p_business_id": string,"p_forecast"?: Json,"p_from": string,"p_skip"?: (string)[],"p_to": string }; Returns: Json
+                           },
 "release_expired_holds":
 { Args: Record<PropertyKey, never>; Returns: number
                            },
@@ -806,6 +835,9 @@ isOneToOne: false
                            },
 "save_my_details":
 { Args: { "p_address"?: Json,"p_finish_setup"?: boolean,"p_full_name": string,"p_phone"?: string }; Returns: Json
+                           },
+"save_property_notes":
+{ Args: { "p_access_notes": string,"p_address_id": string,"p_gate_code": string,"p_pets": string,"p_property_map": Json }; Returns: undefined
                            },
 "save_service_questions":
 { Args: { "p_questions": Json,"p_service_id": string }; Returns: undefined

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { ArrowRight, CalendarDays, Check, ExternalLink, Plus } from "lucide-react";
+import { RainBanner } from "@/components/app/rain-banner";
 import { BookingStatusBadge, Card, CardTitle, PageHeader, Stat } from "@/components/app/ui";
 import { CopyButton } from "@/components/app/copy-button";
 import { buttonStyles } from "@/components/ui/button";
@@ -83,6 +84,12 @@ async function Overview() {
           ) : null
         }
       />
+
+      {canManage ? (
+        <Suspense fallback={null}>
+          <RainBanner business={business} />
+        </Suspense>
+      ) : null}
 
       <section className="map-grid relative mb-8 overflow-hidden rounded-[1.75rem] p-6 text-paper sm:p-8">
         <p className="label-tag relative text-sky">Your booking link</p>

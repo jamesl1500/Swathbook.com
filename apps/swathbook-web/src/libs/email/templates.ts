@@ -134,6 +134,23 @@ export const bookingTemplates: Record<string, Template> = {
             footer: contactLine(context),
         }),
 
+    "booking.rain_delay": (context) => {
+        const previous = typeof context.payload.previous_start === "string" ? context.payload.previous_start : null;
+        const rainDay = previous ? formatDateLong(toDateKey(new Date(previous), context.business.timezone)) : null;
+        return customerEmail(context, `Rain delay: ${context.business.name} moved you to ${when(context)}`, {
+            preheader: `Rain is forecast${rainDay ? ` for ${rainDay}` : ""}, so your booking moved to ${when(context)}.`,
+            heading: "Moved because of rain",
+            paragraphs: [
+                `Hi ${context.customer.name}, rain is forecast${rainDay ? ` for ${rainDay}` : ""}, so ${context.business.name} moved your booking to ${when(context)}.`,
+                "Nothing else changes. If the new time doesn't work, use your booking page or get in touch.",
+            ],
+            details: bookingDetails(context),
+            button: { label: "View your booking", url: bookingUrl(context) },
+            secondaryLink: { label: "Update your calendar", url: `${bookingUrl(context)}/calendar` },
+            footer: contactLine(context),
+        });
+    },
+
     "booking.job_report": (context) =>
         customerEmail(context, `Your job report from ${context.business.name}`, {
             preheader: "Photos from the job and a note from the crew.",

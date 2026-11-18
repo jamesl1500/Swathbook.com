@@ -231,9 +231,12 @@ function AddressForm({
         <Input id={`label-${address?.id ?? "new"}`} name="label" defaultValue={address?.label ?? ""} placeholder="Home, rental, office" />
       </Field>
       <AddressInput value={value} onChange={setValue} googleEnabled={googleEnabled} errors={{ line1: state.fieldErrors?.line1?.[0] }} />
-      <Field label="Access notes" htmlFor={`access-${address?.id ?? "new"}`} hint="Gate codes, pets, where to park. The crew sees this.">
-        <textarea id={`access-${address?.id ?? "new"}`} name="accessNotes" rows={2} maxLength={500} defaultValue={address?.access_notes ?? ""} className={inputStyles} />
-      </Field>
+      {/* Once the address exists, its notes live under Property notes (crew can edit those too). */}
+      {address ? null : (
+        <Field label="Access notes" htmlFor="access-new" hint="Where to park, what to watch out for. The crew sees this.">
+          <textarea id="access-new" name="accessNotes" rows={2} maxLength={500} className={inputStyles} />
+        </Field>
+      )}
       <div className="flex gap-2">
         <SubmitButton size="sm" pendingLabel="Saving…">
           Save address

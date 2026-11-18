@@ -84,6 +84,8 @@ type Rules = {
   neighbor_radius_miles: number;
   google_review_url: string | null;
   tips_enabled: boolean;
+  rain_alerts_enabled: boolean;
+  rain_alert_percent: number;
 };
 
 export function RulesForm({ businessId, rules }: { businessId: string; rules: Rules }) {
@@ -201,6 +203,29 @@ export function RulesForm({ businessId, rules }: { businessId: string; rules: Ru
             </Select>
           </Field>
         </div>
+      </fieldset>
+
+      <fieldset className="space-y-4 border-t border-line pt-5">
+        <legend className="text-base font-bold">Rain days</legend>
+        <p className="text-sm text-ink-soft">
+          We check the forecast where your day starts. When rain looks likely on a day with outdoor jobs, the dashboard says so and lets you move
+          them all at once.
+        </p>
+        <label className="flex items-start gap-2.5 text-sm min-h-11 py-2">
+          <input type="checkbox" name="rainAlertsEnabled" defaultChecked={rules.rain_alerts_enabled} className="mt-0.5 size-4 accent-[var(--color-brand-600)]" />
+          <span>
+            <strong>Warn me about rain</strong> on days with outdoor jobs.
+          </span>
+        </label>
+        <Field label="Counts as a rain day at" htmlFor="rainAlertPercent" className="max-w-xs" error={errors.rainAlertPercent?.[0]}>
+          <Select id="rainAlertPercent" name="rainAlertPercent" defaultValue={rules.rain_alert_percent}>
+            {[40, 50, 60, 70, 80, 90].map((percent) => (
+              <option key={percent} value={percent}>
+                {percent}% chance of rain
+              </option>
+            ))}
+          </Select>
+        </Field>
       </fieldset>
 
       <fieldset className="space-y-4 border-t border-line pt-5">

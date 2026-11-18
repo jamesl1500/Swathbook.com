@@ -119,7 +119,8 @@ export async function saveAddress(_prev: FormState, formData: FormData): Promise
     const row = {
         ...(await withCoordinates(address.data)),
         label: text(formData, "label").slice(0, 40) || null,
-        access_notes: text(formData, "accessNotes").slice(0, 500) || null,
+        // Only the new-address form sends notes; edits leave the property notes alone.
+        ...(formData.has("accessNotes") ? { access_notes: text(formData, "accessNotes").slice(0, 500) || null } : {}),
     };
 
     const supabase = await createClient();

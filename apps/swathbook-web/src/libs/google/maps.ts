@@ -54,7 +54,7 @@ function logProblem(url: string, problem: MapsProblem) {
 }
 
 /** A Maps request that says why it failed. `problem` is null only when there's no key at all. */
-async function googleRequest<T>(url: string, { fieldMask, headers, api, ...rest }: GoogleInit): Promise<GoogleResult<T>> {
+export async function googleRequest<T>(url: string, { fieldMask, headers, api, ...rest }: GoogleInit): Promise<GoogleResult<T>> {
     const key = apiKey();
     if (!key) return { data: null, problem: null };
     try {

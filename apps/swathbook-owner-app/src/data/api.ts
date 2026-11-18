@@ -146,7 +146,7 @@ const JOB_FIELDS = `id, business_id, reference, status, source, scheduled_start,
   deposit_due_cents, deposit_paid_cents, balance_due_cents, customer_notes, internal_notes, cancel_requested_at,
   cancel_request_reason, cancellation_reason, assigned_member_id,
   customers(full_name, email, phone),
-  customer_addresses(line1, line2, city, region, postal_code, lat, lng, access_notes),
+  customer_addresses(line1, line2, city, region, postal_code, lat, lng, access_notes, gate_code, pets, property_map),
   booking_items(id, name, quantity, line_total_cents, duration_minutes, sort_order),
   booking_answers(service_name, prompt, answer, sort_order),
   booking_events(id, event_type, from_status, to_status, created_at, data)`;

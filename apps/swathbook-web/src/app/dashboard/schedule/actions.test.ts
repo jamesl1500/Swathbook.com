@@ -306,6 +306,8 @@ describe("saveBookingRules", () => {
             neighbor_radius_miles: 0.5,
             google_review_url: null,
             tips_enabled: false,
+            rain_alerts_enabled: false,
+            rain_alert_percent: 60,
         });
         expect(update.filters).toContainEqual(["eq", "id", BUSINESS_ID]);
     });

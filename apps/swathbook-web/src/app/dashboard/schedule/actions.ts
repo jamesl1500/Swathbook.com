@@ -350,6 +350,8 @@ const rulesSchema = z.object({
             .pipe(z.url({ protocol: /^https$/, error: "Paste the full https:// link from Google." })),
     ]),
     tipsEnabled: z.boolean(),
+    rainAlertsEnabled: z.boolean(),
+    rainAlertPercent: z.coerce.number().int().min(30).max(100),
 });
 
 export async function saveBookingRules(_prev: FormState, formData: FormData): Promise<FormState> {
@@ -369,6 +371,8 @@ export async function saveBookingRules(_prev: FormState, formData: FormData): Pr
         neighborRadiusMiles: text(formData, "neighborRadiusMiles") || "0.5",
         googleReviewUrl: text(formData, "googleReviewUrl"),
         tipsEnabled: formData.get("tipsEnabled") === "on",
+        rainAlertsEnabled: formData.get("rainAlertsEnabled") === "on",
+        rainAlertPercent: text(formData, "rainAlertPercent") || "60",
     });
     if (!parsed.success) return invalid(parsed.error);
     const values = parsed.data;
@@ -390,6 +394,8 @@ export async function saveBookingRules(_prev: FormState, formData: FormData): Pr
             neighbor_radius_miles: values.neighborRadiusMiles,
             google_review_url: values.googleReviewUrl || null,
             tips_enabled: values.tipsEnabled,
+            rain_alerts_enabled: values.rainAlertsEnabled,
+            rain_alert_percent: values.rainAlertPercent,
         })
         .eq("id", auth.businessId);
     if (error) return { error: "We couldn't save your booking rules." };
