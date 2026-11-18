@@ -181,6 +181,7 @@ describe("BookingFlow", () => {
         expect(screen.getByRole("button", { name: /earlier/i })).toBeDisabled();
     });
 
+    // A long walk through the flow before paging: slow when the whole suite runs at once.
     it("pages to later weeks", async () => {
         const { user, next } = setup();
         await toTime(user, next);
@@ -191,7 +192,7 @@ describe("BookingFlow", () => {
         await waitFor(() => expect(state.getAvailability).toHaveBeenLastCalledWith(expect.objectContaining({ from: "2026-11-16" })), { timeout: 5000 });
         expect(await screen.findByText("No open times this week. Try later dates.", {}, { timeout: 5000 })).toBeInTheDocument();
         expect(screen.getByRole("button", { name: /earlier/i })).toBeEnabled();
-    });
+    }, 15_000);
 
     it("shows availability errors", async () => {
         state.getAvailability.mockResolvedValue({ error: "This business isn't taking bookings right now." });

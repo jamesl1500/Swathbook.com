@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { CalendarCheck, CircleUser, LogOut, Search } from "lucide-react";
+import { CalendarCheck, CircleUser, LogOut, MessageSquareHeart, Search } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { siteConfig } from "@/libs/globals/site";
 import { routes } from "@/libs/routes";
@@ -13,6 +13,7 @@ const nav = [
   { href: routes.customerJobs, label: "My jobs", icon: CalendarCheck },
   { href: routes.findBusinesses, label: "Find a pro", icon: Search },
   { href: routes.customerProfile, label: "Profile", icon: CircleUser },
+  { href: routes.customerFeedback, label: "Feedback", icon: MessageSquareHeart },
 ];
 
 /** Chrome for the signed-in customer pages. The proxy already sent signed-out visitors to sign in. */

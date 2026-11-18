@@ -20,6 +20,8 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
+import { feedbackArgs, FEEDBACK_ERRORS, type FeedbackInput, type FeedbackNote } from '@swathbook/mobile/feedback';
+import Constants from 'expo-constants';
 import { AppState, Platform } from 'react-native';
 
 import { config } from '@/lib/config';
@@ -369,3 +371,41 @@ export function useFinishMySetup() {
 }
 
 export const useDeleteAccount = () => useMutation({ mutationFn: deleteAccount });
+
+// --- Feedback ----------------------------------------------------------------------
+
+/** What the signed-in customer has sent (RLS returns only their own notes). */
+export const getMyFeedback = () =>
+  call<FeedbackNote[]>(
+    supabase.from('feedback').select('id, kind, message, status, response, created_at').order('created_at', { ascending: false }).limit(20),
+  );
+
+/** Sends feedback as the signed-in customer, with the app version and phone for bug reports. */
+export async function sendFeedback(input: FeedbackInput): Promise<FeedbackNote> {
+  const args = feedbackArgs(input, {
+    source: 'client_app',
+    appVersion: Constants.expoConfig?.version ?? null,
+    platform: `${Platform.OS} ${String(Platform.Version)}`,
+    screen: 'account/feedback',
+  });
+  let result;
+  try {
+    result = await supabase.rpc('submit_feedback', args);
+  } catch {
+    throw new ApiError(OFFLINE, 'offline', 0);
+  }
+  if (result.error) {
+    const known = Object.keys(FEEDBACK_ERRORS).find((code) => result.error.message.includes(code));
+    if (!known) console.warn('[api] submit_feedback', result.error.code ?? result.error.message);
+    throw new ApiError(known ? FEEDBACK_ERRORS[known] : 'We couldn’t send that. Please try again.', known ?? result.error.code ?? 'failed');
+  }
+  return result.data as unknown as FeedbackNote;
+}
+
+export const useMyFeedback = (userId: string | undefined) =>
+  useQuery({ queryKey: ['me', 'feedback', userId], queryFn: getMyFeedback, enabled: Boolean(userId) });
+
+export function useSendFeedback() {
+  const client = useQueryClient();
+  return useMutation({ mutationFn: sendFeedback, onSuccess: () => client.invalidateQueries({ queryKey: ['me', 'feedback'] }) });
+}

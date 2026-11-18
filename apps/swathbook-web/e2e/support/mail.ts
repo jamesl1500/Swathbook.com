@@ -73,3 +73,24 @@ export function linkIn(message: MailpitMessage, path: RegExp) {
     link.host = app.host;
     return link.toString();
 }
+
+/** Waits for an email to `email` whose text includes `text` (when batches may hold several items). */
+export async function waitForEmailContaining(email: string, text: string): Promise<MailpitMessage> {
+    let found: MailpitMessage | undefined;
+    await expect
+        .poll(
+            async () => {
+                for (const summary of await listMessages(email)) {
+                    const message = (await (await fetch(`${env.mailpitUrl}/api/v1/message/${summary.ID}`)).json()) as MailpitMessage;
+                    if (message.Text.includes(text)) {
+                        found = message;
+                        return true;
+                    }
+                }
+                return false;
+            },
+            { message: `waiting for an email to ${email} mentioning "${text}"`, timeout: 20_000 },
+        )
+        .toBe(true);
+    return found!;
+}

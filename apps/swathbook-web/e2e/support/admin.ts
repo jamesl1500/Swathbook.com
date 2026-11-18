@@ -17,14 +17,28 @@ export async function createUser({
     fullName = "Dana Field",
     confirmed = true,
     desiredSlug,
-}: { fullName?: string; confirmed?: boolean; desiredSlug?: string } = {}): Promise<TestUser> {
-    const email = uniqueEmail();
+    email: fixedEmail,
+}: {
+    fullName?: string;
+    confirmed?: boolean;
+    desiredSlug?: string;
+    /** A set address (e.g. one on an allow list). Reused, with a fresh password, if an earlier run made it. */
+    email?: string;
+} = {}): Promise<TestUser> {
+    const email = fixedEmail ?? uniqueEmail();
     const { data, error } = await admin.auth.admin.createUser({
         email,
         password: PASSWORD,
         email_confirm: confirmed,
         user_metadata: { full_name: fullName, ...(desiredSlug ? { desired_slug: desiredSlug } : {}) },
     });
+    if (fixedEmail && error && /already|registered|exists/i.test(error.message)) {
+        // The admin API can't look a user up by email; a magic link (not sent) carries the user.
+        const { data: link, error: linkError } = await admin.auth.admin.generateLink({ type: "magiclink", email });
+        if (linkError || !link.user) throw linkError ?? new Error("createUser: couldn't find the existing user");
+        await admin.auth.admin.updateUserById(link.user.id, { password: PASSWORD, email_confirm: confirmed });
+        return { id: link.user.id, email, password: PASSWORD, fullName };
+    }
     if (error || !data.user) throw error ?? new Error("createUser failed");
     return { id: data.user.id, email, password: PASSWORD, fullName };
 }

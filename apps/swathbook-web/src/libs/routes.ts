@@ -41,6 +41,7 @@ export const routes = {
     account: "/dashboard/account",
     billing: "/dashboard/billing",
     team: "/dashboard/team",
+    feedback: "/dashboard/feedback",
 
     // Customers: find a business, then sign in to see and manage their jobs.
     findBusinesses: "/businesses",
@@ -48,6 +49,10 @@ export const routes = {
     customerHome: "/my",
     customerJobs: "/my/jobs",
     customerProfile: "/my/profile",
+    customerFeedback: "/my/feedback",
+
+    // Swathbook staff only (SWATHBOOK_STAFF_EMAILS).
+    feedbackInbox: "/admin/feedback",
 } as const;
 
 /** The public directory of businesses in one trade, e.g. /businesses/lawn-care. */
@@ -66,7 +71,7 @@ export const customerBookingPath = (token: string) => `/booking/${token}`;
 export const businessPagePath = (slug: string) => `/l/${slug}`;
 
 /** Signed-out visitors are sent to log in. */
-export const protectedPaths = [routes.onboarding, routes.dashboard];
+export const protectedPaths = [routes.onboarding, routes.dashboard, routes.feedbackInbox];
 
 /** Signed-in users skip straight past these. */
 export const guestOnlyPaths = [routes.login, routes.signup, routes.forgotPassword];

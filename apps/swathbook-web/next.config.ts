@@ -28,7 +28,7 @@ const securityHeaders = [
 ];
 
 // Belt and braces for pages that already set noindex in their metadata.
-const PRIVATE_PATHS = ["/dashboard/:path*", "/onboarding/:path*", "/auth/:path*", "/invite/:path*", "/booking/:path*", "/my/:path*", "/api/:path*"];
+const PRIVATE_PATHS = ["/dashboard/:path*", "/admin/:path*", "/onboarding/:path*", "/auth/:path*", "/invite/:path*", "/booking/:path*", "/my/:path*", "/api/:path*"];
 
 const nextConfig: NextConfig = {
   // E2E tests build into their own folder (pointed at local Supabase) so they

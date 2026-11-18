@@ -35,6 +35,10 @@ process.env.E2E_SUPABASE_SECRET_KEY = supabase.secretKey;
 process.env.E2E_MAILPIT_URL = supabase.mailpitUrl;
 const E2E_CRON_SECRET = "e2e-cron-secret";
 process.env.E2E_CRON_SECRET = E2E_CRON_SECRET;
+const E2E_STAFF_EMAIL = "feedback-staff@e2e.swathbook.test";
+const E2E_FEEDBACK_INBOX = "feedback-team@e2e.swathbook.test";
+process.env.E2E_STAFF_EMAIL = E2E_STAFF_EMAIL;
+process.env.E2E_FEEDBACK_INBOX = E2E_FEEDBACK_INBOX;
 
 export default defineConfig({
     testDir: "./e2e",
@@ -74,6 +78,9 @@ export default defineConfig({
             RESEND_API_KEY: "",
             MAILPIT_URL: supabase.mailpitUrl,
             CRON_SECRET: E2E_CRON_SECRET,
+            // The feedback inbox and where its digest goes (see e2e/feedback.spec.ts).
+            SWATHBOOK_STAFF_EMAILS: E2E_STAFF_EMAIL,
+            FEEDBACK_EMAIL: E2E_FEEDBACK_INBOX,
         },
     },
 });

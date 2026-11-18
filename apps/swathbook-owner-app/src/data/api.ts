@@ -13,6 +13,8 @@
  */
 
 import { focusManager, keepPreviousData, QueryClient, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { feedbackArgs, FEEDBACK_ERRORS, type FeedbackInput, type FeedbackNote } from '@swathbook/mobile/feedback';
+import Constants from 'expo-constants';
 import { AppState, Platform } from 'react-native';
 
 import { bookingListArgs, PAGE_SIZE, type BookingView } from '@/lib/booking-views';
@@ -300,5 +302,40 @@ export function useMarkNotificationsRead(businessId: string) {
     mutationFn: () => markNotificationsRead(businessId),
     // The badge clears straight away; items keep their "new" dot until the next load.
     onMutate: () => client.setQueryData<NotificationFeed>(key, (feed) => (feed ? { ...feed, unread: 0 } : feed)),
+  });
+}
+
+// --- Feedback --------------------------------------------------------------------
+
+const FEEDBACK_FIELDS = 'id, kind, message, status, response, created_at';
+
+/** What the signed-in person has sent (RLS returns only their own notes). */
+export const getMyFeedback = () =>
+  call<FeedbackNote[]>(supabase.from('feedback').select(FEEDBACK_FIELDS).order('created_at', { ascending: false }).limit(20));
+
+/** Sends feedback as the signed-in person, tagged with the open business and this phone. */
+export const sendFeedback = (input: FeedbackInput, businessId: string | null) =>
+  call<FeedbackNote>(
+    supabase.rpc(
+      'submit_feedback',
+      feedbackArgs(input, {
+        source: 'owner_app',
+        appVersion: Constants.expoConfig?.version ?? null,
+        platform: `${Platform.OS} ${String(Platform.Version)}`,
+        screen: 'more/feedback',
+        businessId,
+      }),
+    ),
+    FEEDBACK_ERRORS,
+  );
+
+export const useMyFeedback = (userId: string | undefined) =>
+  useQuery({ queryKey: ['feedback', userId], queryFn: getMyFeedback, enabled: Boolean(userId) });
+
+export function useSendFeedback(businessId: string | null) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (input: FeedbackInput) => sendFeedback(input, businessId),
+    onSuccess: () => client.invalidateQueries({ queryKey: ['feedback'] }),
   });
 }

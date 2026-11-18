@@ -1,6 +1,6 @@
 import Constants from 'expo-constants';
 import * as WebBrowser from 'expo-web-browser';
-import { Camera, CircleHelp, CircleUser, House, ImageMinus, LogOut, Mail, Palette, Phone, ShieldCheck, Trash2, UserPen } from 'lucide-react-native';
+import { Camera, CircleHelp, CircleUser, House, ImageMinus, LogOut, Mail, MessageSquareHeart, Palette, Phone, ShieldCheck, Trash2, UserPen } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
 import { formatAddress } from '@/components/address';
@@ -130,6 +130,7 @@ function About() {
       <View>
         <SectionHeader title="About" />
         <ListGroup>
+          <ListRow icon={MessageSquareHeart} title="Send feedback" subtitle="Ideas, problems or praise, straight to the team" href="/feedback" />
           <ListRow icon={CircleHelp} title="Help & contact" onPress={() => WebBrowser.openBrowserAsync(`${config.siteUrl}/contact`)} />
           <ListRow icon={ShieldCheck} title="Privacy" onPress={() => WebBrowser.openBrowserAsync(`${config.siteUrl}/privacy`)} />
           <ListRow icon={Palette} title="Design system" subtitle="Every component in the app's library" href="/design-system" />

@@ -3,7 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const processNotifications = vi.hoisted(() => vi.fn(async () => ({ claimed: 2, sent: 2, skipped: 0, failed: 0 })));
 const rpc = vi.hoisted(() => vi.fn(async () => ({ data: 1, error: null })));
-vi.mock("@/libs/email/worker", () => ({ processNotifications }));
+const sendFeedbackDigest = vi.hoisted(() => vi.fn(async () => ({ sent: 3 })));
+vi.mock("@/libs/email/worker", () => ({ processNotifications, emailBaseUrl: () => "https://swathbook.test" }));
+vi.mock("@/libs/feedback", () => ({ sendFeedbackDigest }));
 vi.mock("@/libs/supabase/admin", () => ({ hasAdminClient: () => true, createAdminClient: () => ({ rpc }) }));
 
 import { GET, POST } from "./route";
@@ -15,10 +17,11 @@ beforeEach(() => vi.stubEnv("CRON_SECRET", "s3cret-value"));
 afterEach(() => vi.unstubAllEnvs());
 
 describe("/api/cron/notifications", () => {
-    it("releases expired holds and sends due emails", async () => {
+    it("releases expired holds, sends due emails and the feedback digest", async () => {
         const response = await call(POST, "Bearer s3cret-value");
         expect(response.status).toBe(200);
-        expect(await response.json()).toEqual({ released: 1, claimed: 2, sent: 2, skipped: 0, failed: 0 });
+        expect(await response.json()).toEqual({ released: 1, claimed: 2, sent: 2, skipped: 0, failed: 0, feedback: 3 });
+        expect(sendFeedbackDigest).toHaveBeenCalledWith(expect.anything(), { baseUrl: "https://swathbook.test" });
         expect(rpc).toHaveBeenCalledWith("release_expired_holds");
     });
 

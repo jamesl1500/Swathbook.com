@@ -67,6 +67,7 @@ function App() {
       <Stack.Screen name="sign-in" options={{ title: 'Sign in', presentation: 'modal' }} />
       <Stack.Screen name="setup" options={{ title: 'Set up your account', presentation: 'modal' }} />
       <Stack.Screen name="edit-details" options={{ title: 'Your details', presentation: 'modal' }} />
+      <Stack.Screen name="feedback" options={{ title: 'Send feedback', presentation: 'modal' }} />
       <Stack.Screen name="design-system" options={{ title: 'Design system' }} />
     </Stack>
   );

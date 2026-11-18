@@ -12,6 +12,7 @@ import {
   House,
   Link2,
   ListChecks,
+  MessageSquareHeart,
   LogOut,
   Menu,
   Plus,
@@ -73,8 +74,26 @@ export function DashboardNav({ canManage, variant }: { canManage: boolean; varia
           );
         })}
       </ul>
+      <Link
+        href={feedbackHref(pathname)}
+        aria-current={isActive(pathname, routes.feedback) ? "page" : undefined}
+        className={cn(
+          "mt-6 flex items-center gap-3 rounded-xl border border-dashed px-3 py-2.5 text-[0.95rem] font-semibold transition-colors",
+          isActive(pathname, routes.feedback)
+            ? "border-brand-600 bg-brand-600 text-paper"
+            : "border-line-strong text-ink-soft hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700",
+        )}
+      >
+        <MessageSquareHeart className="size-[1.1rem]" aria-hidden="true" />
+        Send feedback
+      </Link>
     </nav>
   );
+}
+
+/** The feedback page, told which page the person was on. */
+function feedbackHref(pathname: string) {
+  return pathname === routes.feedback || !pathname.startsWith("/") ? routes.feedback : `${routes.feedback}?from=${encodeURIComponent(pathname)}`;
 }
 
 /**
@@ -89,7 +108,7 @@ function TabBar({ canManage, pathname }: { canManage: boolean; pathname: string 
     ? [byRoute(routes.dashboard), byRoute(routes.schedule), null, byRoute(routes.bookings)]
     : [byRoute(routes.dashboard), byRoute(routes.schedule), byRoute(routes.bookings), byRoute(routes.dayRoutes)];
   const moreItems = items.filter((item) => !primary.includes(item) && (canManage || !item.managersOnly));
-  const moreActive = moreItems.some((item) => isActive(pathname, item.href)) || pathname.startsWith(routes.account);
+  const moreActive = moreItems.some((item) => isActive(pathname, item.href)) || pathname.startsWith(routes.account) || pathname.startsWith(routes.feedback);
 
   // Close the sheet whenever navigation happens.
   useEffect(() => {
@@ -162,7 +181,12 @@ function TabBar({ canManage, pathname }: { canManage: boolean; pathname: string 
             </button>
           </div>
           <ul className="space-y-1">
-            {[...moreItems, { href: routes.account, label: "Account settings", icon: CircleUser }, { href: routes.contact, label: "Help & contact", icon: CircleHelp }].map(
+            {[
+              ...moreItems,
+              { href: routes.account, label: "Account settings", icon: CircleUser },
+              { href: feedbackHref(pathname), label: "Send feedback", icon: MessageSquareHeart },
+              { href: routes.contact, label: "Help & contact", icon: CircleHelp },
+            ].map(
               ({ href, label, icon: Icon }) => (
                 <li key={href}>
                   <Link
