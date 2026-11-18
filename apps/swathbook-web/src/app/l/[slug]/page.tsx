@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { Clock, Globe, Phone, ShieldCheck } from "lucide-react";
 import { LogoMark } from "@/components/brand/logo";
@@ -48,6 +49,9 @@ export default function BusinessBookingPage({ params }: PageProps<"/l/[slug]">) 
 async function BookingPageContent({ params }: { params: PageProps<"/l/[slug]">["params"] }) {
   const { slug } = await params;
   const page = await loadBookingPage(slug);
+  // The page's data comes from the shared cache, but it renders per request:
+  // the calendar starts on today in the business's time zone.
+  await connection();
   if (!page) {
     const pausedName = await loadPausedBusinessName(slug);
     if (pausedName) return <PausedNotice name={pausedName} />;

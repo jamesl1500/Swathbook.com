@@ -12,6 +12,7 @@
 
 import type Stripe from "stripe";
 import type { createAdminClient } from "@/libs/supabase/admin";
+import { bookingPageChanged } from "@/libs/booking-page-cache";
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 type V2Account = Stripe.V2.Core.Account;
@@ -108,6 +109,8 @@ export async function saveConnectStatus(admin: AdminClient, businessId: string, 
         { onConflict: "business_id" },
     );
     if (error) throw new Error(`Couldn't save Stripe account status: ${error.message}`);
+    // Whether the page shows deposits follows charges_enabled.
+    bookingPageChanged(businessId);
 }
 
 /** Looks up which business a connected account belongs to and refreshes its status. */

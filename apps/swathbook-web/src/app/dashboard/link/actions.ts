@@ -7,6 +7,7 @@ import { authorizeBusiness, isFailure } from "@/libs/dashboard";
 import { checkbox, invalid, text, type FormState } from "@/libs/forms";
 import { createClient } from "@/libs/supabase/server";
 import { BUSINESS_ASSETS_BUCKET, IMAGE_TYPES, isDeclaredImage, MAX_IMAGE_BYTES, MAX_PHOTOS } from "@/libs/supabase/storage";
+import { bookingPageChanged } from "@/libs/booking-page-cache";
 
 const optionalUrl = z
     .string()
@@ -67,6 +68,7 @@ export async function updateBookingPage(_prev: FormState, formData: FormData): P
         if (error.code === "23505") return { fieldErrors: { slug: ["Someone just took that link. Try another."] } };
         return { error: "We couldn't save your booking page. Please try again." };
     }
+    bookingPageChanged(auth.businessId, { slugs: [values.slug] });
     refresh();
     return {
         success: values.slug !== auth.business.slug ? "Saved. Your link changed, so update anywhere you've shared the old one." : "Booking page saved.",
@@ -80,6 +82,7 @@ export async function setPublished(formData: FormData): Promise<FormState> {
     const supabase = await createClient();
     const { error } = await supabase.from("businesses").update({ is_published: published }).eq("id", auth.businessId);
     if (error) return { error: "We couldn't update your booking page." };
+    bookingPageChanged(auth.businessId, { slugs: [auth.business.slug] });
     refresh();
     return { success: published ? "Your booking page is taking bookings." : "Bookings are paused. Your page shows a closed notice." };
 }
@@ -138,6 +141,7 @@ async function replaceBusinessImage(formData: FormData, column: ImageColumn, lab
         return { error: `We couldn't save your ${label}.` };
     }
     if (previous) await supabase.storage.from(BUSINESS_ASSETS_BUCKET).remove([previous]);
+    bookingPageChanged(auth.businessId);
     refresh();
     return { success: `${capitalize(label)} updated.` };
 }
@@ -150,6 +154,7 @@ async function clearBusinessImage(formData: FormData, column: ImageColumn, label
     const { error } = await supabase.from("businesses").update(imagePatch(column, null)).eq("id", auth.businessId);
     if (error) return { error: `We couldn't remove your ${label}.` };
     if (previous) await supabase.storage.from(BUSINESS_ASSETS_BUCKET).remove([previous]);
+    bookingPageChanged(auth.businessId);
     refresh();
     return { success: `${capitalize(label)} removed.` };
 }
@@ -198,6 +203,7 @@ export async function uploadPhoto(formData: FormData): Promise<FormState> {
         await supabase.storage.from(BUSINESS_ASSETS_BUCKET).remove([path]);
         return { error: error.message === "photo_limit" ? PHOTO_LIMIT_MESSAGE : "We couldn't save that photo. Please try again." };
     }
+    bookingPageChanged(auth.businessId);
     refresh();
     return { success: "Photo added." };
 }
@@ -220,6 +226,7 @@ export async function deletePhoto(formData: FormData): Promise<FormState> {
         .maybeSingle();
     if (!photo) return { error: "That photo no longer exists." };
     await supabase.storage.from(BUSINESS_ASSETS_BUCKET).remove([photo.storage_path]);
+    bookingPageChanged(auth.businessId);
     refresh();
     return { success: "Photo removed." };
 }
@@ -242,6 +249,7 @@ export async function savePhotoCaption(formData: FormData): Promise<FormState> {
         .eq("id", parsed.data.photoId)
         .eq("business_id", auth.businessId);
     if (error) return { error: "We couldn't save that caption." };
+    bookingPageChanged(auth.businessId);
     refresh();
     return { success: "Caption saved." };
 }
@@ -272,6 +280,7 @@ export async function movePhoto(formData: FormData): Promise<FormState> {
         ids.map((id, index) => supabase.from("business_photos").update({ sort_order: index }).eq("id", id).eq("business_id", auth.businessId)),
     );
     if (results.some((result) => result.error)) return { error: "We couldn't reorder your photos." };
+    bookingPageChanged(auth.businessId);
     refresh();
     return {};
 }

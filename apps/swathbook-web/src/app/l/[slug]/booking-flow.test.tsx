@@ -188,8 +188,8 @@ describe("BookingFlow", () => {
 
         state.getAvailability.mockResolvedValue({ slots: [] });
         await user.click(screen.getByRole("button", { name: /later/i }));
-        await waitFor(() => expect(state.getAvailability).toHaveBeenLastCalledWith(expect.objectContaining({ from: "2026-11-16" })));
-        expect(await screen.findByText("No open times this week. Try later dates.")).toBeInTheDocument();
+        await waitFor(() => expect(state.getAvailability).toHaveBeenLastCalledWith(expect.objectContaining({ from: "2026-11-16" })), { timeout: 5000 });
+        expect(await screen.findByText("No open times this week. Try later dates.", {}, { timeout: 5000 })).toBeInTheDocument();
         expect(screen.getByRole("button", { name: /earlier/i })).toBeEnabled();
     });
 

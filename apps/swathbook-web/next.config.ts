@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { buildContentSecurityPolicy } from "./src/libs/csp";
 
 /**
  * Crawlers and link-preview bots get page metadata (title, description,
@@ -14,8 +15,14 @@ const securityHeaders = [
   // Full URLs (with private booking tokens) never leave the site in Referer.
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "X-Frame-Options", value: "SAMEORIGIN" },
-  // Not a full script policy (Stripe and Google need careful allow-listing); these parts are safe everywhere.
-  { key: "Content-Security-Policy", value: "frame-ancestors 'self'; object-src 'none'; base-uri 'self'" },
+  // Allow lists for scripts, frames, connections and forms (see src/libs/csp.ts).
+  {
+    key: "Content-Security-Policy",
+    value: buildContentSecurityPolicy({
+      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      dev: process.env.NODE_ENV === "development",
+    }),
+  },
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), browsing-topics=()" },
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
 ];
