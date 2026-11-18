@@ -100,7 +100,7 @@ describe("submitBooking errors and deposits", () => {
     it("hides unexpected errors behind a generic message", async () => {
         const log = vi.spyOn(console, "error").mockImplementation(() => {});
         state.admin.rpc.mockResolvedValueOnce({ data: null, error: { message: "deadlock detected" } });
-        expect(await submitBooking(request)).toEqual({ ok: false, error: "We couldn't complete your booking. Please try again." });
+        expect(await submitBooking(request)).toEqual({ ok: false, code: "failed", error: "We couldn't complete your booking. Please try again." });
         expect(log).toHaveBeenCalled();
 
         state.admin.rpc.mockResolvedValueOnce({ data: [], error: null });

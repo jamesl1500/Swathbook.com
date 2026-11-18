@@ -13,7 +13,7 @@
  * @since 1.0.0
  */
 
-import { geocodeAddress, routePolyline, travelMatrix } from "@/libs/google/maps";
+import { geocodeAddress, routePolyline, travelMatrix, type MapsProblem } from "@/libs/google/maps";
 import type { createAdminClient } from "@/libs/supabase/admin";
 import type { createClient } from "@/libs/supabase/server";
 import { addDays, dayRangeUtc, minutesIntoDay, zonedToUtc } from "@/libs/time";
@@ -23,7 +23,16 @@ type Client = Awaited<ReturnType<typeof createClient>>;
 type AdminClient = ReturnType<typeof createAdminClient>;
 
 export type PlanResult =
-    | { ok: true; routeId: string; stopCount: number; excluded: string[]; savedSeconds: number; source: "google" | "estimate" }
+    | {
+          ok: true;
+          routeId: string;
+          stopCount: number;
+          excluded: string[];
+          savedSeconds: number;
+          source: "google" | "estimate";
+          /** Why Google didn't help (the route then uses estimates); null when it did, or isn't set up. */
+          mapsProblem: MapsProblem | null;
+      }
     | { ok: false; error: string };
 
 export type RoutingBusiness = {
@@ -36,6 +45,8 @@ export type RoutingBusiness = {
 };
 
 type LocatedStop = { id: string; scheduledStart: string; scheduledEnd: string; point: LatLng };
+/** Hears about Google refusals while planning; the first one is what the owner is told. */
+type Report = (problem: MapsProblem) => void;
 
 export function minutesToTimeKey(minutes: number) {
     const clamped = Math.max(0, Math.min(Math.round(minutes), 24 * 60 - 1));
@@ -58,28 +69,28 @@ function loadDayJobs(db: Client, business: RoutingBusiness, memberId: string, da
 type DayJob = NonNullable<Awaited<ReturnType<typeof loadDayJobs>>["data"]>[number];
 
 /** The business's starting point, geocoded once and remembered. */
-async function resolveBase(db: Client, business: RoutingBusiness): Promise<LatLng | null> {
+async function resolveBase(db: Client, business: RoutingBusiness, report: Report): Promise<LatLng | null> {
     if (business.base_lat != null && business.base_lng != null) return { lat: business.base_lat, lng: business.base_lng };
     if (!business.base_address) return null;
-    const geocoded = await geocodeAddress(business.base_address);
+    const geocoded = await geocodeAddress(business.base_address, report);
     if (!geocoded) return null;
     await db.from("businesses").update({ base_lat: geocoded.lat, base_lng: geocoded.lng }).eq("id", business.id);
     return { lat: geocoded.lat, lng: geocoded.lng };
 }
 
 /** Coordinates for one job's address, geocoding (and saving) it if needed. */
-async function locate(db: Client, job: DayJob): Promise<LatLng | null> {
+async function locate(db: Client, job: DayJob, report: Report): Promise<LatLng | null> {
     const address = job.customer_addresses;
     if (!address) return null;
     if (address.lat != null && address.lng != null) return { lat: address.lat, lng: address.lng };
-    const geocoded = await geocodeAddress([address.line1, address.city, address.region, address.postal_code].filter(Boolean).join(", "));
+    const geocoded = await geocodeAddress([address.line1, address.city, address.region, address.postal_code].filter(Boolean).join(", "), report);
     if (!geocoded) return null;
     await db.from("customer_addresses").update({ lat: geocoded.lat, lng: geocoded.lng, google_place_id: geocoded.placeId }).eq("id", address.id);
     return { lat: geocoded.lat, lng: geocoded.lng };
 }
 
-async function locateStops(db: Client, jobs: DayJob[]) {
-    const points = await Promise.all(jobs.map((job) => locate(db, job)));
+async function locateStops(db: Client, jobs: DayJob[], report: Report) {
+    const points = await Promise.all(jobs.map((job) => locate(db, job, report)));
     const located: LocatedStop[] = [];
     const excluded: string[] = [];
     jobs.forEach((job, index) => {
@@ -101,7 +112,7 @@ function toStopInputs(located: LocatedStop[], timeZone: string, arrivalWindow: n
 async function saveRoute(
     admin: AdminClient,
     business: RoutingBusiness,
-    { memberId, date, depot, plan, baseline, source, polyline, excluded }: {
+    { memberId, date, depot, plan, baseline, source, polyline, excluded, mapsProblem }: {
         memberId: string;
         date: string;
         depot: LatLng;
@@ -110,6 +121,7 @@ async function saveRoute(
         source: "google" | "estimate";
         polyline: string | null;
         excluded: string[];
+        mapsProblem: MapsProblem | null;
     },
 ) {
     const { data: route } = await admin
@@ -129,7 +141,7 @@ async function saveRoute(
                 baseline_duration_seconds: baseline.totalDriveSeconds,
                 optimized_at: new Date().toISOString(),
                 optimization_provider: source === "google" ? "google_routes" : "estimate",
-                optimization_meta: { polyline, excluded, late_minutes: Math.round(plan.totalLateMinutes) },
+                optimization_meta: { polyline, excluded, late_minutes: Math.round(plan.totalLateMinutes), maps_problem: mapsProblem },
             },
             { onConflict: "business_id,member_id,route_date" },
         )
@@ -165,19 +177,25 @@ export async function planDayRoute(
     if (!jobs?.length) return { ok: false, error: "There are no confirmed jobs to route that day." };
     if (jobs.length > 24) return { ok: false, error: "Routes can hold up to 24 stops. Split the day across crew members." };
 
-    const [base, { located, excluded }] = await Promise.all([resolveBase(db, business), locateStops(db, jobs)]);
+    let mapsProblem: MapsProblem | null = null;
+    const report: Report = (problem) => {
+        mapsProblem ??= problem;
+    };
+
+    const [base, { located, excluded }] = await Promise.all([resolveBase(db, business, report), locateStops(db, jobs, report)]);
     if (!located.length) return { ok: false, error: "None of that day's jobs have an address we can map." };
 
     const depot = base ?? located[0].point;
-    const { matrix, source } = await travelMatrix([depot, ...located.map((stop) => stop.point)]);
+    const { matrix, source, problem: matrixProblem } = await travelMatrix([depot, ...located.map((stop) => stop.point)]);
+    if (matrixProblem) report(matrixProblem);
     const stops = toStopInputs(located, business.timezone, business.arrival_window_minutes);
     const options = { returnToStart: Boolean(base) };
     const plan = optimizeRoute(stops, matrix, options);
     const baseline = evaluateOrder(bookingOrder(stops), stops, matrix, options);
     const ordered = plan.order.map((index) => located[index].point);
-    const polyline = await routePolyline(base ? [base, ...ordered, base] : ordered);
+    const polyline = await routePolyline(base ? [base, ...ordered, base] : ordered, report);
 
-    const routeId = await saveRoute(admin, business, { memberId, date, depot, plan, baseline, source, polyline, excluded });
+    const routeId = await saveRoute(admin, business, { memberId, date, depot, plan, baseline, source, polyline, excluded, mapsProblem });
     if (!routeId) return { ok: false, error: "We couldn't save the route." };
 
     return {
@@ -187,5 +205,6 @@ export async function planDayRoute(
         excluded,
         savedSeconds: Math.max(0, baseline.totalDriveSeconds - plan.totalDriveSeconds),
         source,
+        mapsProblem,
     };
 }

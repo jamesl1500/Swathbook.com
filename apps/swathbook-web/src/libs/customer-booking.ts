@@ -23,9 +23,10 @@ export const loadCustomerBooking = cache(async (token: string) => {
     const { data } = await createAdminClient()
         .from("bookings")
         .select(
-            `id, reference, status, scheduled_start, scheduled_end, hold_expires_at, currency, total_cents, deposit_due_cents,
+            `id, reference, status, scheduled_start, scheduled_end, hold_expires_at, currency, total_cents, deposit_due_cents, discount_cents,
+             discount_reason, tip_cents,
              deposit_paid_cents, amount_paid_cents, amount_refunded_cents, balance_due_cents, customer_notes, public_token,
-             cancel_requested_at, cancel_request_reason,
+             cancel_requested_at, cancel_request_reason, rain_delays(rain_date),
              businesses(name, slug, phone, email, timezone, brand_color, logo_path, cancellation_window_hours, deposit_refund_policy),
              booking_items(name, quantity, line_total_cents, sort_order),
              booking_answers(service_name, prompt, answer, sort_order),

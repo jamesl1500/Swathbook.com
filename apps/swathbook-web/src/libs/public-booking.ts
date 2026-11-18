@@ -4,8 +4,8 @@
  * Places a booking for a customer: the shared core of the public booking page
  * (submitBooking) and the customer app (POST /api/app/bookings). Looks the
  * business up, geocodes the address for the service-area check and routing,
- * and calls create_booking with the service role. Payments and emails are left
- * to the caller.
+ * checks any area measurement against the address, and calls create_booking
+ * with the service role. Payments and emails are left to the caller.
  *
  * @module src/libs/public-booking
  * @since 1.0.0
@@ -13,6 +13,7 @@
 
 import { z } from "zod";
 import { geocodeAddress, hasGoogleMaps, placeDetails } from "@/libs/google/maps";
+import { checkArea, checkMeasurement, distanceMeters, MAX_POLYGON_POINTS, MAX_POLYGONS, type LatLng } from "@/libs/measure/geo";
 import { type BookingAnswerInput } from "@/libs/service-questions";
 import { createAdminClient } from "@/libs/supabase/admin";
 
@@ -33,6 +34,14 @@ export const bookingAddressSchema = z.object({
     lng: z.number().min(-180).max(180).nullable().default(null),
 });
 
+/** For services priced by area: the outline drawn on the map, or a size the customer typed. */
+export const measurementSchema = z.union([
+    z.object({ polygons: z.array(z.array(z.tuple([z.number(), z.number()])).max(MAX_POLYGON_POINTS)).min(1).max(MAX_POLYGONS) }),
+    z.object({ areaSqft: z.number().int() }),
+]);
+
+export type MeasurementInput = z.output<typeof measurementSchema>;
+
 export type PlaceBookingInput = {
     slug: string;
     serviceIds: string[];
@@ -42,6 +51,7 @@ export type PlaceBookingInput = {
     notes: string;
     /** Answers to the chosen services' questions (create_booking checks them). */
     answers?: BookingAnswerInput[];
+    measurement?: MeasurementInput | null;
 };
 
 export type PlacedBooking = {
@@ -66,18 +76,21 @@ export const BOOKING_ERRORS = {
     business_not_found: "This business isn't taking bookings right now.",
     answers_required: "Answer the questions about your booking.",
     invalid_answers: "One of your answers isn't valid. Check them and try again.",
+    invalid_measurement: "We couldn't read that measurement. Outline the area again, or enter its size.",
 } as const;
 
 export type BookingErrorCode = keyof typeof BOOKING_ERRORS;
 
 const FAILED = "We couldn't complete your booking. Please try again.";
 
-export async function placeBooking({ slug, serviceIds, start, customer, address, notes, answers = [] }: PlaceBookingInput): Promise<PlaceBookingResult> {
-    const admin = createAdminClient();
-    const { data: business } = await admin.from("businesses").select("id").eq("slug", slug).eq("is_published", true).maybeSingle();
-    if (!business) return { ok: false, code: "business_not_found", error: BOOKING_ERRORS.business_not_found };
+export type ResolvedLocation = { location: LatLng | null; placeId: string | null; formatted: string | null };
 
-    // Coordinates power the service-area check and route planning.
+/**
+ * Coordinates for a booking address: the ones the browser already has (from
+ * a picked suggestion), else Google's, else none. They power the
+ * service-area check, the neighbor discount, measuring and route planning.
+ */
+export async function resolveLocation(address: z.output<typeof bookingAddressSchema>): Promise<ResolvedLocation> {
     let location = address.lat != null && address.lng != null ? { lat: address.lat, lng: address.lng } : null;
     let formatted: string | null = null;
     let placeId = address.placeId || null;
@@ -97,6 +110,54 @@ export async function placeBooking({ slug, serviceIds, start, customer, address,
             }
         }
     }
+    return { location, placeId, formatted };
+}
+
+const METERS_PER_MILE = 1609.344;
+
+/** True when `location` is beyond the business's service radius (false when either is unknown). */
+export function outsideServiceArea(
+    business: { base_lat: number | null; base_lng: number | null; service_radius_miles: number | null },
+    location: LatLng | null,
+) {
+    if (!location || business.base_lat == null || business.base_lng == null || business.service_radius_miles == null) return false;
+    return distanceMeters({ lat: business.base_lat, lng: business.base_lng }, location) / METERS_PER_MILE > business.service_radius_miles;
+}
+
+type BookingMeasurement = { area_sqft: number; polygons: Array<Array<[number, number]>> | null };
+
+/** The measurement as create_booking takes it, checked against the address. */
+export function measurementForBooking(
+    measurement: MeasurementInput | null | undefined,
+    location: LatLng | null,
+): { ok: true; value: BookingMeasurement | null } | { ok: false; error: string } {
+    if (!measurement) return { ok: true, value: null };
+    if ("areaSqft" in measurement) {
+        const checked = checkArea(measurement.areaSqft);
+        return checked.ok ? { ok: true, value: { area_sqft: checked.areaSqft, polygons: null } } : checked;
+    }
+    if (!location) return { ok: false, error: "We couldn't find your address on the map. Enter the size instead." };
+    const checked = checkMeasurement(measurement.polygons, location);
+    return checked.ok ? { ok: true, value: { area_sqft: checked.areaSqft, polygons: checked.polygons } } : checked;
+}
+
+export async function placeBooking({
+    slug,
+    serviceIds,
+    start,
+    customer,
+    address,
+    notes,
+    answers = [],
+    measurement = null,
+}: PlaceBookingInput): Promise<PlaceBookingResult> {
+    const admin = createAdminClient();
+    const { data: business } = await admin.from("businesses").select("id").eq("slug", slug).eq("is_published", true).maybeSingle();
+    if (!business) return { ok: false, code: "business_not_found", error: BOOKING_ERRORS.business_not_found };
+
+    const { location, placeId, formatted } = await resolveLocation(address);
+    const measured = measurementForBooking(measurement, location);
+    if (!measured.ok) return { ok: false, code: "invalid_measurement", error: measured.error };
 
     const { data, error } = await admin.rpc("create_booking", {
         p_business_id: business.id,
@@ -116,6 +177,7 @@ export async function placeBooking({ slug, serviceIds, start, customer, address,
         p_customer_notes: notes || undefined,
         p_source: "booking_page",
         p_answers: answers.map(({ questionId, answer }) => ({ question_id: questionId, answer })),
+        ...(measured.value ? { p_measurement: measured.value } : {}),
     });
     if (error) {
         const code = (Object.keys(BOOKING_ERRORS) as BookingErrorCode[]).find((key) => error.message.includes(key));

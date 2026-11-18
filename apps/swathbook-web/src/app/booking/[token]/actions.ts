@@ -8,8 +8,9 @@ import { getStripe, hasStripe } from "@/libs/stripe/server";
 import { createAdminClient } from "@/libs/supabase/admin";
 import { isDateKey } from "@/libs/time";
 
-export async function startPayment(token: string, kind: PaymentKind): Promise<PaymentSession | { error: string }> {
-    if (!isBookingToken(token) || (kind !== "deposit" && kind !== "balance")) return { error: "That payment link isn't valid." };
+export async function startPayment(token: string, kind: PaymentKind, tipCents?: number): Promise<PaymentSession | { error: string }> {
+    if (!isBookingToken(token) || !["deposit", "balance", "tip"].includes(kind)) return { error: "That payment link isn't valid." };
+    if (kind === "tip" && typeof tipCents !== "number") return { error: "Pick a tip amount." };
     if (!hasStripe()) return { error: "Online payments aren't available right now." };
 
     const admin = createAdminClient();
@@ -17,7 +18,7 @@ export async function startPayment(token: string, kind: PaymentKind): Promise<Pa
     if (!booking) return { error: "We couldn't find that booking." };
 
     try {
-        return await createBookingPayment(getStripe(), admin, { bookingId: booking.id, kind });
+        return await createBookingPayment(getStripe(), admin, { bookingId: booking.id, kind, ...(kind === "tip" ? { tipCents } : {}) });
     } catch (error) {
         console.error("[booking] startPayment failed", error);
         return { error: "We couldn't start the payment. Please try again." };

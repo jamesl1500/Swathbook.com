@@ -2,26 +2,63 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { ArrowLeft, ArrowRight, CalendarCheck, Check, ChevronLeft, ChevronRight, LoaderCircle } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarCheck, Check, ChevronLeft, ChevronRight, LoaderCircle, MapPin, Ruler, Tag } from "lucide-react";
 import { AddressInput, emptyAddress, type AddressValue } from "@/components/booking/address-input";
+import { MeasureMap } from "@/components/booking/measure-map";
 import { PaymentForm } from "@/components/booking/payment-form";
 import { Button } from "@/components/ui/button";
 import { Field, FormMessage, Input } from "@/components/ui/field";
 import type { PublicService } from "@/libs/booking-page";
+import { formatSqft, MAX_AREA_SQFT, MIN_AREA_SQFT, totalAreaSqft, type LatLng, type MapZoom, type Polygon } from "@/libs/measure/geo";
+import { isMeasured, quoteBooking } from "@/libs/pricing";
 import { customerBookingPath } from "@/libs/routes";
 import { answerErrors, answersToSend, questionsFor } from "@/libs/service-questions";
 import type { PaymentSession } from "@/libs/stripe/payments";
 import { addDays, formatDateShort, formatTime, toDateKey } from "@/libs/time";
 import { brandTextColor, cn, formatCents, formatDuration } from "@/libs/utils";
-import { getAvailability, submitBooking, type Slot } from "./actions";
+import { getAvailability, locateAddress, submitBooking, type Slot } from "./actions";
 import { QuestionFields } from "./question-fields";
 
-type Step = "services" | "time" | "details" | "pay";
+type Step = "services" | "where" | "measure" | "time" | "details" | "pay";
+
+/** How the customer gave the area: drawn on the map, typed in, or not at all (priced on site). */
+type Measurement = { kind: "drawn"; polygons: Polygon[] } | { kind: "entered"; text: string } | { kind: "skipped" };
 
 function priceText(service: PublicService, currency: string) {
   if (service.price_type === "quote") return "Quote";
   const amount = formatCents(service.price_cents, currency);
   return service.price_type === "starting_at" ? `From ${amount}` : amount;
+}
+
+/** A line in the summary: measured services show their real price once measured. */
+function linePriceText(line: { isQuote: boolean; isMinimum: boolean; priceCents: number }, service: PublicService, currency: string) {
+  if (line.isQuote) return "Quote";
+  const amount = formatCents(line.priceCents, currency);
+  if (line.isMinimum) return `From ${amount}`;
+  return service.price_type === "starting_at" && !isMeasured(service) ? `From ${amount}` : amount;
+}
+
+function enteredArea(text: string) {
+  const value = Number(text.replace(/[,\s]/g, ""));
+  return Number.isFinite(value) ? Math.round(value) : Number.NaN;
+}
+
+/** The measured area, or null when there isn't one (yet). */
+function areaOf(measurement: Measurement | null) {
+  if (!measurement) return null;
+  if (measurement.kind === "drawn") return measurement.polygons.length ? totalAreaSqft(measurement.polygons) : null;
+  if (measurement.kind === "entered") {
+    const value = enteredArea(measurement.text);
+    return value >= MIN_AREA_SQFT && value <= MAX_AREA_SQFT ? value : null;
+  }
+  return null;
+}
+
+function measurementToSend(measurement: Measurement | null) {
+  if (!measurement || measurement.kind === "skipped") return null;
+  if (measurement.kind === "drawn") return measurement.polygons.length ? { polygons: measurement.polygons } : null;
+  const area = areaOf(measurement);
+  return area == null ? null : { areaSqft: area };
 }
 
 export function BookingFlow({
@@ -33,6 +70,7 @@ export function BookingFlow({
   acceptsPayments,
   googleEnabled,
   startDate,
+  neighborDiscountPercent = 0,
 }: {
   slug: string;
   services: PublicService[];
@@ -42,6 +80,8 @@ export function BookingFlow({
   acceptsPayments: boolean;
   googleEnabled: boolean;
   startDate: string;
+  /** Percent off on days the business already works nearby; 0 when not offered. */
+  neighborDiscountPercent?: number;
 }) {
   const router = useRouter();
   const [step, setStep] = useState<Step>("services");
@@ -53,6 +93,10 @@ export function BookingFlow({
   const [slot, setSlot] = useState<Slot | null>(null);
   const [customer, setCustomer] = useState({ fullName: "", email: "", phone: "" });
   const [address, setAddress] = useState<AddressValue>(emptyAddress);
+  const [location, setLocation] = useState<LatLng | null>(null);
+  const [satellite, setSatellite] = useState<Record<MapZoom, string> | null>(null);
+  const [measurement, setMeasurement] = useState<Measurement | null>(null);
+  const [whereError, setWhereError] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [questionErrors, setQuestionErrors] = useState<Record<string, string>>({});
@@ -61,19 +105,16 @@ export function BookingFlow({
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<string, string[]>>>({});
   const [payment, setPayment] = useState<{ token: string; session: PaymentSession } | null>(null);
   const [loading, startLoading] = useTransition();
+  const [locating, startLocating] = useTransition();
   const [submitting, startSubmit] = useTransition();
 
   const chosen = services.filter((service) => selected.includes(service.id));
+  const measuredServices = chosen.filter(isMeasured);
+  const needsMeasure = measuredServices.length > 0;
   // The chosen services' questions, in the order the services were picked.
   const questions = questionsFor(services, selected);
-  const totals = useMemo(
-    () => ({
-      minutes: chosen.reduce((sum, service) => sum + service.duration_minutes, 0),
-      price: chosen.reduce((sum, service) => sum + (service.price_type === "quote" ? 0 : service.price_cents), 0),
-      deposit: acceptsPayments ? chosen.reduce((sum, service) => sum + service.deposit_cents, 0) : 0,
-    }),
-    [chosen, acceptsPayments],
-  );
+  const areaSqft = needsMeasure ? areaOf(measurement) : null;
+  const quote = quoteBooking(chosen, { areaSqft, neighborPercent: slot?.neighborDiscountPercent ?? 0, acceptsPayments });
 
   const slotsByDay = useMemo(() => {
     const map = new Map<string, Slot[]>();
@@ -85,11 +126,20 @@ export function BookingFlow({
   }, [slots, timeZone]);
 
   const days = Array.from({ length: 7 }, (_, index) => addDays(weekStart, index));
+  const neighborDays = days.filter((key) => slotsByDay.get(key)?.some((item) => item.neighborDiscountPercent > 0));
+  const neighborPercent = Math.max(0, ...(slots ?? []).map((item) => item.neighborDiscountPercent));
 
   useEffect(() => {
     if (step !== "time" || selected.length === 0) return;
     startLoading(async () => {
-      const result = await getAvailability({ slug, serviceIds: selected, from: weekStart, days: 7 });
+      const result = await getAvailability({
+        slug,
+        serviceIds: selected,
+        from: weekStart,
+        days: 7,
+        ...(location ? { location } : {}),
+        ...(areaSqft ? { areaSqft } : {}),
+      });
       if ("error" in result) {
         setSlotError(result.error);
         setSlots([]);
@@ -97,16 +147,54 @@ export function BookingFlow({
       }
       setSlotError(null);
       setSlots(result.slots);
+      // Keep the chosen time if it's still open; its discount may have changed.
+      setSlot((current) => (current ? (result.slots.find((item) => item.start === current.start) ?? null) : null));
       setDay((current) => {
         if (current && result.slots.some((item) => toDateKey(new Date(item.start), timeZone) === current)) return current;
-        return result.slots.length ? toDateKey(new Date(result.slots[0].start), timeZone) : null;
+        const firstNeighborDay = result.slots.find((item) => item.neighborDiscountPercent > 0);
+        const first = firstNeighborDay ?? result.slots[0];
+        return first ? toDateKey(new Date(first.start), timeZone) : null;
       });
     });
-  }, [step, selected, slug, weekStart, timeZone]);
+  }, [step, selected, slug, weekStart, timeZone, location, areaSqft]);
 
   function toggle(serviceId: string) {
     setSlot(null);
     setSelected((current) => (current.includes(serviceId) ? current.filter((id) => id !== serviceId) : [...current, serviceId]));
+  }
+
+  function go(next: Step) {
+    setStep(next);
+    window.scrollTo?.({ top: 0, behavior: "smooth" });
+  }
+
+  function changeAddress(value: AddressValue) {
+    setAddress(value);
+    setWhereError(null);
+    // A new address means a new map, a new outline and possibly new neighbors.
+    if (value.line1 !== address.line1 || value.postalCode !== address.postalCode || value.lat !== address.lat) {
+      setLocation(null);
+      setSatellite(null);
+      setMeasurement((current) => (current?.kind === "drawn" ? null : current));
+      setSlot(null);
+    }
+  }
+
+  function confirmAddress() {
+    setWhereError(null);
+    setFieldErrors({});
+    startLocating(async () => {
+      const result = await locateAddress({ slug, address: { ...address }, wantsMap: needsMeasure });
+      if (!result.ok) {
+        setWhereError(result.error);
+        setFieldErrors(result.fieldErrors ?? {});
+        return;
+      }
+      setLocation(result.location);
+      setSatellite(result.satellite);
+      if (needsMeasure && !result.satellite && measurement?.kind === "drawn") setMeasurement(null);
+      go(needsMeasure ? "measure" : "time");
+    });
   }
 
   function book() {
@@ -126,24 +214,30 @@ export function BookingFlow({
         serviceIds: selected,
         start: slot!.start,
         customer,
-        address: { ...address },
+        address: { ...address, lat: location?.lat ?? address.lat, lng: location?.lng ?? address.lng },
         notes,
         answers: answersToSend(questions, answers),
+        measurement: needsMeasure ? measurementToSend(measurement) : null,
         company: honeypot,
       });
       if (!result.ok) {
         setSubmitError(result.error);
         setFieldErrors(result.fieldErrors ?? {});
-        if (result.error.includes("just booked")) {
+        if (result.code === "slot_unavailable") {
           setSlot(null);
-          setStep("time");
+          go("time");
+        } else if (result.code === "invalid_measurement") {
+          setWhereError(result.error);
+          go("measure");
+        } else if (result.code === "outside_service_area") {
+          setWhereError(result.error);
+          go("where");
         }
         return;
       }
       if (result.payment) {
         setPayment({ token: result.token, session: result.payment });
-        setStep("pay");
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        go("pay");
       } else {
         router.push(customerBookingPath(result.token));
       }
@@ -161,11 +255,15 @@ export function BookingFlow({
 
   const steps: Array<{ id: Step; label: string }> = [
     { id: "services", label: "Service" },
+    { id: "where", label: "Where" },
+    ...(needsMeasure ? [{ id: "measure" as Step, label: "Measure" }] : []),
     { id: "time", label: "Time" },
     { id: "details", label: "Details" },
-    ...(totals.deposit > 0 ? [{ id: "pay" as Step, label: "Deposit" }] : []),
+    ...(quote.depositCents > 0 ? [{ id: "pay" as Step, label: "Deposit" }] : []),
   ];
   const stepIndex = steps.findIndex((item) => item.id === step);
+  const addressLine = [address.line1, address.city].filter(Boolean).join(", ");
+  const measuredReady = measurement?.kind === "skipped" || areaSqft != null;
 
   return (
     <div className="min-w-0">
@@ -219,8 +317,15 @@ export function BookingFlow({
                       {service.description ? <span className="mt-1 block text-sm text-ink-soft">{service.description}</span> : null}
                       <span className="mt-2 block text-sm text-ink-faint">
                         {formatDuration(service.duration_minutes)}
+                        {isMeasured(service) ? ` · ${formatCents(service.price_per_1000_sqft_cents!, currency)} per 1,000 sq ft` : ""}
                         {acceptsPayments && service.deposit_cents > 0 ? ` · ${formatCents(service.deposit_cents, currency)} deposit to book` : ""}
                       </span>
+                      {isMeasured(service) ? (
+                        <span className="mt-1.5 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-700">
+                          <Ruler className="size-4" aria-hidden="true" />
+                          Instant price: measure your yard on the map
+                        </span>
+                      ) : null}
                     </span>
                   </label>
                 </li>
@@ -229,10 +334,151 @@ export function BookingFlow({
           </ul>
           <StickyNext
             disabled={selected.length === 0}
-            onNext={() => setStep("time")}
-            summary={selected.length ? `${selected.length} selected · ${formatDuration(totals.minutes)}` : "Pick a service to continue"}
+            onNext={() => go("where")}
+            summary={selected.length ? `${selected.length} selected · ${formatDuration(quote.minutes)}` : "Pick a service to continue"}
             brandColor={brandColor}
           />
+        </section>
+      ) : null}
+
+      {step === "where" ? (
+        <section aria-labelledby="where">
+          <h2 id="where" className="text-2xl font-bold">
+            Where should we come?
+          </h2>
+          <p className="mt-1 text-ink-soft">{chosen.map((service) => service.name).join(", ")}</p>
+          {neighborDiscountPercent > 0 ? (
+            <p className="mt-4 flex gap-2.5 rounded-[1.25rem] border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-700">
+              <Tag className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+              <span>
+                <strong>Neighbor pricing:</strong> book a day we&apos;re already working near you and save {neighborDiscountPercent}%.
+              </span>
+            </p>
+          ) : null}
+          <form
+            className="mt-6 space-y-5"
+            noValidate
+            onSubmit={(event) => {
+              event.preventDefault();
+              confirmAddress();
+            }}
+          >
+            {whereError ? <FormMessage>{whereError}</FormMessage> : null}
+            <AddressInput
+              value={address}
+              onChange={changeAddress}
+              googleEnabled={googleEnabled}
+              errors={{ line1: fieldErrors["address.line1"]?.[0] }}
+            />
+            <StepNav onBack={() => go("services")}>
+              <button
+                type="submit"
+                disabled={locating || address.line1.trim().length < 3}
+                className="inline-flex h-11 items-center gap-2 rounded-full px-5 font-semibold disabled:opacity-40"
+                style={{ backgroundColor: brandColor, color: brandTextColor(brandColor) }}
+              >
+                {locating ? <LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> : null}
+                Continue
+                <ArrowRight className="size-4" aria-hidden="true" />
+              </button>
+            </StepNav>
+          </form>
+        </section>
+      ) : null}
+
+      {step === "measure" ? (
+        <section aria-labelledby="measure">
+          <h2 id="measure" className="text-2xl font-bold">
+            Outline the area
+          </h2>
+          <p className="mt-1 text-ink-soft">
+            {measuredServices.map((service) => service.name).join(", ")} is priced by size.{" "}
+            {satellite && location ? "Trace it on the photo for an instant price." : "Enter the size for an instant price."}
+          </p>
+          {whereError ? <div className="mt-4"><FormMessage>{whereError}</FormMessage></div> : null}
+
+          <div className="mt-5">
+            {satellite && location && measurement?.kind !== "entered" ? (
+              <>
+                <MeasureMap
+                  center={location}
+                  links={satellite}
+                  value={measurement?.kind === "drawn" ? measurement.polygons : []}
+                  onChange={(polygons) => {
+                    setWhereError(null);
+                    setMeasurement({ kind: "drawn", polygons });
+                  }}
+                  brandColor={brandColor}
+                />
+                <button
+                  type="button"
+                  onClick={() => setMeasurement({ kind: "entered", text: "" })}
+                  className="mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-brand-600 hover:underline"
+                >
+                  Know the size? Enter it instead
+                </button>
+              </>
+            ) : (
+              <div className="max-w-sm space-y-3">
+                <Field label="Area in square feet" htmlFor="area" hint={`Between ${MIN_AREA_SQFT.toLocaleString("en-US")} and ${MAX_AREA_SQFT.toLocaleString("en-US")} sq ft.`}>
+                  <Input
+                    id="area"
+                    inputMode="numeric"
+                    value={measurement?.kind === "entered" ? measurement.text : ""}
+                    onChange={(event) => setMeasurement({ kind: "entered", text: event.target.value })}
+                    placeholder="e.g. 6,000"
+                  />
+                </Field>
+                {satellite && location ? (
+                  <button
+                    type="button"
+                    onClick={() => setMeasurement(null)}
+                    className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-600 hover:underline"
+                  >
+                    Draw it on the map instead
+                  </button>
+                ) : null}
+              </div>
+            )}
+          </div>
+
+          {areaSqft != null ? (
+            <dl className="mt-5 space-y-2 rounded-[1.25rem] border border-line bg-card p-5 text-sm" aria-live="polite">
+              <div className="flex justify-between gap-3">
+                <dt className="text-ink-soft">Your area</dt>
+                <dd className="font-semibold">{formatSqft(areaSqft)}</dd>
+              </div>
+              {quote.lines
+                .filter((line) => measuredServices.some((service) => service.id === line.id))
+                .map((line) => (
+                  <div key={line.id} className="flex justify-between gap-3">
+                    <dt>{line.name}</dt>
+                    <dd className="font-display text-lg font-bold">{formatCents(line.priceCents, currency)}</dd>
+                  </div>
+                ))}
+            </dl>
+          ) : null}
+
+          <StepNav onBack={() => go("where")}>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setMeasurement({ kind: "skipped" });
+                  go("time");
+                }}
+              >
+                Skip, price it on site
+              </Button>
+              <StickyNext
+                inline
+                disabled={!measuredReady || measurement?.kind === "skipped"}
+                onNext={() => go("time")}
+                summary={areaSqft != null ? formatSqft(areaSqft) : "Outline the area"}
+                brandColor={brandColor}
+              />
+            </div>
+          </StepNav>
         </section>
       ) : null}
 
@@ -242,6 +488,16 @@ export function BookingFlow({
             Pick a time
           </h2>
           <p className="mt-1 text-ink-soft">Times are in the business&apos;s local time zone.</p>
+
+          {neighborDays.length ? (
+            <p className="mt-4 flex gap-2.5 rounded-[1.25rem] border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-700" data-testid="neighbor-banner">
+              <Tag className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+              <span>
+                <strong>We&apos;re already working near you</strong> on {neighborDays.map((key) => formatDateShort(key)).join(", ")}. Book one of those days and
+                save {neighborPercent}%.
+              </span>
+            </p>
+          ) : null}
 
           <div className="mt-5 flex items-center justify-between gap-2">
             <Button variant="ghost" size="sm" disabled={weekStart <= startDate || loading} onClick={() => setWeekStart(addDays(weekStart, -7))}>
@@ -262,22 +518,29 @@ export function BookingFlow({
               const count = slotsByDay.get(key)?.length ?? 0;
               const [, , dayOfMonth] = key.split("-");
               const isActive = day === key;
+              const isNeighborDay = neighborDays.includes(key);
               return (
                 <button
                   key={key}
                   type="button"
                   role="tab"
                   aria-selected={isActive}
+                  aria-label={isNeighborDay ? `${formatDateShort(key)}, save ${neighborPercent}%` : undefined}
                   disabled={count === 0}
                   onClick={() => setDay(key)}
                   className={cn(
-                    "flex flex-col items-center rounded-xl border py-2 text-xs font-semibold transition-colors disabled:opacity-35",
+                    "relative flex flex-col items-center rounded-xl border py-2 text-xs font-semibold transition-colors disabled:opacity-35",
                     isActive ? "border-transparent" : "border-line bg-card hover:border-ink-faint",
                   )}
                   style={isActive ? { backgroundColor: brandColor, color: brandTextColor(brandColor) } : undefined}
                 >
                   <span>{formatDateShort(key).split(",")[0]}</span>
                   <span className="font-display text-lg">{Number(dayOfMonth)}</span>
+                  {isNeighborDay ? (
+                    <span className="absolute -top-2 rounded-full bg-brand-600 px-1.5 text-[0.65rem] leading-4 text-white" aria-hidden="true">
+                      −{neighborPercent}%
+                    </span>
+                  ) : null}
                 </button>
               );
             })}
@@ -317,12 +580,16 @@ export function BookingFlow({
             )}
           </div>
 
-          <StepNav onBack={() => setStep("services")}>
+          <StepNav onBack={() => go(needsMeasure ? "measure" : "where")}>
             <StickyNext
               inline
               disabled={!slot}
-              onNext={() => setStep("details")}
-              summary={slot ? `${formatDateShort(toDateKey(new Date(slot.start), timeZone))} at ${formatTime(slot.start, timeZone)}` : "Pick a time"}
+              onNext={() => go("details")}
+              summary={
+                slot
+                  ? `${formatDateShort(toDateKey(new Date(slot.start), timeZone))} at ${formatTime(slot.start, timeZone)}${slot.neighborDiscountPercent ? ` · ${slot.neighborDiscountPercent}% off` : ""}`
+                  : "Pick a time"
+              }
               brandColor={brandColor}
             />
           </StepNav>
@@ -332,11 +599,18 @@ export function BookingFlow({
       {step === "details" && slot ? (
         <section aria-labelledby="your-details">
           <h2 id="your-details" className="text-2xl font-bold">
-            Where should we come?
+            Your details
           </h2>
           <p className="mt-1 text-ink-soft">
             {chosen.map((service) => service.name).join(", ")} · {formatDateShort(toDateKey(new Date(slot.start), timeZone))} at{" "}
             {formatTime(slot.start, timeZone)}
+          </p>
+          <p className="mt-2 flex flex-wrap items-center gap-x-2 text-sm text-ink-soft">
+            <MapPin className="size-4 shrink-0 text-ink-faint" aria-hidden="true" />
+            <span>{addressLine}</span>
+            <button type="button" onClick={() => go("where")} className="inline-flex min-h-9 items-center font-semibold text-brand-600 hover:underline">
+              Change
+            </button>
           </p>
 
           <form
@@ -375,13 +649,6 @@ export function BookingFlow({
               brandColor={brandColor}
             />
 
-            <AddressInput
-              value={address}
-              onChange={setAddress}
-              googleEnabled={googleEnabled}
-              errors={{ line1: fieldErrors["address.line1"]?.[0] }}
-            />
-
             <Field label={<>Anything we should know? <span className="font-normal text-ink-faint">(optional)</span></>} htmlFor="notes">
               <textarea
                 id="notes"
@@ -402,22 +669,34 @@ export function BookingFlow({
 
             <div className="rounded-[1.25rem] border border-line bg-card p-5">
               <dl className="space-y-2 text-sm">
-                {chosen.map((service) => (
-                  <div key={service.id} className="flex justify-between gap-3">
-                    <dt>{service.name}</dt>
-                    <dd className="font-semibold">{priceText(service, currency)}</dd>
+                {quote.lines.map((line) => {
+                  const service = chosen.find((item) => item.id === line.id)!;
+                  return (
+                    <div key={line.id} className="flex justify-between gap-3">
+                      <dt>
+                        {line.name}
+                        {isMeasured(service) && areaSqft != null ? <span className="text-ink-faint"> · {formatSqft(areaSqft)}</span> : null}
+                      </dt>
+                      <dd className="font-semibold">{linePriceText(line, service, currency)}</dd>
+                    </div>
+                  );
+                })}
+                {quote.discountCents > 0 ? (
+                  <div className="flex justify-between gap-3 text-brand-700" data-testid="neighbor-discount">
+                    <dt>Neighbor discount ({slot.neighborDiscountPercent}%)</dt>
+                    <dd className="font-semibold">−{formatCents(quote.discountCents, currency)}</dd>
                   </div>
-                ))}
-                {totals.deposit > 0 ? (
+                ) : null}
+                {quote.depositCents > 0 ? (
                   <div className="flex justify-between gap-3 border-t border-line pt-2">
                     <dt className="font-semibold">Deposit due now</dt>
-                    <dd className="font-display text-lg font-bold">{formatCents(totals.deposit, currency)}</dd>
+                    <dd className="font-display text-lg font-bold">{formatCents(quote.depositCents, currency)}</dd>
                   </div>
                 ) : null}
               </dl>
             </div>
 
-            <StepNav onBack={() => setStep("time")}>
+            <StepNav onBack={() => go("time")}>
               <button
                 type="submit"
                 disabled={submitting}
@@ -425,7 +704,7 @@ export function BookingFlow({
                 style={{ backgroundColor: brandColor, color: brandTextColor(brandColor) }}
               >
                 {submitting ? <LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> : <CalendarCheck className="size-4" aria-hidden="true" />}
-                {totals.deposit > 0 ? "Continue to deposit" : "Book it"}
+                {quote.depositCents > 0 ? "Continue to deposit" : "Book it"}
               </button>
             </StepNav>
           </form>

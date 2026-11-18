@@ -12,6 +12,8 @@ import { createClient } from "@/libs/supabase/server";
 import { loadTeam, type TeamMember } from "@/libs/team";
 import { addDays, dayRangeUtc, formatDateLong, formatTime, isDateKey, todayKey } from "@/libs/time";
 import { cn } from "@/libs/utils";
+import { MapsFallbackNote } from "@/components/app/maps-problem";
+import type { MapsProblem } from "@/libs/google/problems";
 import { PlanRouteButton, StopControls } from "./route-controls";
 
 export const metadata: Metadata = { title: "Routes" };
@@ -192,7 +194,7 @@ function MemberRoute({
   const activeStops = stops.filter((stop) => stop.bookings && stop.bookings.status !== "cancelled");
   const stale = Boolean(route) && activeStops.length !== jobCount;
   const saved = route?.baseline_duration_seconds != null && route.total_duration_seconds != null ? route.baseline_duration_seconds - route.total_duration_seconds : 0;
-  const meta = (route?.optimization_meta ?? {}) as { excluded?: string[]; late_minutes?: number };
+  const meta = (route?.optimization_meta ?? {}) as { excluded?: string[]; late_minutes?: number; maps_problem?: MapsProblem | null };
   const points = activeStops
     .map((stop) => stop.bookings?.customer_addresses)
     .filter((address): address is NonNullable<typeof address> & { lat: number; lng: number } => address?.lat != null && address.lng != null)
@@ -254,6 +256,7 @@ function MemberRoute({
             </div>
           </dl>
 
+          {meta.maps_problem ? <MapsFallbackNote /> : null}
           {meta.late_minutes ? (
             <p className="mt-3 text-sm text-clay">Heads up: some arrivals land outside their arrival window. Consider moving a job.</p>
           ) : null}

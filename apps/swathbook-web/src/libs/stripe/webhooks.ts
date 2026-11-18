@@ -118,7 +118,7 @@ async function handlePaymentIntent(stripe: Stripe, admin: AdminClient, event: Th
     if (!bookingId) return;
     const { data: booking } = await admin.from("bookings").select("business_id, customer_id, currency").eq("id", bookingId).maybeSingle();
     if (!booking) return;
-    const kind = intent.metadata?.kind === "deposit" ? "deposit" : "balance";
+    const kind = intent.metadata?.kind === "deposit" || intent.metadata?.kind === "tip" ? intent.metadata.kind : "balance";
     const { error: insertError } = await admin.from("payments").insert({
         business_id: booking.business_id,
         booking_id: bookingId,

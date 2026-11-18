@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarPlus, CircleCheck, Clock, MapPin, Phone, TriangleAlert } from "lucide-react";
+import { CalendarPlus, CircleCheck, Clock, CloudRain, Images, MapPin, Phone, TriangleAlert } from "lucide-react";
 import { BookingAnswers, sortAnswers } from "@/components/booking/booking-answers";
 import type { BookingOptions, CustomerBooking } from "@/libs/customer-booking";
 import { paymentReturnState, type PaymentReturn, type PaymentReturnState } from "@/libs/payment-return";
@@ -126,6 +126,13 @@ export function BookingPanel({
         </section>
       ) : null}
 
+      {booking.rain_delays && ["confirmed", "requested"].includes(booking.status) ? (
+        <p className="flex gap-2.5 rounded-[1.25rem] border border-line bg-card px-5 py-4 text-sm" data-testid="rain-moved">
+          <CloudRain className="mt-0.5 size-4 shrink-0 text-ink-faint" aria-hidden="true" />
+          Moved from {formatDateLong(booking.rain_delays.rain_date)} because rain was forecast.
+        </p>
+      ) : null}
+
       <section className="rounded-[1.25rem] border border-line bg-card p-5 sm:p-6">
         <h2 className="text-lg font-bold">{formatDateLong(toDateKey(new Date(booking.scheduled_start), timeZone))}</h2>
         <p className="text-ink-soft">
@@ -152,6 +159,18 @@ export function BookingPanel({
               <dd>{formatCents(item.line_total_cents ?? 0, booking.currency)}</dd>
             </div>
           ))}
+          {booking.discount_cents > 0 ? (
+            <div className="flex justify-between gap-3 text-brand-700">
+              <dt>{booking.discount_reason ?? "Discount"}</dt>
+              <dd>−{formatCents(booking.discount_cents, booking.currency)}</dd>
+            </div>
+          ) : null}
+          {booking.tip_cents > 0 ? (
+            <div className="flex justify-between gap-3">
+              <dt>Tip</dt>
+              <dd>{formatCents(booking.tip_cents, booking.currency)}</dd>
+            </div>
+          ) : null}
           <div className="flex justify-between gap-3 border-t border-line pt-2 font-semibold">
             <dt>Total</dt>
             <dd>{formatCents(booking.total_cents ?? 0, booking.currency)}</dd>
@@ -176,6 +195,20 @@ export function BookingPanel({
           </div>
         ) : null}
       </section>
+
+      {booking.status === "completed" ? (
+        <Link
+          href={`/booking/${booking.public_token}/report`}
+          className="flex items-center gap-3 rounded-[1.25rem] border border-line bg-card p-5 font-semibold hover:border-ink-faint"
+          data-testid="report-link"
+        >
+          <Images className="size-5 shrink-0" style={{ color: brand }} aria-hidden="true" />
+          <span className="flex-1">
+            See your job report
+            <span className="block text-sm font-normal text-ink-soft">Photos and a note from the crew.</span>
+          </span>
+        </Link>
+      ) : null}
 
       <section className="flex flex-wrap gap-3">
         {["confirmed", "requested", "pending_payment"].includes(booking.status) ? (

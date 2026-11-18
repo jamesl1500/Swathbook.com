@@ -12,6 +12,10 @@ import { createClient } from "@/libs/supabase/server";
 import { formatDateTime } from "@/libs/time";
 import { formatCents } from "@/libs/utils";
 import { AddressList, CustomerProfile } from "../customer-forms";
+import { PropertyNotes } from "@/components/property/property-notes";
+import { formatAddress } from "@/libs/address";
+import { canMeasure, satelliteLinks } from "@/libs/google/satellite";
+import { readPropertyMap } from "@/libs/property";
 
 export const metadata: Metadata = { title: "Customer" };
 
@@ -33,7 +37,7 @@ async function Customer({ params }: { params: PageProps<"/dashboard/customers/[c
     supabase.from("customers").select("*").eq("id", customerId).eq("business_id", business.id).maybeSingle(),
     supabase
       .from("customer_addresses")
-      .select("id, label, line1, line2, city, region, postal_code, lat, lng, google_place_id, access_notes, is_primary")
+      .select("id, label, line1, line2, city, region, postal_code, lat, lng, google_place_id, access_notes, is_primary, gate_code, pets, property_map")
       .eq("customer_id", customerId)
       .order("is_primary", { ascending: false })
       .order("created_at"),
@@ -100,6 +104,35 @@ async function Customer({ params }: { params: PageProps<"/dashboard/customers/[c
               canManage={canManage}
             />
           </Card>
+          {addresses?.length ? (
+            <Card>
+              <CardTitle>Property notes</CardTitle>
+              <p className="-mt-2 mb-4 text-sm text-ink-soft">What the crew sees on every job here. Anyone on your team can add to it.</p>
+              <div className="space-y-6">
+                {addresses.map((address) => {
+                  const point = address.lat != null && address.lng != null ? { lat: address.lat, lng: address.lng } : null;
+                  return (
+                    <section key={address.id} aria-label={`Property notes for ${address.line1}`}>
+                      {addresses.length > 1 ? <h3 className="mb-2 font-semibold">{address.label || formatAddress(address)}</h3> : null}
+                      <PropertyNotes
+                        businessId={business.id}
+                        canEdit
+                        center={point}
+                        links={point && canMeasure() ? satelliteLinks(point) : null}
+                        value={{
+                          addressId: address.id,
+                          gateCode: address.gate_code ?? "",
+                          pets: address.pets ?? "",
+                          accessNotes: address.access_notes ?? "",
+                          map: readPropertyMap(address.property_map),
+                        }}
+                      />
+                    </section>
+                  );
+                })}
+              </div>
+            </Card>
+          ) : null}
         </div>
 
         <Card>

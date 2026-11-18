@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Form from "next/form";
 import Link from "next/link";
 import { Suspense } from "react";
-import { CalendarCog, ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { CalendarCog, ChevronLeft, ChevronRight, CloudRain, Plus } from "lucide-react";
+import { RainBanner } from "@/components/app/rain-banner";
 import { BookingStatusBadge, PageHeader } from "@/components/app/ui";
 import { buttonStyles } from "@/components/ui/button";
 import { Select } from "@/components/ui/field";
@@ -93,6 +94,12 @@ async function Schedule({ searchParams }: { searchParams: PageProps<"/dashboard/
         actions={
           <>
             {canManage ? (
+              <Link href={routes.rainDays} className={buttonStyles({ variant: "secondary", size: "sm" })}>
+                <CloudRain className="size-4" aria-hidden="true" />
+                Rain days
+              </Link>
+            ) : null}
+            {canManage ? (
               <Link href={routes.availability} className={buttonStyles({ variant: "secondary", size: "sm" })}>
                 <CalendarCog className="size-4" aria-hidden="true" />
                 Hours &amp; time off
@@ -107,6 +114,12 @@ async function Schedule({ searchParams }: { searchParams: PageProps<"/dashboard/
           </>
         }
       />
+
+      {canManage ? (
+        <Suspense fallback={null}>
+          <RainBanner business={business} />
+        </Suspense>
+      ) : null}
 
       {canManage && requests ? (
         <div className="mb-5 rounded-2xl border border-sun/60 bg-sun-soft px-5 py-3 text-sm">

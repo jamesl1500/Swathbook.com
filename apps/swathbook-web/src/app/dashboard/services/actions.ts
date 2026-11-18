@@ -19,8 +19,16 @@ const serviceSchema = z
         depositCents: z.union([z.literal("").transform(() => 0), dollarsToCents]),
         isActive: z.boolean(),
         isPublic: z.boolean(),
+        /** Priced by the area the customer measures on the booking page. */
+        byArea: z.boolean(),
+        weatherDependent: z.boolean(),
+        areaRateCents: z.union([z.literal("").transform(() => 0), dollarsToCents]),
+        minutesPer1000: z.union([z.literal("").transform(() => null), z.coerce.number().int().min(1).max(600)]),
     })
     .superRefine((values, context) => {
+        if (values.byArea && (values.areaRateCents < 1 || values.areaRateCents > 1_000_000)) {
+            context.addIssue({ code: "custom", path: ["areaRateCents"], message: "Enter a price per 1,000 sq ft." });
+        }
         if (values.depositType === "percent" && values.depositPercent < 1) {
             context.addIssue({ code: "custom", path: ["depositPercent"], message: "Pick a deposit percentage." });
         }
@@ -47,6 +55,10 @@ export async function saveService(_prev: FormState, formData: FormData): Promise
         depositCents: text(formData, "depositAmount"),
         isActive: checkbox(formData, "isActive"),
         isPublic: checkbox(formData, "isPublic"),
+        byArea: checkbox(formData, "byArea"),
+        weatherDependent: checkbox(formData, "weatherDependent"),
+        areaRateCents: text(formData, "areaRate"),
+        minutesPer1000: text(formData, "minutesPer1000"),
     });
     if (!parsed.success) return invalid(parsed.error);
     const values = parsed.data;
@@ -58,7 +70,8 @@ export async function saveService(_prev: FormState, formData: FormData): Promise
     const row = {
         name: values.name,
         description: values.description ?? null,
-        price_type: values.priceType,
+        // Priced by area always reads "From" the minimum.
+        price_type: values.byArea ? ("starting_at" as const) : values.priceType,
         price_cents: values.priceCents,
         duration_minutes: values.durationMinutes,
         deposit_type: values.depositType,
@@ -66,6 +79,9 @@ export async function saveService(_prev: FormState, formData: FormData): Promise
         deposit_amount_cents: values.depositType === "fixed" ? values.depositCents : 0,
         is_active: values.isActive,
         is_public: values.isPublic,
+        weather_dependent: values.weatherDependent,
+        price_per_1000_sqft_cents: values.byArea ? values.areaRateCents : null,
+        minutes_per_1000_sqft: values.byArea ? values.minutesPer1000 : null,
     };
 
     const supabase = await createClient();

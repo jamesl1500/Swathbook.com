@@ -147,6 +147,7 @@ function BookingPage({ page, googleEnabled }: { page: BookingPageData; googleEna
           acceptsPayments={business.accepts_online_payments}
           googleEnabled={googleEnabled}
           startDate={todayKey(business.timezone)}
+          neighborDiscountPercent={business.neighbor_discount_percent ?? 0}
         />
 
         {photos.length ? (

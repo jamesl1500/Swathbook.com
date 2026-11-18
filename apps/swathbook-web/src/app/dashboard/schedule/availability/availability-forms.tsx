@@ -80,6 +80,12 @@ type Rules = {
   deposit_refund_policy: string;
   auto_confirm: boolean;
   allow_customer_reschedule: boolean;
+  neighbor_discount_percent: number;
+  neighbor_radius_miles: number;
+  google_review_url: string | null;
+  tips_enabled: boolean;
+  rain_alerts_enabled: boolean;
+  rain_alert_percent: number;
 };
 
 export function RulesForm({ businessId, rules }: { businessId: string; rules: Rules }) {
@@ -170,6 +176,79 @@ export function RulesForm({ businessId, rules }: { businessId: string; rules: Ru
           your cancellation window. Cancellations always come to you as a request.
         </span>
       </label>
+
+      <fieldset className="space-y-4 border-t border-line pt-5">
+        <legend className="text-base font-bold">Neighbor pricing</legend>
+        <p className="text-sm text-ink-soft">
+          Offer a discount on days you&apos;re already working nearby. Customers see those days flagged when they book, and the job goes to whoever is
+          already in the area, so your routes get tighter.
+        </p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Discount" htmlFor="neighborDiscount" error={errors.neighborDiscountPercent?.[0]}>
+            <Select id="neighborDiscount" name="neighborDiscountPercent" defaultValue={rules.neighbor_discount_percent}>
+              {[0, 5, 10, 15, 20, 25].map((percent) => (
+                <option key={percent} value={percent}>
+                  {percent ? `${percent}% off` : "Off"}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="Counts as nearby within" htmlFor="neighborRadius" error={errors.neighborRadiusMiles?.[0]}>
+            <Select id="neighborRadius" name="neighborRadiusMiles" defaultValue={String(Number(rules.neighbor_radius_miles))}>
+              {["0.25", "0.5", "1", "2", "3"].map((miles) => (
+                <option key={miles} value={miles}>
+                  {miles === "1" ? "1 mile" : `${miles} miles`}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        </div>
+      </fieldset>
+
+      <fieldset className="space-y-4 border-t border-line pt-5">
+        <legend className="text-base font-bold">Rain days</legend>
+        <p className="text-sm text-ink-soft">
+          We check the forecast where your day starts. When rain looks likely on a day with outdoor jobs, the dashboard says so and lets you move
+          them all at once.
+        </p>
+        <label className="flex items-start gap-2.5 text-sm min-h-11 py-2">
+          <input type="checkbox" name="rainAlertsEnabled" defaultChecked={rules.rain_alerts_enabled} className="mt-0.5 size-4 accent-[var(--color-brand-600)]" />
+          <span>
+            <strong>Warn me about rain</strong> on days with outdoor jobs.
+          </span>
+        </label>
+        <Field label="Counts as a rain day at" htmlFor="rainAlertPercent" className="max-w-xs" error={errors.rainAlertPercent?.[0]}>
+          <Select id="rainAlertPercent" name="rainAlertPercent" defaultValue={rules.rain_alert_percent}>
+            {[40, 50, 60, 70, 80, 90].map((percent) => (
+              <option key={percent} value={percent}>
+                {percent}% chance of rain
+              </option>
+            ))}
+          </Select>
+        </Field>
+      </fieldset>
+
+      <fieldset className="space-y-4 border-t border-line pt-5">
+        <legend className="text-base font-bold">After the job</legend>
+        <p className="text-sm text-ink-soft">
+          When a job is marked done, the customer gets a job report with your before and after photos and your note.
+        </p>
+        <Field
+          label={<>Google review link <span className="font-normal text-ink-faint">(optional)</span></>}
+          htmlFor="googleReviewUrl"
+          hint="From your Google Business Profile: Ask for reviews → copy the link."
+          error={errors.googleReviewUrl?.[0]}
+        >
+          <Input id="googleReviewUrl" name="googleReviewUrl" type="url" inputMode="url" placeholder="https://g.page/r/…" defaultValue={rules.google_review_url ?? ""} />
+        </Field>
+        <label className="flex items-start gap-2.5 text-sm min-h-11 py-2">
+          <input type="checkbox" name="tipsEnabled" defaultChecked={rules.tips_enabled} className="mt-0.5 size-4 accent-[var(--color-brand-600)]" />
+          <span>
+            <strong>Let customers leave a tip</strong> on their job report. Tips are paid to you like any other payment.
+          </span>
+        </label>
+      </fieldset>
+
       <SubmitButton pendingLabel="Saving…">Save rules</SubmitButton>
     </form>
   );

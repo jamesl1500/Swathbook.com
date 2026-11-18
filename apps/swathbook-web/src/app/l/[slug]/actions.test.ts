@@ -96,7 +96,7 @@ describe("submitBooking", () => {
 
     it("says so when the business isn't taking bookings", async () => {
         state.admin = createSupabaseMock();
-        expect(await submitBooking(request)).toEqual({ ok: false, error: expect.stringMatching(/isn't taking bookings/) });
+        expect(await submitBooking(request)).toEqual({ ok: false, code: "business_not_found", error: expect.stringMatching(/isn.t taking bookings/) });
     });
 
     it.each([
@@ -105,14 +105,14 @@ describe("submitBooking", () => {
         ["invalid_services", /no longer available/],
     ])("explains %s from the database", async (code, message) => {
         state.admin.rpc.mockResolvedValue({ data: null, error: { message: code } });
-        expect(await submitBooking(request)).toEqual({ ok: false, error: expect.stringMatching(message) });
+        expect(await submitBooking(request)).toMatchObject({ ok: false, error: expect.stringMatching(message) });
     });
 });
 
 describe("getAvailability", () => {
     it("returns the open slots", async () => {
         state.admin.rpc.mockResolvedValue({ data: [{ slot_start: "s", slot_end: "e" }], error: null });
-        expect(await getAvailability({ slug: "green-acres", serviceIds: [SERVICE], from: "2026-11-02" })).toEqual({ slots: [{ start: "s", end: "e" }] });
+        expect(await getAvailability({ slug: "green-acres", serviceIds: [SERVICE], from: "2026-11-02" })).toEqual({ slots: [{ start: "s", end: "e", neighborDiscountPercent: 0 }] });
         expect(state.admin.rpc).toHaveBeenCalledWith("get_available_slots", { p_slug: "green-acres", p_service_ids: [SERVICE], p_from: "2026-11-02", p_days: 7 });
     });
 
