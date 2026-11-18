@@ -6,6 +6,7 @@ import { authorizeBusiness, isFailure } from "@/libs/dashboard";
 import { checkbox, dollarsToCents, invalid, text, type FormState } from "@/libs/forms";
 import { parseQuestionsField } from "@/libs/service-questions";
 import { createClient } from "@/libs/supabase/server";
+import { bookingPageChanged } from "@/libs/booking-page-cache";
 
 const serviceSchema = z
     .object({
@@ -108,11 +109,13 @@ export async function saveService(_prev: FormState, formData: FormData): Promise
         });
         if (error) {
             console.error("[services] saving questions failed", error.code ?? error.message);
+            bookingPageChanged(auth.businessId);
             refresh();
             return { error: editingId ? "The service saved, but its questions didn't. Please try again." : "The service was added, but its questions weren't. Edit it to add them again." };
         }
     }
 
+    bookingPageChanged(auth.businessId);
     refresh();
     return { success: editingId ? "Service saved." : "Service added." };
 }
@@ -125,6 +128,7 @@ export async function deleteService(formData: FormData): Promise<FormState> {
     // Past bookings keep their own copy of the name and price (booking_items).
     const { error } = await supabase.from("services").delete().eq("id", text(formData, "serviceId")).eq("business_id", auth.businessId);
     if (error) return { error: "We couldn't remove that service." };
+    bookingPageChanged(auth.businessId);
     refresh();
     return { success: "Service removed." };
 }
@@ -155,6 +159,7 @@ export async function moveService(formData: FormData): Promise<FormState> {
                 : supabase.from("services").update({ sort_order: position }).eq("id", service.id).eq("business_id", auth.businessId),
         ),
     );
+    bookingPageChanged(auth.businessId);
     refresh();
     return {};
 }

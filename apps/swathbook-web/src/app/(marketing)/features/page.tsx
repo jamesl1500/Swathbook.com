@@ -7,12 +7,12 @@ import { CtaBand } from "@/components/marketing/cta-band";
 import { PillarVisual } from "@/components/marketing/pillar-visual";
 import { FourToolsAside } from "@/components/marketing/hero-asides";
 import { Container, PageHero, SectionHeading } from "@/components/marketing/section";
-import { findTrade, pillars, supportingFeatures } from "@/libs/marketing/content";
+import { findTrade, pillars, standoutFeatures, supportingFeatures } from "@/libs/marketing/content";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Features: Booking Pages, Deposits & AI Routing",
+  title: "Features: Booking, Deposits, AI Routes & Satellite Quotes",
   description:
-    "Online booking pages, deposits, card payments and AI route planning in one app. See every Swathbook feature built for field service businesses.",
+    "Booking pages, deposits, payments, AI routes, satellite quotes, neighbor pricing, job reports and rain-day rescheduling, all built for field service businesses.",
   path: routes.features,
 });
 
@@ -20,7 +20,6 @@ const roadmap = [
   { title: "Text message reminders", body: "Confirmations and on-my-way texts, alongside the emails customers already get." },
   { title: "Recurring plans", body: "Weekly, bi-weekly and seasonal services that rebook themselves." },
   { title: "Quotes & estimates", body: "Send a quote, get it approved, and turn it into a booked job in one tap." },
-  { title: "Reviews on autopilot", body: "Ask happy customers for a Google review right after they pay." },
 ];
 
 export default function FeaturesPage() {
@@ -77,14 +76,38 @@ export default function FeaturesPage() {
         </Container>
       </section>
 
-      <section className="border-y border-line bg-card py-24">
+      <section className="border-t border-line bg-card py-24">
+        <Container>
+          <SectionHeading
+            eyebrow="Only on Swathbook"
+            title="Built for the work outdoors"
+            description="The things general booking tools don't do: pricing a yard from above, filling your route, handling rain and keeping every crew member in the know."
+          />
+          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {standoutFeatures.map((feature) => {
+              const Icon = feature.icon;
+              return (
+                <div key={feature.id} id={feature.id} className="scroll-mt-24 rounded-[1.5rem] border border-line bg-paper p-7">
+                  <span className="grid size-11 place-items-center rounded-xl bg-brand-50 text-brand-600">
+                    <Icon className="size-5" aria-hidden="true" />
+                  </span>
+                  <h3 className="mt-5 text-lg font-bold">{feature.title}</h3>
+                  <p className="mt-1.5 leading-relaxed text-ink-soft">{feature.body}</p>
+                </div>
+              );
+            })}
+          </div>
+        </Container>
+      </section>
+
+      <section className="border-y border-line py-24">
         <Container>
           <SectionHeading eyebrow="Day-to-day" title="Built-in from day one" />
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {supportingFeatures.map((feature) => {
               const Icon = feature.icon;
               return (
-                <div key={feature.title} className="rounded-[1.5rem] border border-line bg-paper p-7">
+                <div key={feature.title} className="rounded-[1.5rem] border border-line bg-card p-7">
                   <span className="grid size-11 place-items-center rounded-xl bg-brand-600 text-paper">
                     <Icon className="size-5" aria-hidden="true" />
                   </span>

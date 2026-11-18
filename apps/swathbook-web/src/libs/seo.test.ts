@@ -53,6 +53,22 @@ describe("businessJsonLd", () => {
         expect(quote).not.toHaveProperty("price");
         expect(quote).not.toHaveProperty("priceSpecification");
     });
+
+    it("publishes the square-foot rate for services priced by measured area", () => {
+        const data = businessJsonLd({
+            ...base,
+            services: [{ name: "Mow", description: null, price_type: "starting_at", price_cents: 4000, price_per_1000_sqft_cents: 250 }],
+        });
+        expect(data.hasOfferCatalog!.itemListElement[0].priceSpecification).toEqual([
+            { "@type": "PriceSpecification", minPrice: "40.00", priceCurrency: "USD" },
+            {
+                "@type": "UnitPriceSpecification",
+                price: "2.50",
+                priceCurrency: "USD",
+                referenceQuantity: { "@type": "QuantitativeValue", value: 1000, unitCode: "FTK", unitText: "sq ft" },
+            },
+        ]);
+    });
 });
 
 describe("businessPageMeta", () => {

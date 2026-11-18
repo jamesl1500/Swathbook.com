@@ -4,7 +4,7 @@ import { refresh } from "next/cache";
 import { z } from "zod";
 import { authorizeBusiness, isFailure } from "@/libs/dashboard";
 import { text, type FormState } from "@/libs/forms";
-import { IMAGE_TYPES, JOB_FILES_BUCKET, MAX_IMAGE_BYTES, MAX_JOB_PHOTOS } from "@/libs/supabase/storage";
+import { IMAGE_TYPES, isDeclaredImage, JOB_FILES_BUCKET, MAX_IMAGE_BYTES, MAX_JOB_PHOTOS } from "@/libs/supabase/storage";
 import { createClient } from "@/libs/supabase/server";
 
 /*
@@ -32,6 +32,7 @@ export async function uploadJobPhoto(formData: FormData): Promise<FormState> {
     if (!(file instanceof File) || file.size === 0) return { error: "Choose a photo to upload." };
     if (!IMAGE_TYPES[file.type]) return { error: "Use a PNG, JPG or WebP photo." };
     if (file.size > MAX_IMAGE_BYTES) return { error: "That photo is too large. Try a smaller one." };
+    if (!(await isDeclaredImage(file))) return { error: "That file isn't a PNG, JPG or WebP photo." };
 
     const supabase = await createClient();
     const bookingId = await bookingInBusiness(supabase, auth.businessId, formData.get("bookingId"));

@@ -11,4 +11,6 @@ export const env = {
     supabaseSecretKey: required("E2E_SUPABASE_SECRET_KEY"),
     mailpitUrl: required("E2E_MAILPIT_URL"),
     cronSecret: required("E2E_CRON_SECRET"),
+    staffEmail: required("E2E_STAFF_EMAIL"),
+    feedbackInbox: required("E2E_FEEDBACK_INBOX"),
 };

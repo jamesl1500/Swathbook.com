@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { canMeasure, satelliteLinks } from "@/libs/google/satellite";
+import { signLocation, verifyLocation } from "@/libs/signing";
 import type { LatLng, MapZoom } from "@/libs/measure/geo";
 import {
     BOOKING_ERRORS,
@@ -12,6 +13,8 @@ import {
     placeBooking,
     resolveLocation,
 } from "@/libs/public-booking";
+import { allowRequest, RATE_LIMITED_MESSAGE } from "@/libs/rate-limit";
+import { hasGoogleMaps } from "@/libs/google/maps";
 import { bookingAnswersSchema } from "@/libs/service-questions";
 import { isDateKey } from "@/libs/time";
 import { createBookingPayment, type PaymentSession } from "@/libs/stripe/payments";
@@ -23,22 +26,24 @@ import { createClient } from "@/libs/supabase/server";
 export type Slot = { start: string; end: string; neighborDiscountPercent: number };
 
 const slugField = z.string().min(3).max(40);
-const coordinate = z.number().finite();
-
 const availabilitySchema = z.object({
     slug: slugField,
     serviceIds: z.array(z.uuid()).min(1).max(10),
     from: z.string().refine(isDateKey),
     days: z.number().int().min(1).max(14).default(7),
-    location: z.object({ lat: coordinate.min(-90).max(90), lng: coordinate.min(-180).max(180) }).nullable().default(null),
+    /** From locateAddress: only coordinates the server found get the neighbor check. */
+    locationToken: z.string().max(200).nullable().default(null),
     areaSqft: z.number().int().min(100).max(1_000_000).nullable().default(null),
 });
 
 export async function getAvailability(input: z.input<typeof availabilitySchema>): Promise<{ slots: Slot[] } | { error: string }> {
     const parsed = availabilitySchema.safeParse(input);
     if (!parsed.success) return { error: "Pick a service and a date." };
-    const { slug, serviceIds, from, days, location, areaSqft } = parsed.data;
-    const supabase = await createClient();
+    const { slug, serviceIds, from, days, locationToken, areaSqft } = parsed.data;
+    const location = verifyLocation(locationToken);
+    // get_available_slots only takes coordinates from the server: a neighbor
+    // discount says a job is booked near that spot, so they can't be anyone's.
+    const supabase = location ? createAdminClient() : await createClient();
     const { data, error } = await supabase.rpc("get_available_slots", {
         p_slug: slug,
         p_service_ids: serviceIds,
@@ -61,7 +66,7 @@ const locateSchema = z.object({
 });
 
 export type LocateResult =
-    | { ok: true; location: LatLng | null; satellite: Record<MapZoom, string> | null }
+    | { ok: true; location: LatLng | null; locationToken: string | null; satellite: Record<MapZoom, string> | null }
     | { ok: false; error: string; fieldErrors?: Partial<Record<string, string[]>> };
 
 /**
@@ -77,6 +82,8 @@ export async function locateAddress(input: z.input<typeof locateSchema>): Promis
         return { ok: false, error: "Check the highlighted fields.", fieldErrors };
     }
     const { slug, address, wantsMap } = parsed.data;
+    // Each call geocodes (and may sign satellite photos): both are billed by Google.
+    if (hasGoogleMaps() && !(await allowRequest("locate"))) return { ok: false, error: RATE_LIMITED_MESSAGE };
 
     const { data: business } = await createAdminClient()
         .from("businesses")
@@ -89,7 +96,12 @@ export async function locateAddress(input: z.input<typeof locateSchema>): Promis
     const { location } = await resolveLocation(address);
     if (outsideServiceArea(business, location)) return { ok: false, error: BOOKING_ERRORS.outside_service_area };
 
-    return { ok: true, location, satellite: wantsMap && location && canMeasure() ? satelliteLinks(location) : null };
+    return {
+        ok: true,
+        location,
+        locationToken: location ? signLocation(location, address) : null,
+        satellite: wantsMap && location && canMeasure() ? satelliteLinks(location) : null,
+    };
 }
 
 const bookingSchema = z.object({
@@ -122,6 +134,8 @@ export async function submitBooking(input: BookingRequest): Promise<BookingResul
         return { ok: false, error: flat.formErrors[0] ?? "Check the highlighted fields.", fieldErrors };
     }
     const { slug, serviceIds, start, customer, address, notes, answers, measurement } = parsed.data;
+    // A booking holds a slot on someone's calendar: cap how many one visitor can place per business.
+    if (!(await allowRequest("booking", { scope: slug.toLowerCase() }))) return { ok: false, error: RATE_LIMITED_MESSAGE, code: "rate_limited" };
 
     const placed = await placeBooking({ slug, serviceIds, start, customer, address, notes, answers, measurement });
     if (!placed.ok) return { ok: false, error: placed.error, code: placed.code };

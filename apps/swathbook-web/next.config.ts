@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { buildContentSecurityPolicy } from "./src/libs/csp";
 
 /**
  * Crawlers and link-preview bots get page metadata (title, description,
@@ -14,13 +15,20 @@ const securityHeaders = [
   // Full URLs (with private booking tokens) never leave the site in Referer.
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "X-Frame-Options", value: "SAMEORIGIN" },
-  { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
+  // Allow lists for scripts, frames, connections and forms (see src/libs/csp.ts).
+  {
+    key: "Content-Security-Policy",
+    value: buildContentSecurityPolicy({
+      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      dev: process.env.NODE_ENV === "development",
+    }),
+  },
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), browsing-topics=()" },
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
 ];
 
 // Belt and braces for pages that already set noindex in their metadata.
-const PRIVATE_PATHS = ["/dashboard/:path*", "/onboarding/:path*", "/auth/:path*", "/invite/:path*", "/booking/:path*", "/my/:path*", "/api/:path*"];
+const PRIVATE_PATHS = ["/dashboard/:path*", "/admin/:path*", "/onboarding/:path*", "/auth/:path*", "/invite/:path*", "/booking/:path*", "/my/:path*", "/api/:path*"];
 
 const nextConfig: NextConfig = {
   // E2E tests build into their own folder (pointed at local Supabase) so they

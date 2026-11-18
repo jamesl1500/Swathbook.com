@@ -3,6 +3,7 @@ import { appError, appJson, appPreflight, authenticateApp, readJson } from "@/li
 import { sendQueuedEmailsSoon } from "@/libs/email/worker";
 import { bookingAddressSchema, bookingCustomerSchema, placeBooking } from "@/libs/public-booking";
 import { bookingAnswersListSchema } from "@/libs/service-questions";
+import { allowRequest, RATE_LIMITED_MESSAGE } from "@/libs/rate-limit";
 import { customerBookingPath } from "@/libs/routes";
 import { createAdminClient } from "@/libs/supabase/admin";
 
@@ -42,6 +43,9 @@ export async function POST(request: Request) {
         return appJson({ error: issue?.message ?? "Check your booking details.", code: "invalid", field: issue?.path.join(".") }, 422);
     }
     const { slug, serviceIds, start, customer, address, notes, answers } = parsed.data;
+    if (!(await allowRequest("booking", { scope: slug.toLowerCase(), identity: auth.user.id }))) {
+        return appError(429, "rate_limited", RATE_LIMITED_MESSAGE);
+    }
 
     const placed = await placeBooking({
         slug,

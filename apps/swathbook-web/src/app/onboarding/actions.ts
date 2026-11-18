@@ -7,6 +7,7 @@ import { getCurrentUser, getDraftBusiness } from "@/libs/auth";
 import { routes } from "@/libs/routes";
 import { createClient } from "@/libs/supabase/server";
 import { onboardingSchema, slugField } from "./schema";
+import { bookingPageChanged } from "@/libs/booking-page-cache";
 
 export type SlugCheck = { available: boolean; reason?: string };
 export type OnboardingResult = { error: string; field?: "slug" };
@@ -114,6 +115,8 @@ export async function completeOnboarding(input: unknown): Promise<OnboardingResu
         .update({ onboarding_completed_at: new Date().toISOString(), is_published: true })
         .eq("id", business.id);
     if (completeError) return { error: "Almost there. We couldn't finish setup. Please try again." };
+    // The page is live now: drop any cached "no page here" for its link.
+    bookingPageChanged(business.id, { slugs: [values.slug] });
 
     // Open the dashboard on the business that was just launched.
     (await cookies()).set(ACTIVE_BUSINESS_COOKIE, business.id, activeBusinessCookieOptions);

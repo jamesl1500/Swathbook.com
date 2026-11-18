@@ -13,7 +13,9 @@
     "./use-debounced-value": "./src/use-debounced-value.ts",
     "./booking-status": "./src/booking-status.tsx",
     "./query-state": "./src/query-state.tsx",
-    "./status": "./src/status.ts"
+    "./status": "./src/status.ts",
+    "./feedback": "./src/feedback.ts",
+    "./feedback-screen": "./src/feedback-screen.tsx"
   },
   "scripts": {
     "test": "vitest run",

@@ -64,6 +64,7 @@ export function TextField({
           invalid && styles.invalid,
           focused && invalid && styles.invalidFocused,
           !editable && styles.disabled,
+          props.multiline && styles.controlMultiline,
         ]}
       >
         {Icon ? <Icon size={18} color={colors.inkFaint} strokeWidth={2.25} aria-hidden /> : null}
@@ -75,7 +76,7 @@ export function TextField({
           placeholderTextColor={colors.inkFaint}
           selectionColor={colors.brand500}
           cursorColor={colors.brand600}
-          style={[styles.input, webNoOutline]}
+          style={[styles.input, props.multiline && styles.inputMultiline, webNoOutline]}
           onFocus={(event) => {
             setFocused(true);
             onFocus?.(event);
@@ -175,6 +176,14 @@ const styles = StyleSheet.create({
   },
   disabled: {
     opacity: 0.6,
+  },
+  // Multiline fields (a message, notes) start a few lines tall, text at the top.
+  controlMultiline: {
+    alignItems: 'flex-start',
+  },
+  inputMultiline: {
+    minHeight: 132,
+    textAlignVertical: 'top',
   },
   input: {
     flex: 1,

@@ -13,7 +13,13 @@ vi.mock("@/libs/dashboard", async () => (await import("@/test/dashboard")).mockD
 
 import { deletePhoto, movePhoto, uploadCover, uploadPhoto } from "./actions";
 
-const webp = () => new File([new Uint8Array(2048)], "van.webp", { type: "image/webp" });
+/** A file that starts like a real WebP ("RIFF" <size> "WEBP"). */
+const webpBytes = () => {
+    const bytes = new Uint8Array(2048);
+    bytes.set([0x52, 0x49, 0x46, 0x46, 0xf8, 0x07, 0, 0, 0x57, 0x45, 0x42, 0x50]);
+    return bytes;
+};
+const webp = () => new File([webpBytes()], "van.webp", { type: "image/webp" });
 
 beforeEach(() => {
     state.supabase = createSupabaseMock();
@@ -40,6 +46,12 @@ describe("uploadPhoto", () => {
     it("rejects files that aren't images", async () => {
         const result = await uploadPhoto(form({ image: new File(["%PDF"], "menu.pdf", { type: "application/pdf" }) }));
         expect(result.error).toBe("Use a PNG, JPG or WebP image.");
+    });
+
+    it("rejects files dressed up as images", async () => {
+        const result = await uploadPhoto(form({ image: new File(["<svg onload=alert(1)>"], "van.png", { type: "image/png" }) }));
+        expect(result.error).toBe("That file isn't a PNG, JPG or WebP image.");
+        expect(state.supabase.uploaded).toEqual([]);
     });
 
     it("cleans up the uploaded file when the row can't be saved", async () => {

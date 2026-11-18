@@ -1,7 +1,7 @@
 import { confirm } from '@swathbook/mobile/confirm';
 import { colors, ListGroup, ListRow, PageHeader, Screen, SectionHeader, space, Text } from '@swathbook/mobile/design-system';
 import * as WebBrowser from 'expo-web-browser';
-import { Check, CircleHelp, CreditCard, LayoutDashboard, ListChecks, LogOut, Settings, Store, Users } from 'lucide-react-native';
+import { Check, CircleHelp, CreditCard, LayoutDashboard, ListChecks, LogOut, MessageSquareHeart, Settings, Store, Users } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 
 import { signOut, useAuth } from '@/data/auth';
@@ -41,6 +41,13 @@ export default function MoreScreen() {
           </ListGroup>
         </View>
       ) : null}
+
+      <View style={styles.stack}>
+        <SectionHeader title="Help shape Swathbook" />
+        <ListGroup>
+          <ListRow icon={MessageSquareHeart} title="Send feedback" subtitle="Ideas, problems or praise, straight to the team" href="/feedback" />
+        </ListGroup>
+      </View>
 
       <View style={styles.stack}>
         <SectionHeader title="On the website" />

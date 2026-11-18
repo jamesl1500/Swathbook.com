@@ -14,6 +14,7 @@ import type Stripe from "stripe";
 import type { createAdminClient } from "@/libs/supabase/admin";
 import type { Database } from "@/libs/supabase/database.types";
 import { PLANS, isPaidPlan, planForLookupKey, type PaidPlan } from "./plans";
+import { bookingPageChanged } from "@/libs/booking-page-cache";
 
 type Admin = ReturnType<typeof createAdminClient>;
 type SubscriptionStatus = Database["public"]["Enums"]["subscription_status"];
@@ -163,5 +164,7 @@ export async function syncSubscription(admin: Admin, subscription: Stripe.Subscr
         { onConflict: "stripe_subscription_id" },
     );
     if (error) throw error;
+    // A plan starting or lapsing opens or pauses the booking page.
+    bookingPageChanged(businessId);
     return { businessId, plan, status: subscription.status };
 }

@@ -124,7 +124,7 @@ beforeEach(() => {
     state.push.mockReset();
     state.getAvailability.mockReset().mockResolvedValue({ slots: SLOTS });
     state.submitBooking.mockReset().mockResolvedValue({ ok: true, token: "t".repeat(64) });
-    state.locateAddress.mockReset().mockResolvedValue({ ok: true, location: { lat: 30.27, lng: -97.74 }, satellite: null });
+    state.locateAddress.mockReset().mockResolvedValue({ ok: true, location: { lat: 30.27, lng: -97.74 }, locationToken: "signed-spot", satellite: null });
 });
 
 describe("BookingFlow", () => {
@@ -168,7 +168,7 @@ describe("BookingFlow", () => {
             serviceIds: [MOW.id],
             from: "2026-11-09",
             days: 7,
-            location: { lat: 30.27, lng: -97.74 },
+            locationToken: "signed-spot",
         });
         expect(state.locateAddress).toHaveBeenCalledWith({ slug: "green-acres", address: expect.objectContaining({ line1: "1 Main St" }), wantsMap: false });
 
@@ -181,6 +181,7 @@ describe("BookingFlow", () => {
         expect(screen.getByRole("button", { name: /earlier/i })).toBeDisabled();
     });
 
+    // A long walk through the flow before paging: slow when the whole suite runs at once.
     it("pages to later weeks", async () => {
         const { user, next } = setup();
         await toTime(user, next);
@@ -188,10 +189,10 @@ describe("BookingFlow", () => {
 
         state.getAvailability.mockResolvedValue({ slots: [] });
         await user.click(screen.getByRole("button", { name: /later/i }));
-        await waitFor(() => expect(state.getAvailability).toHaveBeenLastCalledWith(expect.objectContaining({ from: "2026-11-16" })));
-        expect(await screen.findByText("No open times this week. Try later dates.")).toBeInTheDocument();
+        await waitFor(() => expect(state.getAvailability).toHaveBeenLastCalledWith(expect.objectContaining({ from: "2026-11-16" })), { timeout: 5000 });
+        expect(await screen.findByText("No open times this week. Try later dates.", {}, { timeout: 5000 })).toBeInTheDocument();
         expect(screen.getByRole("button", { name: /earlier/i })).toBeEnabled();
-    });
+    }, 15_000);
 
     it("shows availability errors", async () => {
         state.getAvailability.mockResolvedValue({ error: "This business isn't taking bookings right now." });

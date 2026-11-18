@@ -18,9 +18,13 @@ vi.mock("@/libs/google/maps", () => ({
 vi.mock("@/libs/stripe/server", () => ({ hasStripe: () => state.stripeConfigured, getStripe: () => ({}) }));
 vi.mock("@/libs/stripe/payments", () => ({ createBookingPayment: vi.fn(async () => state.session) }));
 vi.mock("@/libs/email/worker", () => ({ sendQueuedEmailsSoon: vi.fn() }));
+vi.mock("@/libs/rate-limit", () => ({ allowRequest: vi.fn(async () => true), RATE_LIMITED_MESSAGE: "Too many tries." }));
 
 import { sendQueuedEmailsSoon } from "@/libs/email/worker";
 import { createBookingPayment } from "@/libs/stripe/payments";
+import { allowRequest } from "@/libs/rate-limit";
+import { signLocation } from "@/libs/signing";
+import { createClient } from "@/libs/supabase/server";
 import { getAvailability, submitBooking, type BookingRequest } from "./actions";
 
 const SERVICE = "6f1f5c2e-0c4a-4b8e-9a59-1f2d3c4b5a69";
@@ -55,6 +59,13 @@ beforeEach(() => {
 });
 
 describe("submitBooking", () => {
+    it("stops one visitor flooding a business's calendar", async () => {
+        vi.mocked(allowRequest).mockResolvedValueOnce(false);
+        expect(await submitBooking(request)).toEqual({ ok: false, error: "Too many tries.", code: "rate_limited" });
+        expect(allowRequest).toHaveBeenCalledWith("booking", { scope: "green-acres" });
+        expect(state.admin.rpc).not.toHaveBeenCalled();
+    });
+
     it("books through create_booking with a normalized customer and address", async () => {
         expect(await submitBooking(request)).toEqual({ ok: true, token: "a".repeat(64), payment: null });
         expect(state.admin.rpc).toHaveBeenCalledWith("create_booking", {
@@ -114,6 +125,21 @@ describe("getAvailability", () => {
         state.admin.rpc.mockResolvedValue({ data: [{ slot_start: "s", slot_end: "e" }], error: null });
         expect(await getAvailability({ slug: "green-acres", serviceIds: [SERVICE], from: "2026-11-02" })).toEqual({ slots: [{ start: "s", end: "e", neighborDiscountPercent: 0 }] });
         expect(state.admin.rpc).toHaveBeenCalledWith("get_available_slots", { p_slug: "green-acres", p_service_ids: [SERVICE], p_from: "2026-11-02", p_days: 7 });
+    });
+
+    it("asks about neighbors only for a location the server signed, and as the server", async () => {
+        vi.stubEnv("SUPABASE_SECRET_KEY", "sb_secret_test");
+        state.admin.rpc.mockResolvedValue({ data: [], error: null });
+        const locationToken = signLocation({ lat: 30.27, lng: -97.74 }, { line1: "1 Main St", postalCode: "78701" })!;
+        vi.mocked(createClient).mockClear();
+        await getAvailability({ slug: "green-acres", serviceIds: [SERVICE], from: "2026-11-02", locationToken });
+        expect(state.admin.rpc).toHaveBeenLastCalledWith("get_available_slots", expect.objectContaining({ p_lat: 30.27, p_lng: -97.74 }));
+        expect(createClient).not.toHaveBeenCalled();
+
+        await getAvailability({ slug: "green-acres", serviceIds: [SERVICE], from: "2026-11-02", locationToken: "30.27,-97.74|x|9999999999|forged" });
+        expect(state.admin.rpc).toHaveBeenLastCalledWith("get_available_slots", expect.not.objectContaining({ p_lat: expect.anything() }));
+        expect(createClient).toHaveBeenCalled();
+        vi.unstubAllEnvs();
     });
 
     it("validates its input", async () => {

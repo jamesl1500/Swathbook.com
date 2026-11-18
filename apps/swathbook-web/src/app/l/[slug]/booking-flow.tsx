@@ -94,6 +94,7 @@ export function BookingFlow({
   const [customer, setCustomer] = useState({ fullName: "", email: "", phone: "" });
   const [address, setAddress] = useState<AddressValue>(emptyAddress);
   const [location, setLocation] = useState<LatLng | null>(null);
+  const [locationToken, setLocationToken] = useState<string | null>(null);
   const [satellite, setSatellite] = useState<Record<MapZoom, string> | null>(null);
   const [measurement, setMeasurement] = useState<Measurement | null>(null);
   const [whereError, setWhereError] = useState<string | null>(null);
@@ -137,7 +138,7 @@ export function BookingFlow({
         serviceIds: selected,
         from: weekStart,
         days: 7,
-        ...(location ? { location } : {}),
+        ...(locationToken ? { locationToken } : {}),
         ...(areaSqft ? { areaSqft } : {}),
       });
       if ("error" in result) {
@@ -156,7 +157,7 @@ export function BookingFlow({
         return first ? toDateKey(new Date(first.start), timeZone) : null;
       });
     });
-  }, [step, selected, slug, weekStart, timeZone, location, areaSqft]);
+  }, [step, selected, slug, weekStart, timeZone, locationToken, areaSqft]);
 
   function toggle(serviceId: string) {
     setSlot(null);
@@ -174,6 +175,7 @@ export function BookingFlow({
     // A new address means a new map, a new outline and possibly new neighbors.
     if (value.line1 !== address.line1 || value.postalCode !== address.postalCode || value.lat !== address.lat) {
       setLocation(null);
+      setLocationToken(null);
       setSatellite(null);
       setMeasurement((current) => (current?.kind === "drawn" ? null : current));
       setSlot(null);
@@ -191,6 +193,7 @@ export function BookingFlow({
         return;
       }
       setLocation(result.location);
+      setLocationToken(result.locationToken);
       setSatellite(result.satellite);
       if (needsMeasure && !result.satellite && measurement?.kind === "drawn") setMeasurement(null);
       go(needsMeasure ? "measure" : "time");
@@ -214,7 +217,7 @@ export function BookingFlow({
         serviceIds: selected,
         start: slot!.start,
         customer,
-        address: { ...address, lat: location?.lat ?? address.lat, lng: location?.lng ?? address.lng },
+        address: { ...address, lat: location?.lat ?? address.lat, lng: location?.lng ?? address.lng, locationToken: locationToken ?? address.locationToken ?? null },
         notes,
         answers: answersToSend(questions, answers),
         measurement: needsMeasure ? measurementToSend(measurement) : null,

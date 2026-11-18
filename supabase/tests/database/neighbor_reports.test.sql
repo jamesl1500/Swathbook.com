@@ -73,6 +73,18 @@ select is((select array_agg(distinct neighbor_discount_percent) from public.get_
               'green-acres', array['50000000-0000-0000-0000-000000000001']::uuid[], ((now() at time zone 'America/Chicago')::date + 2), 1)),
           array[0], 'no location, no discount');
 
+-- Coordinates only count from the server: from the API, anyone could probe
+-- points to find where customers have work booked.
+set local role anon;
+select is(pg_temp.day_discounts(30.2702, -97.7431, 2), array[0], 'visitors can''t probe neighbor days with their own coordinates');
+reset role;
+set local role authenticated;
+select is(pg_temp.day_discounts(30.2702, -97.7431, 2), array[0], 'nor can signed-in users');
+reset role;
+set local role service_role;
+select is(pg_temp.day_discounts(30.2702, -97.7431, 2), array[10], 'the server can');
+reset role;
+
 -- An unpaid hold nearby doesn't make a neighbor day.
 update public.bookings set status = 'requested' where id = (select id from ann);
 select is(pg_temp.day_discounts(30.2702, -97.7431, 2), array[10], 'requested jobs count');

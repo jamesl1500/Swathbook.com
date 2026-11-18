@@ -15,7 +15,11 @@ const state = vi.hoisted(() => ({
 // React's cache() only memoizes inside a request; outside one it just calls through.
 vi.mock("./supabase/server", () => ({ createClient: vi.fn(async () => state.supabase.client) }));
 vi.mock("./supabase/admin", () => ({ createAdminClient: () => state.admin.client, hasAdminClient: () => state.hasAdmin }));
+vi.mock("./supabase/public", () => ({ createPublicClient: () => state.supabase.client }));
+// 'use cache' is a no-op outside Next; record what the loader tags and how long it keeps.
+vi.mock("next/cache", () => ({ cacheTag: vi.fn(), cacheLife: vi.fn() }));
 
+import { cacheLife, cacheTag } from "next/cache";
 import { loadBookingPage, loadPausedBusinessName } from "./booking-page";
 import { refundByDefault } from "./booking-policy";
 import { isBookingToken, loadBookingOptions, loadCustomerBooking } from "./customer-booking";
@@ -44,14 +48,36 @@ describe("refundByDefault", () => {
 
 describe("loadBookingPage", () => {
     it("asks the database only for well-formed slugs", async () => {
-        state.supabase.rpc.mockResolvedValue({ data: { business: { name: "Green Acres" } }, error: null });
-        expect(await loadBookingPage("green-acres")).toEqual({ business: { name: "Green Acres" } });
+        state.supabase.rpc.mockResolvedValue({ data: { business: { id: "b1", name: "Green Acres" } }, error: null });
+        expect(await loadBookingPage("green-acres")).toEqual({ business: { id: "b1", name: "Green Acres" } });
         expect(state.supabase.rpc).toHaveBeenCalledWith("get_booking_page", { p_slug: "green-acres" });
 
         for (const slug of ["ab", "-green", "green-", "Green", "green_acres", "a".repeat(41), "../etc"]) {
             expect(await loadBookingPage(slug)).toBeNull();
         }
         expect(state.supabase.rpc).toHaveBeenCalledTimes(1);
+    });
+
+    it("tags a found page with its business, so any edit drops it", async () => {
+        vi.mocked(cacheTag).mockClear();
+        vi.mocked(cacheLife).mockClear();
+        state.supabase.rpc.mockResolvedValue({ data: { business: { id: "b1", name: "Green Acres" } }, error: null });
+        await loadBookingPage("green-acres");
+        expect(vi.mocked(cacheTag).mock.calls.flat()).toEqual(["booking-page:slug:green-acres", "booking-page:b1"]);
+        expect(cacheLife).toHaveBeenCalledWith(expect.objectContaining({ revalidate: 300 }));
+    });
+
+    it("keeps 'no page here' only briefly, and never keeps a failed lookup", async () => {
+        vi.mocked(cacheLife).mockClear();
+        state.supabase.rpc.mockResolvedValue({ data: null, error: null });
+        expect(await loadBookingPage("paused-co")).toBeNull();
+        expect(cacheLife).toHaveBeenCalledWith(expect.objectContaining({ expire: 60 }));
+
+        const log = vi.spyOn(console, "error").mockImplementation(() => {});
+        state.supabase.rpc.mockResolvedValue({ data: null, error: { message: "timeout" } });
+        expect(await loadBookingPage("green-acres")).toBeNull();
+        expect(log).toHaveBeenCalled();
+        log.mockRestore();
     });
 
     it("finds a paused business's name for a friendlier notice", async () => {

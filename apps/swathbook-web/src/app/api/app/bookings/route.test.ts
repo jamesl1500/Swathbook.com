@@ -19,6 +19,7 @@ vi.mock("@/libs/app-api", async (importOriginal) => ({
 }));
 vi.mock("@/libs/supabase/admin", () => ({ createAdminClient: () => state.admin.client }));
 vi.mock("@/libs/email/worker", () => ({ sendQueuedEmailsSoon: vi.fn() }));
+vi.mock("@/libs/rate-limit", () => ({ allowRequest: vi.fn(async () => true), RATE_LIMITED_MESSAGE: "Too many tries." }));
 vi.mock("@/libs/public-booking", async (importOriginal) => ({
     ...(await importOriginal<typeof import("@/libs/public-booking")>()),
     placeBooking: vi.fn(async () => state.placed),

@@ -20,7 +20,9 @@ vi.mock("@/libs/google/maps", () => ({ hasGoogleMaps: () => true, geocodeAddress
 vi.mock("@/libs/stripe/server", () => ({ hasStripe: () => true, getStripe: () => ({}) }));
 vi.mock("@/libs/stripe/payments", () => ({ createBookingPayment: state.createBookingPayment }));
 vi.mock("@/libs/email/worker", () => ({ sendQueuedEmailsSoon: state.sendSoon }));
+vi.mock("@/libs/rate-limit", () => ({ allowRequest: vi.fn(async () => true), RATE_LIMITED_MESSAGE: "Too many tries." }));
 
+import { signLocation } from "@/libs/signing";
 import { submitBooking, type BookingRequest } from "./actions";
 
 const request: BookingRequest = {
@@ -37,6 +39,7 @@ const created = { booking_id: "bk1", public_token: "a".repeat(64), deposit_due_c
 const sentAddress = () => (state.admin.rpc.mock.calls[0][1] as { p_address: { lat: number | null; lng: number | null } }).p_address;
 
 beforeEach(() => {
+    vi.stubEnv("SUPABASE_SECRET_KEY", "sb_secret_test");
     state.admin = createSupabaseMock();
     state.admin.respond("businesses.select", { data: { id: "b1" } });
     state.admin.respond("bookings.select", { data: { address_id: "addr1" } });
@@ -48,17 +51,25 @@ beforeEach(() => {
 });
 
 describe("submitBooking locating the address", () => {
-    it("uses the picked place's coordinates and remembers the place on the address", async () => {
-        state.placeDetails.mockResolvedValue({ lat: 30.1, lng: -97.1, formatted: "10 Oak Ln, Austin, TX 78701, USA" });
-        await submitBooking({ ...request, address: { ...request.address, placeId: "pl_1" } });
+    it("uses coordinates the server signed for this address, and remembers the place", async () => {
+        const locationToken = signLocation({ lat: 30.1, lng: -97.1 }, request.address);
+        await submitBooking({ ...request, address: { ...request.address, placeId: "pl_1", lat: 30.1, lng: -97.1, locationToken } });
 
-        expect(state.placeDetails).toHaveBeenCalledWith("pl_1");
+        expect(state.placeDetails).not.toHaveBeenCalled();
         expect(state.geocodeAddress).not.toHaveBeenCalled();
         expect(sentAddress()).toMatchObject({ lat: 30.1, lng: -97.1 });
         expect(state.admin.callsTo("customer_addresses", "update")[0]).toMatchObject({
-            values: { google_place_id: "pl_1", formatted_address: "10 Oak Ln, Austin, TX 78701, USA" },
+            values: { google_place_id: "pl_1" },
             filters: [["eq", "id", "addr1"]],
         });
+    });
+
+    it("won't carry a signed location over to a different address", async () => {
+        const locationToken = signLocation({ lat: 30.1, lng: -97.1 }, { line1: "12 Elm St", postalCode: "78701" });
+        state.geocodeAddress.mockResolvedValue({ lat: 30.2, lng: -97.2, placeId: "pl_geo", formatted: "Formatted" });
+        await submitBooking({ ...request, address: { ...request.address, lat: 30.1, lng: -97.1, locationToken } });
+        expect(state.geocodeAddress).toHaveBeenCalledTimes(1);
+        expect(sentAddress()).toMatchObject({ lat: 30.2, lng: -97.2 });
     });
 
     it("geocodes a typed address", async () => {
@@ -69,12 +80,13 @@ describe("submitBooking locating the address", () => {
         expect(state.admin.callsTo("customer_addresses", "update")[0].values).toEqual({ google_place_id: "pl_geo", formatted_address: "Formatted" });
     });
 
-    it("trusts coordinates the browser already sent", async () => {
-        await submitBooking({ ...request, address: { ...request.address, lat: 30.3, lng: -97.3 } });
+    it("ignores coordinates and places the browser made up, and geocodes the address instead", async () => {
+        // Coordinates next to someone else's job would earn a neighbor discount and pass the service-area check.
+        state.geocodeAddress.mockResolvedValue({ lat: 30.2, lng: -97.2, placeId: "pl_geo", formatted: "Formatted" });
+        await submitBooking({ ...request, address: { ...request.address, placeId: "pl_far", lat: 30.3, lng: -97.3, locationToken: "30.3,-97.3|x|9999999999|forged" } });
         expect(state.placeDetails).not.toHaveBeenCalled();
-        expect(state.geocodeAddress).not.toHaveBeenCalled();
-        expect(sentAddress()).toMatchObject({ lat: 30.3, lng: -97.3 });
-        expect(state.admin.callsTo("customer_addresses", "update")).toHaveLength(0);
+        expect(sentAddress()).toMatchObject({ lat: 30.2, lng: -97.2 });
+        expect(state.admin.callsTo("customer_addresses", "update")[0].values).toEqual({ google_place_id: "pl_geo", formatted_address: "Formatted" });
     });
 
     it("still books when the address can't be found (the database decides on service area)", async () => {

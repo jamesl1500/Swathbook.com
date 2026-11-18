@@ -12,6 +12,7 @@ import { hasStripe } from "@/libs/stripe/server";
 import { createClient } from "@/libs/supabase/server";
 import { sendQueuedEmailsSoon } from "@/libs/email/worker";
 import { isDateKey, zonedToUtc } from "@/libs/time";
+import { bookingPageChanged } from "@/libs/booking-page-cache";
 
 const timeKey = z.string().regex(/^\d{2}:\d{2}$/, { error: "Pick a time." });
 
@@ -325,6 +326,7 @@ export async function saveHours(_prev: FormState, formData: FormData): Promise<F
         const { error } = await supabase.from("business_hours").insert(rows);
         if (error) return { error: "We couldn't save your hours." };
     }
+    bookingPageChanged(auth.businessId);
     refresh();
     return { success: "Hours saved." };
 }
@@ -399,6 +401,7 @@ export async function saveBookingRules(_prev: FormState, formData: FormData): Pr
         })
         .eq("id", auth.businessId);
     if (error) return { error: "We couldn't save your booking rules." };
+    bookingPageChanged(auth.businessId);
     refresh();
     return { success: "Booking rules saved." };
 }

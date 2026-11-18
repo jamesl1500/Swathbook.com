@@ -65,6 +65,7 @@ function App() {
       <Stack.Protected guard={signedIn}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'Today' }} />
         <Stack.Screen name="job/[id]" options={{ title: 'Job' }} />
+        <Stack.Screen name="feedback" options={{ title: 'Send feedback', presentation: 'modal' }} />
       </Stack.Protected>
       <Stack.Protected guard={!signedIn}>
         <Stack.Screen name="sign-in" options={{ headerShown: false }} />

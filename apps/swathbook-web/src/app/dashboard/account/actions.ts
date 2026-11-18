@@ -13,6 +13,7 @@ import { createAdminClient } from "@/libs/supabase/admin";
 import { removeAvatarFiles, removeFolder } from "@/libs/supabase/storage-cleanup";
 import { createClient } from "@/libs/supabase/server";
 import { changeEmailSchema, changeNameSchema, changePasswordSchema, deleteAccountSchema } from "@/libs/validation/auth";
+import { bookingPageChanged } from "@/libs/booking-page-cache";
 
 const SIGNED_OUT: FormState = { error: "Your session ended. Log in again to change your account." };
 const WRONG_PASSWORD = { fieldErrors: { currentPassword: ["That password isn't right."] } } satisfies FormState;
@@ -155,6 +156,8 @@ export async function deleteAccount(_prev: FormState, formData: FormData): Promi
         return { error: "We couldn't delete your account. Please try again or contact support." };
     }
 
+    // Their booking pages are gone with them.
+    for (const businessId of businessIds) bookingPageChanged(businessId);
     await cancelPlans((liveSubscriptions ?? []).map((row) => row.stripe_subscription_id));
     await removeBusinessFiles(admin, businessIds);
     await removeAvatarFiles(admin, user.id);

@@ -3,7 +3,9 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("./google/weather", () => ({ dailyForecast: vi.fn() }));
 
 import type { ForecastDay } from "./google/weather";
-import { buildOutlook, nextRainDay, rainStops, suggestMoveTo } from "./rain";
+import { createSupabaseMock } from "@/test/supabase-mock";
+import { buildOutlook, loadRainOutlook, nextRainDay, rainStops, suggestMoveTo } from "./rain";
+import { addDays, todayKey } from "./time";
 
 function forecast(date: string, rainChance: number): ForecastDay {
     return { date, rainChance, rainInches: null, summary: null, iconUrl: null, highF: null, lowF: null };
@@ -75,5 +77,45 @@ describe("suggestMoveTo", () => {
     it("skips closed days and stays inside the booking window", () => {
         expect(suggestMoveTo("2026-11-20", { openWeekdays: [1, 2, 3, 4, 5], outlook, lastDay: "2026-12-31" })).toBe("2026-11-23");
         expect(suggestMoveTo("2026-11-20", { openWeekdays: [1, 2, 3, 4, 5], outlook, lastDay: "2026-11-22" })).toBeNull();
+    });
+});
+
+describe("loadRainOutlook", () => {
+    const business = {
+        id: "b1",
+        timezone: "America/Chicago",
+        base_lat: 30.27,
+        base_lng: -97.74,
+        rain_alerts_enabled: true,
+        rain_alert_percent: 60,
+        booking_window_days: 30,
+    };
+
+    it("fetches one shared forecast window and uses the days asked for", async () => {
+        const { dailyForecast } = await import("./google/weather");
+        const today = todayKey("America/Chicago");
+        vi.mocked(dailyForecast).mockResolvedValue({ days: [0, 1, 2, 3, 4].map((offset) => forecast(addDays(today, offset), 10)), problem: null });
+        const supabase = createSupabaseMock();
+        supabase.respond("bookings.select", { data: [] });
+
+        const outlook = await loadRainOutlook(supabase.client as never, business, 3);
+        expect(dailyForecast).toHaveBeenLastCalledWith({ lat: 30.27, lng: -97.74 }, 7);
+        expect(outlook?.days).toHaveLength(3);
+        expect(supabase.callsTo("bookings", "select")).toHaveLength(1);
+    });
+
+    it("skips the jobs query on dry days when only rain matters", async () => {
+        const { dailyForecast } = await import("./google/weather");
+        const today = todayKey("America/Chicago");
+        vi.mocked(dailyForecast).mockResolvedValue({ days: [forecast(today, 20), forecast(addDays(today, 1), 59)], problem: null });
+        const supabase = createSupabaseMock();
+
+        expect(await loadRainOutlook(supabase.client as never, business, 3, { onlyIfRainy: true })).toBeNull();
+        expect(supabase.callsTo("bookings", "select")).toHaveLength(0);
+
+        vi.mocked(dailyForecast).mockResolvedValue({ days: [forecast(today, 20), forecast(addDays(today, 1), 80)], problem: null });
+        supabase.respond("bookings.select", { data: [] });
+        expect(await loadRainOutlook(supabase.client as never, business, 3, { onlyIfRainy: true })).not.toBeNull();
+        expect(supabase.callsTo("bookings", "select")).toHaveLength(1);
     });
 });

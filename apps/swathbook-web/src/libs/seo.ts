@@ -183,6 +183,8 @@ type JsonLdService = {
     description: string | null;
     price_type: "fixed" | "starting_at" | "quote";
     price_cents: number;
+    /** Set when the price follows a measured area; price_cents is then the minimum. */
+    price_per_1000_sqft_cents?: number | null;
 };
 
 /**
@@ -260,7 +262,21 @@ function servicePrice(service: JsonLdService, currency: string) {
     const price = (service.price_cents / 100).toFixed(2);
     if (service.price_type === "fixed") return { price, priceCurrency: currency };
     if (service.price_type === "starting_at") {
-        return { priceSpecification: { "@type": "PriceSpecification", minPrice: price, priceCurrency: currency } };
+        const minimum = { "@type": "PriceSpecification", minPrice: price, priceCurrency: currency };
+        const rate = service.price_per_1000_sqft_cents;
+        if (!rate || rate <= 0) return { priceSpecification: minimum };
+        // Priced by the measured area: the minimum, plus the rate per 1,000 sq ft (FTK = square foot).
+        return {
+            priceSpecification: [
+                minimum,
+                {
+                    "@type": "UnitPriceSpecification",
+                    price: (rate / 100).toFixed(2),
+                    priceCurrency: currency,
+                    referenceQuantity: { "@type": "QuantitativeValue", value: 1000, unitCode: "FTK", unitText: "sq ft" },
+                },
+            ],
+        };
     }
     return {}; // Priced by quote: no number to publish.
 }

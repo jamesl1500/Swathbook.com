@@ -12,12 +12,16 @@ import {
     Bug,
     Car,
     CalendarCheck,
+    Camera,
+    CloudRain,
     CreditCard,
     Droplets,
     Fence,
     Flower2,
     Hammer,
     HandCoins,
+    House,
+    KeyRound,
     Leaf,
     Link2,
     MessageSquareText,
@@ -25,6 +29,7 @@ import {
     PawPrint,
     Receipt,
     Route,
+    Satellite,
     Scissors,
     Smartphone,
     Snowflake,
@@ -268,7 +273,7 @@ export const supportingFeatures: Feature[] = [
     {
         icon: Users,
         title: "Customer book",
-        body: "Every customer, address, gate code and job history in one place, with no more scrolling through texts.",
+        body: "Every customer, address, gate code, pet and job history in one place, with no more scrolling through texts.",
     },
     {
         icon: BellRing,
@@ -289,6 +294,40 @@ export const supportingFeatures: Feature[] = [
         icon: Smartphone,
         title: "Run it from your phone",
         body: "Everything works from the cab of your truck. No laptop required.",
+    },
+];
+
+/** What sets Swathbook apart, each with an anchor on the features page. */
+export const standoutFeatures: Array<Feature & { id: string }> = [
+    {
+        id: "satellite-quotes",
+        icon: Satellite,
+        title: "Instant quotes from a satellite photo",
+        body: "Customers outline their lawn, driveway or roof on a satellite photo and see your per-square-foot price before they book. No drive-by estimates.",
+    },
+    {
+        id: "neighbor-pricing",
+        icon: House,
+        title: "Neighbor pricing",
+        body: "Offer a discount on days you already have a job nearby. Customers fill the gaps in your route, and you spend less time driving between stops.",
+    },
+    {
+        id: "job-reports",
+        icon: Camera,
+        title: "Job reports with before and after photos",
+        body: "After every job, customers get a branded report with your photos and notes, a link to pay what's left, a tip button and a nudge to leave a review.",
+    },
+    {
+        id: "rain-days",
+        icon: CloudRain,
+        title: "Rain-day rescheduling",
+        body: "When rain is forecast, move a whole day's outdoor jobs in a couple of taps. Swathbook finds the new times and emails every customer for you.",
+    },
+    {
+        id: "property-notes",
+        icon: KeyRound,
+        title: "Property notes for crews",
+        body: "Gate codes, pets and a pinned map of hazards, spigots and sprinkler heads, saved with the address so every crew member arrives knowing the yard.",
     },
 ];
 
@@ -369,6 +408,14 @@ export const faqs = [
     {
         question: "How does the AI route planning work?",
         answer: "Each day, Swathbook looks at your booked jobs, their addresses, how long each takes, and any time windows customers picked, then orders your stops to minimize drive time. If a job moves, the route updates.",
+    },
+    {
+        question: "Can customers get a price without a site visit?",
+        answer: "Yes. For services you price by the square foot, customers outline the area on a satellite photo of their property while booking and see the price right away.",
+    },
+    {
+        question: "What happens when it rains?",
+        answer: "Swathbook checks the forecast for your service area and warns you about rainy days ahead. Pick the day, choose where the outdoor jobs should go, and every customer gets an email with their new time.",
     },
     {
         question: "Which trades is Swathbook for?",

@@ -11,29 +11,17 @@
  * @since 1.0.0
  */
 
-import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { MAP_SIZE, MAP_ZOOMS, type LatLng, type MapZoom } from "@/libs/measure/geo";
+import { coordinate, sign, signatureMatches, signingKey as keyFor } from "@/libs/signing";
 import { hasGoogleMaps } from "./maps";
 
 const LINK_TTL_SECONDS = 2 * 60 * 60;
 
-function signingKey() {
-    const secret = process.env.SUPABASE_SECRET_KEY;
-    if (!secret) return null;
-    // A key of its own, so a signature here is never useful anywhere else.
-    return createHash("sha256").update(`swathbook:satellite:${secret}`).digest();
-}
-
-function coordinate(value: number) {
-    return value.toFixed(6);
-}
+// A key of its own, so a signature here is never useful anywhere else.
+const signingKey = () => keyFor("satellite");
 
 function payload(center: LatLng, zoom: number, expires: number) {
     return `${coordinate(center.lat)},${coordinate(center.lng)}|${zoom}|${expires}`;
-}
-
-function sign(key: Buffer, message: string) {
-    return createHmac("sha256", key).update(message).digest("base64url");
 }
 
 export function canMeasure() {
@@ -72,9 +60,7 @@ export function verifySatelliteLink(query: URLSearchParams, now = Date.now()): S
     if (!key || !Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
     if (!(MAP_ZOOMS as readonly number[]).includes(zoom) || !Number.isInteger(expires) || expires * 1000 < now) return null;
 
-    const expected = Buffer.from(sign(key, payload({ lat, lng }, zoom, expires)));
-    const given = Buffer.from(signature);
-    if (expected.length !== given.length || !timingSafeEqual(expected, given)) return null;
+    if (!signatureMatches(key, payload({ lat, lng }, zoom, expires), signature)) return null;
     return { center: { lat, lng }, zoom: zoom as MapZoom };
 }
 
