@@ -34,7 +34,7 @@ async function businessPages(): Promise<MetadataRoute.Sitemap> {
 
   const { data, error } = await createAdminClient()
     .from("businesses")
-    .select("slug, updated_at, cover_path, business_photos(storage_path, sort_order)")
+    .select("slug, updated_at, cover_path, trial_ends_at, business_photos(storage_path, sort_order), subscriptions(status)")
     .eq("is_published", true)
     .not("onboarding_completed_at", "is", null)
     .order("updated_at", { ascending: false })
@@ -43,7 +43,14 @@ async function businessPages(): Promise<MetadataRoute.Sitemap> {
     console.error("[sitemap] couldn't list business pages", error);
     return [];
   }
-  return data.map((business) => {
+  const now = Date.now();
+  // Same rule as private.business_has_access(): paused pages stay out of the sitemap.
+  const live = data.filter(
+    (business) =>
+      (business.trial_ends_at && Date.parse(business.trial_ends_at) > now) ||
+      business.subscriptions.some((subscription) => ["trialing", "active", "past_due"].includes(subscription.status)),
+  );
+  return live.map((business) => {
     // Cover and gallery photos as image entries, so work photos can show up in image search.
     const images = [
       business.cover_path,

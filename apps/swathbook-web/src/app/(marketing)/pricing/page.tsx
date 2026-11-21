@@ -4,6 +4,7 @@ import { faqJsonLd, pageMetadata, softwareJsonLd } from "@/libs/seo";
 import { routes } from "@/libs/routes";
 import { CtaBand } from "@/components/marketing/cta-band";
 import { FaqList } from "@/components/marketing/faq-list";
+import { PaymentFeeCards } from "@/components/marketing/payment-fee-cards";
 import { PricingCards } from "@/components/marketing/pricing-cards";
 import { Container, PageHero, SectionHeading } from "@/components/marketing/section";
 import { TalkToUsCard } from "@/components/marketing/talk-to-us";
@@ -12,30 +13,30 @@ import { PlanIncludesAside } from "@/components/marketing/hero-asides";
 export const metadata: Metadata = pageMetadata({
   title: "Pricing",
   description:
-    "No monthly fee. Swathbook takes 1.25% of the payments you take through your booking link, with deposits, card payments, AI routing and unlimited team members included.",
+    "Simple monthly plans for solo operators and growing crews, plus 1.25% of customer payments. Booking link, deposits and AI routing included. 7-day free trial.",
   path: routes.pricing,
 });
 
 const pricingFaqs = [
   {
-    question: "Is there a monthly fee?",
-    answer: "No. There's no subscription, no setup fee and no contract. Swathbook takes 1.25% of each deposit and balance your customers pay through your booking link, and that's all.",
+    question: "Is there a free trial?",
+    answer: "Yes. Every new business gets a 7-day free trial with everything turned on, and you don't need a credit card. Pick a plan any time; you won't be charged until the trial ends.",
   },
   {
-    question: "When is the 1.25% taken?",
-    answer: "Only when you're paid. It comes out of each card payment before it reaches your bank, so there's never a bill. Jobs paid in cash cost nothing, and tips go to you in full.",
+    question: "Is there a fee on payments?",
+    answer: "Yes: Swathbook takes 1.25% of each deposit and balance customers pay through your booking page. It comes out before the payout, a refund returns it, and tips are yours in full. Jobs paid in cash have no fee.",
   },
   {
     question: "Are there payment processing fees?",
-    answer: "Yes, card payments carry Stripe's standard processing fee (2.9% + 30¢ on most US cards), paid to Stripe. Each service in your dashboard shows what you keep after both.",
+    answer: "Yes, card payments also carry Stripe's standard processing fee (2.9% + 30¢ on most US cards), paid to Stripe. Each service in your dashboard shows what you keep after both.",
   },
   {
-    question: "What if I refund a customer?",
-    answer: "Our fee is refunded with it. If you don't keep the money, we don't either.",
+    question: "Can I switch plans later?",
+    answer: "Anytime. Upgrade when you add a crew member, or drop down in the off-season. Changes take effect on your next bill.",
   },
   {
-    question: "Is anything limited?",
-    answer: "No. Every business gets every feature, unlimited bookings and as many team members as it needs. A solo operator and a ten-truck fleet pay the same rate.",
+    question: "What happens if I cancel?",
+    answer: "Your link stops taking new bookings at the end of your billing period. Your account, customers and job history stay put, so you can pick up where you left off.",
   },
 ];
 
@@ -45,20 +46,27 @@ export default function PricingPage() {
       <JsonLd data={[softwareJsonLd, faqJsonLd(pricingFaqs)]} />
       <PageHero
         eyebrow="Pricing"
-        title="You get paid. Then we do."
-        description="No monthly fee, no tiers, no contract. Swathbook takes 1.25% of the payments you take through it, and every feature comes with it."
+        title="Priced like a tool, not a tax."
+        description="Pick the plan that matches the size of your operation, plus 1.25% of the payments you take. Every plan includes your booking link, deposits, payments and AI routing."
         aside={<PlanIncludesAside />}
       />
 
       <section className="py-24" aria-labelledby="plans-heading">
         <Container>
           <h2 id="plans-heading" className="sr-only">
-            Price
+            Plans
           </h2>
           <PricingCards />
-          <p className="mt-8 text-center text-sm text-ink-faint">
-            Prices in USD. Card processing is charged separately by Stripe.
-          </p>
+          <p className="mt-8 text-center text-sm text-ink-faint">Prices in USD, billed monthly after your 7-day free trial.</p>
+        </Container>
+      </section>
+
+      <section className="pb-24" aria-labelledby="fee-heading">
+        <Container>
+          <h2 id="fee-heading" className="mb-8 text-center text-2xl font-bold sm:text-3xl">
+            And when your customers pay
+          </h2>
+          <PaymentFeeCards />
         </Container>
       </section>
 

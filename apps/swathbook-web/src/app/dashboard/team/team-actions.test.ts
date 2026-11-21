@@ -50,11 +50,11 @@ describe("inviteMember", () => {
         expect(result.inviteUrl).toContain("/invite/");
     });
 
-    it("explains a full team", async () => {
+    it("explains a full plan", async () => {
         state.supabase.rpc.mockImplementation(async (fn: string) =>
             fn === "team_members" ? { data: [], error: null } : { data: null, error: { message: "seat_limit" } },
         );
-        expect((await inviteMember({}, form({ email: "carl@example.com", role: "crew" }))).error).toMatch(/team is full/);
+        expect((await inviteMember({}, form({ email: "carl@example.com", role: "crew" }))).error).toMatch(/seats are full/);
     });
 
     it("won't invite someone already on the team", async () => {

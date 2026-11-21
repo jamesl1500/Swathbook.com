@@ -13,7 +13,7 @@ import { InvestorForm } from "./investor-form";
 export const metadata: Metadata = pageMetadata({
   title: "Investors",
   description:
-    "Swathbook is talking with early investors. Learn how we make money (1.25% of every payment our businesses take) and register your interest.",
+    "Swathbook is talking with early investors. Learn how we make money (monthly plans plus 1.25% of every payment our businesses take) and register your interest.",
   path: routes.investors,
 });
 
@@ -30,8 +30,8 @@ const thesis = [
   },
   {
     icon: TrendingUp,
-    title: "Revenue that grows with our customers",
-    body: `No subscription to sell or churn. Swathbook takes ${SWATHBOOK_FEE_LABEL} of what businesses are paid through it, so we earn more exactly as they do.`,
+    title: "Two ways we earn",
+    body: `A monthly plan from every business ($29 Solo, $79 Crew) covers running the platform, and ${SWATHBOOK_FEE_LABEL} of what businesses are paid through it grows with them.`,
   },
 ];
 
@@ -73,7 +73,7 @@ function ModelAside() {
     <div className="-rotate-1 rounded-[1.75rem] border border-line bg-card p-6 shadow-card">
       <p className="label-tag text-ink-faint">How Swathbook earns</p>
       <p className="mt-3 font-display text-5xl font-extrabold tracking-tight text-brand-700">{SWATHBOOK_FEE_LABEL}</p>
-      <p className="mt-1 text-ink-soft">of every payment businesses take through Swathbook</p>
+      <p className="mt-1 text-ink-soft">of every payment businesses take through Swathbook, on top of their monthly plan</p>
       <dl className="mt-6 space-y-2.5 text-sm">
         {volumes.map((volume) => (
           <div key={volume} className="flex items-baseline justify-between gap-4 rounded-xl bg-paper px-4 py-2.5">

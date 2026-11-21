@@ -86,35 +86,51 @@ test.describe("unpaid deposits", () => {
 });
 
 test.describe("billing", () => {
-    test("1.25% per payment, no plan to buy, and a booking page that never pauses", async ({ page }) => {
+    test("the trial, a paused page when it ends, and reopening with a plan", async ({ page }) => {
         const { business } = await ownerSignedIn(page);
         await page.goto("/dashboard/billing");
-        await expect(page.getByTestId("billing-status")).toContainText("1.25% per payment");
-        await expect(page.getByTestId("billing-status")).toContainText("No monthly fee");
+        await expect(page.getByTestId("billing-status")).toContainText("Free trial · 7 days left");
+        await expect(page.getByText("Billing isn't configured yet")).toBeVisible();
+        // Plans come with the 1.25% payment fee, shown beside them.
+        await expect(page.getByTestId("plan-solo")).toContainText("$29");
+        await expect(page.getByText("Swathbook takes 1.25% of each deposit and balance")).toBeVisible();
         await expect(page.getByTestId("fee-summary")).toContainText("(0 payments)");
-        await expect(page.getByTestId("legacy-plan")).toHaveCount(0);
-        await expect(page.getByRole("button", { name: /Subscribe|Choose/ })).toHaveCount(0);
 
-        // An old trial date running out changes nothing.
+        // Trial over, no plan: the booking page pauses and the owner is told everywhere.
         await admin.from("businesses").update({ trial_ends_at: new Date(Date.now() - 60_000).toISOString() }).eq("id", business.id);
         await page.goto("/dashboard");
-        await expect(page.getByTestId("billing-banner")).toHaveCount(0);
+        await expect(page.getByTestId("billing-banner")).toContainText("Your booking page is paused");
+        await page.goto("/dashboard/billing");
+        await expect(page.getByTestId("billing-status")).toContainText("Your free trial has ended");
         await page.goto(`/l/${business.slug}`);
-        await expect(page.getByRole("heading", { level: 1, name: "Shine On Detailing" })).toBeVisible();
-    });
+        await expect(page.getByRole("heading", { name: /isn't taking online bookings/ })).toBeVisible();
 
-    test("an owner still on an old monthly plan is told to cancel it", async ({ page }) => {
-        const { business } = await ownerSignedIn(page);
+        // A plan (as the Stripe webhook would record it) reopens everything.
         await admin.from("subscriptions").insert({
             business_id: business.id,
             stripe_subscription_id: `sub_${business.id.replace(/-/g, "").slice(0, 14)}`,
             stripe_customer_id: "cus_e2e",
-            plan: "solo",
+            plan: "crew",
             status: "active",
             current_period_end: new Date(Date.now() + 30 * 86_400_000).toISOString(),
         });
         await page.goto("/dashboard/billing");
-        await expect(page.getByTestId("legacy-plan")).toContainText("You still have the Solo monthly plan");
+        await expect(page.getByTestId("billing-status")).toContainText("Crew plan is active");
+        await expect(page.getByTestId("billing-banner")).toHaveCount(0);
+        await expect(page.getByTestId("plan-crew")).toContainText("Current plan");
+        await page.goto(`/l/${business.slug}`);
+        await expect(page.getByRole("heading", { level: 1, name: "Shine On Detailing" })).toBeVisible();
+    });
+
+    test("the pricing page shows the plans, then the payment fee", async ({ page }) => {
+        await page.goto("/pricing");
+        await expect(page.getByRole("heading", { name: "Solo", exact: true })).toBeVisible();
+        const fee = page.getByTestId("payment-fee");
+        await expect(fee).toContainText("1.25%");
+        await expect(fee).toContainText("$191.40");
+        // The fee cards sit under the plans.
+        const plans = await page.getByRole("heading", { name: "Crew", exact: true }).boundingBox();
+        expect((await fee.boundingBox())!.y).toBeGreaterThan(plans!.y);
     });
 
     test("each service shows what the business keeps after fees", async ({ page }) => {
@@ -128,6 +144,13 @@ test.describe("billing", () => {
         await form.getByLabel("Price", { exact: true }).fill("100");
         await expect(form.getByTestId("take-home")).toContainText("You keep about $95.55");
     });
+
+    test("a nearly finished trial shows a heads-up", async ({ page }) => {
+        const { business } = await ownerSignedIn(page);
+        await admin.from("businesses").update({ trial_ends_at: new Date(Date.now() + 2 * 86_400_000 - 60_000).toISOString() }).eq("id", business.id);
+        await page.goto("/dashboard");
+        await expect(page.getByTestId("billing-banner")).toContainText("Your free trial ends in 2 days");
+    });
 });
 
 test.describe("team", () => {
@@ -136,12 +159,12 @@ test.describe("team", () => {
         const crewEmail = uniqueEmail("crew");
 
         await page.goto("/dashboard/team");
-        await expect(page.getByTestId("seat-count")).toHaveText("1 person");
+        await expect(page.getByTestId("seat-count")).toHaveText("1 of 5 seats");
         await page.getByLabel("Email").fill(crewEmail);
         await page.getByRole("button", { name: "Send invite" }).click();
         await expect(page.getByText(`Invite sent to ${crewEmail}.`)).toBeVisible();
         await expect(page.getByTestId("pending-invite")).toContainText(crewEmail);
-        await expect(page.getByTestId("seat-count")).toHaveText("2 people");
+        await expect(page.getByTestId("seat-count")).toHaveText("2 of 5 seats");
 
         const invite = await waitForEmail(crewEmail, /Olive Owner invited you to Shine On Detailing/);
         const inviteUrl = linkIn(invite, /^\/invite\/[0-9a-f]{64}$/);
@@ -179,7 +202,7 @@ test.describe("team", () => {
         await expect(page.getByTestId("team-member").filter({ hasText: "Carl Crew" })).toContainText(crewEmail);
         await expect(page.getByTestId("pending-invite")).toHaveCount(0);
 
-        // No seat limits: an old Solo plan on file doesn't block inviting more.
+        // Solo is one seat: the team is over its limit, so inviting is blocked.
         await admin.from("subscriptions").insert({
             business_id: business.id,
             stripe_subscription_id: `sub_${business.id.replace(/-/g, "").slice(0, 14)}`,
@@ -188,9 +211,10 @@ test.describe("team", () => {
             status: "active",
         });
         await page.reload();
-        await expect(page.getByRole("button", { name: "Send invite" })).toBeEnabled();
+        await expect(page.getByText("Your plan's seats are full.")).toBeVisible();
+        await expect(page.getByRole("button", { name: "Send invite" })).toBeDisabled();
 
-        // Owners can still remove people.
+        // Removing the crew member frees the seat.
         page.once("dialog", (dialog) => dialog.accept());
         await page.getByRole("button", { name: "Remove Carl Crew" }).click();
         await expect(page.getByTestId("team-member")).toHaveCount(1);

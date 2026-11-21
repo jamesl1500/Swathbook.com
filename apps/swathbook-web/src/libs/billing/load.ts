@@ -1,23 +1,40 @@
 /**
  * load.ts
  *
- * What the billing page shows: Swathbook's fees on the business's recent
- * customer payments, and any monthly plan left over from before per-payment
- * pricing (so the owner can cancel it). Owners and admins only: payments and
- * subscriptions are readable to managers through RLS.
+ * Reads a business's billing for the dashboard: its trial or plan, its team
+ * seats, and Swathbook's 1.25% fees on recent customer payments. Owners and
+ * admins only: subscriptions and payments are readable to managers through RLS.
  *
  * @module src/libs/billing/load
  * @since 1.0.0
  */
 
 import type { createClient } from "@/libs/supabase/server";
+import { billingState } from "./status";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
+
+export async function loadBilling(supabase: Supabase, business: { id: string; trial_ends_at: string | null }) {
+    const [{ data: subscription }, { data: seats }] = await Promise.all([
+        supabase
+            .from("subscriptions")
+            .select("plan, status, current_period_end, cancel_at_period_end, trial_end")
+            .eq("business_id", business.id)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+        supabase.rpc("team_seats", { p_business_id: business.id }).maybeSingle(),
+    ]);
+    return {
+        state: billingState({ trialEndsAt: business.trial_ends_at, subscription }),
+        subscription,
+        seats: { used: seats?.used ?? 1, limit: seats?.seat_limit ?? null },
+    };
+}
 
 export const FEE_SUMMARY_DAYS = 30;
 
 const COLLECTED = ["succeeded", "partially_refunded", "refunded"] as const;
-const LIVE_PLAN = ["trialing", "active", "past_due"] as const;
 
 type PaymentRow = { amount_cents: number; amount_refunded_cents: number; application_fee_cents: number };
 
@@ -38,23 +55,14 @@ export function summarizeFees(rows: PaymentRow[]): FeeSummary {
     return { payments: rows.length, collectedCents, feeCents };
 }
 
-export async function loadBilling(supabase: Supabase, business: { id: string }, now = Date.now()) {
+/** Swathbook's fees on the business's customer payments over the last FEE_SUMMARY_DAYS. */
+export async function loadFeeSummary(supabase: Supabase, businessId: string, now = Date.now()) {
     const since = new Date(now - FEE_SUMMARY_DAYS * 86_400_000).toISOString();
-    const [{ data: payments }, { data: subscription }] = await Promise.all([
-        supabase
-            .from("payments")
-            .select("amount_cents, amount_refunded_cents, application_fee_cents")
-            .eq("business_id", business.id)
-            .in("status", [...COLLECTED])
-            .gte("created_at", since),
-        supabase
-            .from("subscriptions")
-            .select("plan, status, current_period_end, cancel_at_period_end")
-            .eq("business_id", business.id)
-            .in("status", [...LIVE_PLAN])
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .maybeSingle(),
-    ]);
-    return { fees: summarizeFees(payments ?? []), legacyPlan: subscription ?? null };
+    const { data } = await supabase
+        .from("payments")
+        .select("amount_cents, amount_refunded_cents, application_fee_cents")
+        .eq("business_id", businessId)
+        .in("status", [...COLLECTED])
+        .gte("created_at", since);
+    return summarizeFees(data ?? []);
 }

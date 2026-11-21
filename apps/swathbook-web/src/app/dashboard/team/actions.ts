@@ -17,7 +17,7 @@ const roleField = z.enum(["admin", "crew"], { error: "Pick a role." });
 const inviteSchema = z.object({ email: emailField, role: roleField });
 
 const INVITE_ERRORS: Record<string, string> = {
-    seat_limit: "This team is full. Remove someone first.",
+    seat_limit: "Your plan's seats are full. Upgrade to Crew for up to 5 people, or remove someone first.",
     only_owner_can_invite_admins: "Only the owner can invite admins.",
     not_allowed: "Only owners and admins can invite people.",
 };

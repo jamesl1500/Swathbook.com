@@ -62,8 +62,8 @@ export default function HomePage() {
         <Container>
           <SectionHeading
             eyebrow="Pricing"
-            title="Pay only when you get paid"
-            description="No monthly fee. Swathbook takes 1.25% of the payments you take through it, and nothing when you don't."
+            title="Simple plans that pay for themselves"
+            description="One saved no-show a month covers the bill. Start with a 7-day free trial, then a monthly plan plus 1.25% of the payments you take."
             align="center"
           />
           <div className="mt-14">
@@ -122,7 +122,7 @@ function Hero() {
           <ClaimLinkForm className="mt-9" />
 
           <ul className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm text-ink-soft">
-            {["No monthly fee", "Live in about 5 minutes", "No contracts"].map((item) => (
+            {["Free to start", "Live in about 5 minutes", "No contracts"].map((item) => (
               <li key={item} className="inline-flex items-center gap-1.5">
                 <Check className="size-4 text-brand-500" aria-hidden="true" />
                 {item}

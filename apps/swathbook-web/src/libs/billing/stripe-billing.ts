@@ -1,11 +1,10 @@
 /**
  * stripe-billing.ts
  *
- * Monthly plans bought before Swathbook moved to a per-payment fee. They live
- * on the platform account (separate from the businesses' connected accounts,
- * which take customer payments). Nothing new is sold: the billing portal lets
- * an owner cancel an old plan, and the webhook keeps public.subscriptions in
- * step with Stripe until it's gone.
+ * Subscriptions on the Swathbook platform account (separate from the
+ * businesses' own connected accounts, which take customer payments).
+ * Checkout starts a plan, the billing portal manages it, and the webhook keeps
+ * public.subscriptions in step with Stripe.
  *
  * @module src/libs/billing/stripe-billing
  * @since 1.0.0
@@ -14,14 +13,114 @@
 import type Stripe from "stripe";
 import type { createAdminClient } from "@/libs/supabase/admin";
 import type { Database } from "@/libs/supabase/database.types";
-import { isPaidPlan, planForLookupKey } from "./plans";
+import { PLANS, isPaidPlan, planForLookupKey, type PaidPlan } from "./plans";
+import { bookingPageChanged } from "@/libs/booking-page-cache";
 
 type Admin = ReturnType<typeof createAdminClient>;
 type SubscriptionStatus = Database["public"]["Enums"]["subscription_status"];
 
+/** Stripe product tax code: Software as a service (SaaS), business use. */
+export const SAAS_BUSINESS_TAX_CODE = "txcd_10103001";
+
+const priceCache = new Map<PaidPlan, string>();
+
+/** The monthly price for a plan, created in Stripe the first time it's needed. */
+export async function priceIdFor(stripe: Stripe, plan: PaidPlan) {
+    const cached = priceCache.get(plan);
+    if (cached) return cached;
+    const config = PLANS[plan];
+    const { data } = await stripe.prices.list({ lookup_keys: [config.lookupKey], active: true, limit: 1 });
+    let price = data[0];
+    if (!price) {
+        price = await stripe.prices.create(
+            {
+                currency: "usd",
+                unit_amount: config.priceCents,
+                recurring: { interval: "month" },
+                lookup_key: config.lookupKey,
+                // Software as a service, business use: what Stripe Tax needs to tax the plan correctly.
+                product_data: { name: `Swathbook ${config.name}`, tax_code: SAAS_BUSINESS_TAX_CODE, metadata: { plan } },
+                metadata: { plan },
+            },
+            { idempotencyKey: `price:${config.lookupKey}:${config.priceCents}` },
+        );
+    }
+    priceCache.set(plan, price.id);
+    return price.id;
+}
+
+export function resetPriceCache() {
+    priceCache.clear();
+}
+
+type BillingBusiness = { id: string; name: string; stripe_customer_id: string | null; trial_ends_at: string | null };
+
 /** Stripe's answer when an id doesn't exist in this account (for example, it was made with another account's keys). */
 export function isMissingResource(error: unknown) {
     return typeof error === "object" && error !== null && (error as { code?: unknown }).code === "resource_missing";
+}
+
+/** True when `id` is a live customer in the account the current keys belong to. */
+async function customerExists(stripe: Stripe, id: string) {
+    try {
+        const customer = await stripe.customers.retrieve(id);
+        return !("deleted" in customer && customer.deleted);
+    } catch (error) {
+        if (isMissingResource(error)) return false;
+        throw error;
+    }
+}
+
+/**
+ * The business's customer on the platform account, created once. A saved id
+ * that Stripe doesn't know (deleted, or from another account's keys, as when
+ * switching test accounts) is replaced rather than failing every checkout.
+ */
+export async function ensureCustomer(stripe: Stripe, admin: Admin, business: BillingBusiness, email: string) {
+    const saved = business.stripe_customer_id;
+    if (saved && (await customerExists(stripe, saved))) return saved;
+    if (saved) console.warn(`[billing] replacing missing Stripe customer for business ${business.id}`);
+    const customer = await stripe.customers.create(
+        { name: business.name, email, metadata: { business_id: business.id } },
+        // A replacement needs its own key, or Stripe would hand back the same missing customer.
+        { idempotencyKey: saved ? `billing-customer:${business.id}:replaces:${saved}` : `billing-customer:${business.id}` },
+    );
+    const { error } = await admin.from("businesses").update({ stripe_customer_id: customer.id }).eq("id", business.id);
+    if (error) throw error;
+    return customer.id;
+}
+
+/** Stripe needs a trial end at least 48 hours out; shorter remainders just start billing now. */
+export function remainingTrialEnd(trialEndsAt: string | null, now = Date.now()) {
+    if (!trialEndsAt) return undefined;
+    const end = Date.parse(trialEndsAt);
+    return end - now > 48 * 3_600_000 ? Math.floor(end / 1000) : undefined;
+}
+
+export async function createCheckoutSession(
+    stripe: Stripe,
+    admin: Admin,
+    { business, plan, email, returnUrl }: { business: BillingBusiness; plan: PaidPlan; email: string; returnUrl: string },
+) {
+    const customer = await ensureCustomer(stripe, admin, business, email);
+    const trialEnd = remainingTrialEnd(business.trial_ends_at);
+    const session = await stripe.checkout.sessions.create({
+        mode: "subscription",
+        customer,
+        client_reference_id: business.id,
+        line_items: [{ price: await priceIdFor(stripe, plan), quantity: 1 }],
+        // Subscribing mid-trial keeps the rest of the free days.
+        subscription_data: { metadata: { business_id: business.id, plan }, ...(trialEnd ? { trial_end: trialEnd } : {}) },
+        metadata: { business_id: business.id, plan },
+        allow_promotion_codes: true,
+        // Managed Payments (Stripe as merchant of record) is on by default for new
+        // Stripe accounts, but it doesn't support Connect platforms, which Swathbook
+        // is. Opt out explicitly so a dashboard default can't break checkout.
+        managed_payments: { enabled: false },
+        success_url: `${returnUrl}?checkout=success`,
+        cancel_url: `${returnUrl}?checkout=canceled`,
+    });
+    return session.url;
 }
 
 export async function createPortalSession(stripe: Stripe, customer: string, returnUrl: string) {
@@ -65,5 +164,7 @@ export async function syncSubscription(admin: Admin, subscription: Stripe.Subscr
         { onConflict: "stripe_subscription_id" },
     );
     if (error) throw error;
+    // A plan starting or lapsing opens or pauses the booking page.
+    bookingPageChanged(businessId);
     return { businessId, plan, status: subscription.status };
 }

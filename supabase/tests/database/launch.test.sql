@@ -1,4 +1,4 @@
--- Open access (20261121000100_fee_pricing.sql), deposit holds, booking email queue and team functions
+-- Billing gates (restored in 20261122000100_monthly_plans_with_fee.sql), deposit holds, booking email queue and team functions
 -- (20261026000100_billing.sql, 20261026000200_notifications_team.sql).
 begin;
 \set QUIET 1
@@ -27,24 +27,29 @@ values ('50000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-0000000
 insert into public.stripe_connect_accounts (business_id, stripe_account_id, charges_enabled)
 values ('10000000-0000-0000-0000-000000000001', 'acct_launch', true);
 
--- --- Access (per-payment pricing: nothing lapses) ---------------------------------
-select is((select trial_ends_at from public.businesses where id = '10000000-0000-0000-0000-000000000001'), null,
-          'finishing onboarding no longer starts a trial');
-select isnt(public.get_booking_page('launch-detail'), null, 'the page is open without any plan');
-select ok((select count(*) > 0 from public.get_available_slots('launch-detail', array['50000000-0000-0000-0000-000000000001']::uuid[])), 'and offers times');
+-- --- Trial and access ------------------------------------------------------------
+select ok((select trial_ends_at between now() + interval '6 days 23 hours' and now() + interval '7 days 1 hour'
+           from public.businesses where id = '10000000-0000-0000-0000-000000000001'),
+          'finishing onboarding starts a 7-day trial');
+select isnt(public.get_booking_page('launch-detail'), null, 'the page is open during the trial');
 
 update public.businesses set trial_ends_at = now() - interval '1 minute' where id = '10000000-0000-0000-0000-000000000001';
-select isnt(public.get_booking_page('launch-detail'), null, 'an old trial date that has passed changes nothing');
+select is(public.get_booking_page('launch-detail'), null, 'a lapsed trial pauses the page');
+select is((select count(*)::int from public.get_available_slots('launch-detail', array['50000000-0000-0000-0000-000000000001']::uuid[])), 0, 'and offers no times');
+select throws_ok($$
+    select * from public.create_booking('10000000-0000-0000-0000-000000000001', array['50000000-0000-0000-0000-000000000001']::uuid[],
+        date_trunc('hour', now()) + interval '2 days', '{"full_name":"Late","email":"late@example.com"}', '{"line1":"1 Main"}')
+$$, 'P0002', 'business_not_found', 'and refuses new bookings');
 
 insert into public.subscriptions (business_id, stripe_subscription_id, stripe_customer_id, plan, status)
-values ('10000000-0000-0000-0000-000000000001', 'sub_launch', 'cus_launch', 'solo', 'canceled');
-select isnt(public.get_booking_page('launch-detail'), null, 'nor does cancelling an old monthly plan');
+values ('10000000-0000-0000-0000-000000000001', 'sub_launch', 'cus_launch', 'crew', 'past_due');
+select isnt(public.get_booking_page('launch-detail'), null, 'past_due keeps the page open while Stripe retries');
+update public.subscriptions set status = 'canceled' where stripe_subscription_id = 'sub_launch';
+select is(public.get_booking_page('launch-detail'), null, 'a canceled plan pauses it');
+update public.subscriptions set status = 'active' where stripe_subscription_id = 'sub_launch';
+select isnt(public.get_booking_page('launch-detail'), null, 'an active plan reopens it');
 
-update public.businesses set is_published = false where id = '10000000-0000-0000-0000-000000000001';
-select is(public.get_booking_page('launch-detail'), null, 'unpublishing still closes the page');
-update public.businesses set is_published = true where id = '10000000-0000-0000-0000-000000000001';
-
-select throws_ok($$update public.businesses set trial_ends_at = now() + interval '1 year'$$, '42501', null, 'owners cannot write the old trial date')
+select throws_ok($$update public.businesses set trial_ends_at = now() + interval '1 year'$$, '42501', null, 'owners cannot extend their own trial')
 from (select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated"}', true), set_config('role', 'authenticated', true)) s;
 reset role;
 
@@ -109,11 +114,18 @@ set local role authenticated;
 select throws_ok($$select * from public.claim_notifications(1)$$, '42501', null, 'clients cannot claim emails');
 reset role;
 
--- --- Seats: unlimited on every business, even with an old Solo plan on file ------------
+-- --- Seats --------------------------------------------------------------------------
+update public.subscriptions set plan = 'solo' where stripe_subscription_id = 'sub_launch';
 set local role authenticated;
 select t.as_user('00000000-0000-0000-0000-0000000000a1', 'owner@example.com');
-select lives_ok($$select public.create_business_invitation('10000000-0000-0000-0000-000000000001', 'crew1@example.com', 'crew')$$, 'owners can invite');
-select is((select row(used, seat_limit)::text from public.team_seats('10000000-0000-0000-0000-000000000001')), '(2,)', 'seats count the owner and pending invites, with no limit');
+select throws_ok($$select public.create_business_invitation('10000000-0000-0000-0000-000000000001', 'crew1@example.com', 'crew')$$,
+                 'P0001', 'seat_limit', 'Solo is one seat: the owner');
+reset role;
+update public.subscriptions set plan = 'crew' where stripe_subscription_id = 'sub_launch';
+set local role authenticated;
+select t.as_user('00000000-0000-0000-0000-0000000000a1', 'owner@example.com');
+select lives_ok($$select public.create_business_invitation('10000000-0000-0000-0000-000000000001', 'crew1@example.com', 'crew')$$, 'Crew allows invites');
+select is((select row(used, seat_limit)::text from public.team_seats('10000000-0000-0000-0000-000000000001')), '(2,5)', 'seats count the owner and pending invites');
 create temp table invite_token as select public.create_business_invitation('10000000-0000-0000-0000-000000000001', 'crew2@example.com', 'crew') as token;
 select is((select business_name || '|' || email || '|' || expired from public.invitation_preview((select token from invite_token))),
           'Launch Detail|crew2@example.com|false', 'an invite link previews its business');

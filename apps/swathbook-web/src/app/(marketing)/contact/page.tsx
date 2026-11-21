@@ -11,7 +11,7 @@ import { siteConfig } from "@/libs/globals/site";
 export const metadata: Metadata = pageMetadata({
   title: "Contact Us",
   description:
-    "Questions about Swathbook, support requests or help setting up a fleet? Email the team and we'll reply within one business day.",
+    "Questions about Swathbook, support requests or fleet plans? Email the team and we'll reply within one business day.",
   path: routes.contact,
 });
 
@@ -31,8 +31,8 @@ const channels = [
   {
     icon: Building2,
     title: "Fleet & multi-location",
-    body: "Running several crews or locations? We'll help import your customers and get every crew running.",
-    subject: "Fleet setup",
+    body: "Running several crews or locations? Let's set up a plan that fits.",
+    subject: "Fleet plan inquiry",
   },
 ];
 
