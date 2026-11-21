@@ -63,7 +63,7 @@ export default function HomePage() {
           <SectionHeading
             eyebrow="Pricing"
             title="Simple plans that pay for themselves"
-            description="One saved no-show a month covers the bill. Start free, upgrade when your crew grows."
+            description="One saved no-show a month covers the bill. Start with a 7-day free trial, then a monthly plan plus 1.25% of the payments you take."
             align="center"
           />
           <div className="mt-14">

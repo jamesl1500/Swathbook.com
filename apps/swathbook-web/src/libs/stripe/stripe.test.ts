@@ -4,7 +4,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createSupabaseMock, type SupabaseMock } from "@/test/supabase-mock";
 import { createConnectedAccount, createOnboardingLink, summarizeAccount } from "./connect";
 import { amountDue, createBookingPayment } from "./payments";
-import { platformFeeCents } from "./server";
 import { handleStripeEvent, paymentStatusFromIntent, refundStatusFromStripe } from "./webhooks";
 
 /** Just the Stripe surface these modules use. */
@@ -33,17 +32,6 @@ let db: SupabaseMock;
 beforeEach(() => {
     stripe = fakeStripe();
     db = createSupabaseMock();
-    vi.stubEnv("STRIPE_PLATFORM_FEE_BPS", "0");
-});
-
-describe("platformFeeCents", () => {
-    it("is off by default", () => expect(platformFeeCents(10_000)).toBe(0));
-    it("charges basis points when configured", () => expect(platformFeeCents(10_000, 100)).toBe(100));
-    it("never exceeds the amount and ignores nonsense", () => {
-        expect(platformFeeCents(500, 50_000)).toBe(500);
-        expect(platformFeeCents(500, Number.NaN)).toBe(0);
-        expect(platformFeeCents(500, -10)).toBe(0);
-    });
 });
 
 describe("connected accounts", () => {
@@ -161,8 +149,9 @@ describe("createBookingPayment", () => {
             automatic_payment_methods: { enabled: true },
             receipt_email: "dana@example.com",
             metadata: { booking_id: "bk1", business_id: "b1", kind: "deposit" },
+            // Swathbook's 1.25% of the $60 deposit.
+            application_fee_amount: 75,
         });
-        expect(params).not.toHaveProperty("application_fee_amount");
         expect(options).toMatchObject({ stripeAccount: "acct_1" });
 
         expect(db.callsTo("payments", "insert")[0].values).toMatchObject({
@@ -170,15 +159,23 @@ describe("createBookingPayment", () => {
             kind: "deposit",
             status: "requires_payment",
             amount_cents: 6000,
+            application_fee_cents: 75,
             stripe_account_id: "acct_1",
             stripe_payment_intent_id: "pi_1",
         });
     });
 
-    it("adds Swathbook's fee when one is configured", async () => {
-        vi.stubEnv("STRIPE_PLATFORM_FEE_BPS", "100");
-        await createBookingPayment(asStripe(stripe), asAdmin(db), { bookingId: "bk1", kind: "deposit" });
-        expect(stripe.paymentIntents.create.mock.calls[0][0]).toMatchObject({ application_fee_amount: 60 });
+    it("takes no fee on tips", async () => {
+        db = createSupabaseMock();
+        db.respond("bookings.select", {
+            data: { ...booking, status: "completed", completed_at: new Date().toISOString(), subtotal_cents: 24000, discount_cents: 0, businesses: { name: "Green Acres", tips_enabled: true } },
+        });
+        db.respond("stripe_connect_accounts.select", { data: { stripe_account_id: "acct_1", charges_enabled: true } });
+        db.respond("payments.select", { data: null, count: 0 });
+        stripe.paymentIntents.create.mockResolvedValue({ id: "pi_tip", client_secret: "pi_tip_secret" });
+        await createBookingPayment(asStripe(stripe), asAdmin(db), { bookingId: "bk1", kind: "tip", tipCents: 2000 });
+        expect(stripe.paymentIntents.create.mock.calls[0][0]).not.toHaveProperty("application_fee_amount");
+        expect(db.callsTo("payments", "insert")[0].values).toMatchObject({ kind: "tip", amount_cents: 2000, application_fee_cents: 0 });
     });
 
     it("reuses an open PaymentIntent instead of creating duplicates", async () => {

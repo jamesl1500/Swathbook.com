@@ -28,6 +28,8 @@ export const RATE_LIMITS = {
     locate: { limit: 30, windowSeconds: 600 },
     /** Bookings placed on one business's page from one place. */
     booking: { limit: 8, windowSeconds: 600 },
+    /** The investor interest form on /investors. */
+    investorInterest: { limit: 5, windowSeconds: 3600 },
 } satisfies Record<string, RateLimit>;
 
 export const RATE_LIMITED_MESSAGE = "Too many tries. Wait a few minutes, then try again.";

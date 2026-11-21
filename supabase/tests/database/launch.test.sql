@@ -1,4 +1,4 @@
--- Billing gates, deposit holds, booking email queue and team functions
+-- Billing gates (restored in 20261122000100_monthly_plans_with_fee.sql), deposit holds, booking email queue and team functions
 -- (20261026000100_billing.sql, 20261026000200_notifications_team.sql).
 begin;
 \set QUIET 1

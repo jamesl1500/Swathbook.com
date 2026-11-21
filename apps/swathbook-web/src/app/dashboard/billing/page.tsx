@@ -4,7 +4,8 @@ import { Suspense } from "react";
 import { Check, CircleAlert, PauseCircle, Sparkles } from "lucide-react";
 import { Card, CardTitle, ManagersOnly, PageHeader } from "@/components/app/ui";
 import { FormMessage } from "@/components/ui/field";
-import { loadBilling } from "@/libs/billing/load";
+import { CARD_PROCESSING, SWATHBOOK_FEE_LABEL, estimateTakeHome } from "@/libs/billing/fees";
+import { FEE_SUMMARY_DAYS, loadBilling, loadFeeSummary } from "@/libs/billing/load";
 import { PLANS, TRIAL_DAYS, type PaidPlan } from "@/libs/billing/plans";
 import type { BillingState } from "@/libs/billing/status";
 import { requireBusinessContext } from "@/libs/dashboard";
@@ -17,10 +18,13 @@ import { ChoosePlanButton, ManageBillingButton } from "./billing-forms";
 
 export const metadata: Metadata = { title: "Billing" };
 
+/** The worked example on the page: a $200 job paid in full by card. */
+const EXAMPLE_JOB_CENTS = 20_000;
+
 export default function BillingPage({ searchParams }: PageProps<"/dashboard/billing">) {
   return (
     <>
-      <PageHeader title="Billing" description="Your Swathbook plan. Customer payments and payouts are under Payouts." />
+      <PageHeader title="Billing" description="Your Swathbook plan and fees. Customer payments and payouts are under Payouts." />
       <Suspense fallback={<div className="h-96 animate-pulse rounded-[1.75rem] bg-paper-deep" />}>
         <Billing searchParams={searchParams} />
       </Suspense>
@@ -33,7 +37,14 @@ async function Billing({ searchParams }: { searchParams: PageProps<"/dashboard/b
   if (!canManage) return <ManagersOnly what="billing" />;
 
   const supabase = await createClient();
-  const [{ state, subscription, seats }, { checkout }] = await Promise.all([loadBilling(supabase, business), searchParams]);
+  const [{ state, subscription, seats }, fees, { data: account }, { checkout }] = await Promise.all([
+    loadBilling(supabase, business),
+    loadFeeSummary(supabase, business.id),
+    supabase.from("stripe_connect_accounts").select("charges_enabled").eq("business_id", business.id).maybeSingle(),
+    searchParams,
+  ]);
+  const example = estimateTakeHome(EXAMPLE_JOB_CENTS);
+  const currency = business.currency;
   const isOwner = role === "owner";
   const configured = hasStripe();
   const currentPlan = state.kind === "active" || state.kind === "past_due" ? state.plan : null;
@@ -102,8 +113,54 @@ async function Billing({ searchParams }: { searchParams: PageProps<"/dashboard/b
             </Link>
           </Card>
         </div>
-        {!isOwner ? <p className="mt-3 text-sm text-ink-soft">Only the business owner can change the plan.</p> : null}
+        <p className="mt-3 text-sm text-ink-soft">
+          Every plan also includes payments: Swathbook takes {SWATHBOOK_FEE_LABEL} of each deposit and balance customers pay through your booking page. Tips
+          are yours in full.
+        </p>
+        {!isOwner ? <p className="mt-1 text-sm text-ink-soft">Only the business owner can change the plan.</p> : null}
       </section>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardTitle>On a {formatCents(EXAMPLE_JOB_CENTS, currency)} job</CardTitle>
+          <dl className="space-y-2 text-sm">
+            <Row label="Customer pays" value={formatCents(example.priceCents, currency)} />
+            <Row label={`Swathbook (${SWATHBOOK_FEE_LABEL})`} value={`−${formatCents(example.swathbookFeeCents, currency)}`} />
+            <Row label={`Card processing (about ${CARD_PROCESSING.label})`} value={`−${formatCents(example.processingCents, currency)}`} />
+            <div className="border-t border-line pt-2">
+              <Row label="You keep" value={formatCents(example.takeHomeCents, currency)} strong />
+            </div>
+          </dl>
+          <p className="mt-3 text-xs text-ink-faint">
+            The fee comes out before the payout, and a refund returns it. Processing is Stripe&apos;s and varies by card. Each service shows what you
+            keep on the{" "}
+            <Link href={routes.services} className="font-semibold text-brand-600 underline underline-offset-4">
+              Services
+            </Link>{" "}
+            page.
+          </p>
+        </Card>
+
+        <Card data-testid="fee-summary">
+          <CardTitle>Payment fees, last {FEE_SUMMARY_DAYS} days</CardTitle>
+          <dl className="space-y-2 text-sm">
+            <Row label={`Paid through Swathbook (${fees.payments} ${fees.payments === 1 ? "payment" : "payments"})`} value={formatCents(fees.collectedCents, currency)} />
+            <Row label={`Swathbook fees (${SWATHBOOK_FEE_LABEL})`} value={formatCents(fees.feeCents, currency)} strong />
+          </dl>
+          <p className="mt-3 text-xs text-ink-faint">After refunds. Every fee is also listed with its payment in your Stripe dashboard.</p>
+          {!account?.charges_enabled ? (
+            <div className="mt-4 space-y-3">
+              <FormMessage tone="info">You&apos;re not taking card payments yet, so there are no payment fees.</FormMessage>
+              <Link
+                href={routes.payouts}
+                className="inline-flex min-h-11 items-center rounded-full border border-line-strong px-5 text-sm font-semibold hover:border-ink-soft"
+              >
+                Set up payouts to take deposits online
+              </Link>
+            </div>
+          ) : null}
+        </Card>
+      </div>
 
       <Card>
         <CardTitle>Team seats</CardTitle>
@@ -112,6 +169,15 @@ async function Billing({ searchParams }: { searchParams: PageProps<"/dashboard/b
           you and pending invites. <Link href={routes.team} className="font-semibold text-brand-600 underline underline-offset-4">Manage your team</Link>
         </p>
       </Card>
+    </div>
+  );
+}
+
+function Row({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+  return (
+    <div className="flex items-baseline justify-between gap-4">
+      <dt className={strong ? "font-semibold text-ink" : "text-ink-soft"}>{label}</dt>
+      <dd className={strong ? "font-display text-lg font-extrabold" : "font-semibold tabular-nums"}>{value}</dd>
     </div>
   );
 }

@@ -15,6 +15,7 @@ const pages: Array<{ path: string; priority: number; changeFrequency: "weekly" |
   { path: routes.findBusinesses, priority: 0.8, changeFrequency: "weekly" },
   { path: routes.about, priority: 0.6, changeFrequency: "yearly" },
   { path: routes.contact, priority: 0.5, changeFrequency: "yearly" },
+  { path: routes.investors, priority: 0.4, changeFrequency: "monthly" },
   { path: routes.terms, priority: 0.2, changeFrequency: "yearly" },
   { path: routes.privacy, priority: 0.2, changeFrequency: "yearly" },
 ];

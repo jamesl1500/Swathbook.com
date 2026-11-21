@@ -14,6 +14,7 @@ export const routes = {
     pricing: "/pricing",
     about: "/about",
     contact: "/contact",
+    investors: "/investors",
     terms: "/terms",
     privacy: "/privacy",
 
@@ -53,6 +54,7 @@ export const routes = {
 
     // Swathbook staff only (SWATHBOOK_STAFF_EMAILS).
     feedbackInbox: "/admin/feedback",
+    investorInbox: "/admin/investors",
 } as const;
 
 /** The public directory of businesses in one trade, e.g. /businesses/lawn-care. */

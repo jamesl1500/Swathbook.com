@@ -29,6 +29,7 @@ const columns = [
     links: [
       { href: routes.about, label: "About" },
       { href: routes.contact, label: "Contact" },
+      { href: routes.investors, label: "Investors" },
       { href: routes.terms, label: "Terms of service" },
       { href: routes.privacy, label: "Privacy policy" },
     ],

@@ -91,6 +91,10 @@ test.describe("billing", () => {
         await page.goto("/dashboard/billing");
         await expect(page.getByTestId("billing-status")).toContainText("Free trial · 7 days left");
         await expect(page.getByText("Billing isn't configured yet")).toBeVisible();
+        // Plans come with the 1.25% payment fee, shown beside them.
+        await expect(page.getByTestId("plan-solo")).toContainText("$29");
+        await expect(page.getByText("Swathbook takes 1.25% of each deposit and balance")).toBeVisible();
+        await expect(page.getByTestId("fee-summary")).toContainText("(0 payments)");
 
         // Trial over, no plan: the booking page pauses and the owner is told everywhere.
         await admin.from("businesses").update({ trial_ends_at: new Date(Date.now() - 60_000).toISOString() }).eq("id", business.id);
@@ -116,6 +120,29 @@ test.describe("billing", () => {
         await expect(page.getByTestId("plan-crew")).toContainText("Current plan");
         await page.goto(`/l/${business.slug}`);
         await expect(page.getByRole("heading", { level: 1, name: "Shine On Detailing" })).toBeVisible();
+    });
+
+    test("the pricing page shows the plans, then the payment fee", async ({ page }) => {
+        await page.goto("/pricing");
+        await expect(page.getByRole("heading", { name: "Solo", exact: true })).toBeVisible();
+        const fee = page.getByTestId("payment-fee");
+        await expect(fee).toContainText("1.25%");
+        await expect(fee).toContainText("$191.40");
+        // The fee cards sit under the plans.
+        const plans = await page.getByRole("heading", { name: "Crew", exact: true }).boundingBox();
+        expect((await fee.boundingBox())!.y).toBeGreaterThan(plans!.y);
+    });
+
+    test("each service shows what the business keeps after fees", async ({ page }) => {
+        await ownerSignedIn(page, { services: [{ name: "Full detail", price_cents: 20_000, duration_minutes: 120 }] });
+        await page.goto("/dashboard/services");
+        // $200 - $2.50 (1.25%) - $6.10 (2.9% + 30¢).
+        await expect(page.getByTestId("service-row").filter({ hasText: "Full detail" }).getByTestId("take-home")).toContainText("You keep about $191.40");
+
+        // The add form works it out as the price is typed.
+        const form = page.locator("aside form");
+        await form.getByLabel("Price", { exact: true }).fill("100");
+        await expect(form.getByTestId("take-home")).toContainText("You keep about $95.55");
     });
 
     test("a nearly finished trial shows a heads-up", async ({ page }) => {

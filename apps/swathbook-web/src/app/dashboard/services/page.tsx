@@ -49,9 +49,9 @@ async function Services() {
         <aside>
           <div className="rounded-[1.5rem] border border-line bg-card p-5 sm:p-6 xl:sticky xl:top-28">
             <h2 className="text-lg font-bold">Add a service</h2>
-            <p className="mt-1 text-sm text-ink-soft">Deposits are charged when a customer books and come off the final bill.</p>
+            <p className="mt-1 text-sm text-ink-soft">Deposits are charged when a customer books and come off the final bill. You&apos;ll see what you keep after fees as you set the price.</p>
             <div className="mt-5">
-              <ServiceEditor businessId={business.id} namePlaceholder={`e.g. ${findTrade(business.trade)?.sampleServices[0]?.name ?? "Standard visit"}`} />
+              <ServiceEditor businessId={business.id} currency={business.currency} namePlaceholder={`e.g. ${findTrade(business.trade)?.sampleServices[0]?.name ?? "Standard visit"}`} />
             </div>
           </div>
         </aside>

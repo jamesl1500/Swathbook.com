@@ -349,7 +349,7 @@ export type PricingTier = {
     highlighted?: boolean;
 };
 
-/** Placeholder pricing. Update before launch. */
+/** Monthly plans. Every plan also pays 1.25% of customer payments (libs/billing/fees.ts). */
 export const pricingTiers: PricingTier[] = [
     {
         name: "Solo",
@@ -424,6 +424,10 @@ export const faqs = [
     {
         question: "How long does setup take?",
         answer: "Most businesses have a live booking link in about five minutes. Pick your trade, and we'll suggest starter services you can tweak.",
+    },
+    {
+        question: "What does Swathbook cost?",
+        answer: "A monthly plan after a 7-day free trial (Solo is $29, Crew is $79), plus 1.25% of the payments customers make through your booking page. Tips are yours in full, and jobs paid in cash carry no fee.",
     },
     {
         question: "Can I cancel anytime?",
