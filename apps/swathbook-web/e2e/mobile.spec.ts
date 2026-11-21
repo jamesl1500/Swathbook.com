@@ -72,7 +72,7 @@ async function checkLayout(page: Page, path: string, ready: (page: Page) => Prom
 }
 
 test.describe("public pages on phones and tablets", () => {
-    for (const path of ["/", "/features", "/industries", "/pricing", "/about", "/contact", "/privacy", "/terms", "/auth/login", "/auth/signup"]) {
+    for (const path of ["/", "/features", "/industries", "/pricing", "/about", "/contact", "/investors", "/privacy", "/terms", "/auth/login", "/auth/signup"]) {
         test(`${path} fits`, async ({ page }) => {
             await checkLayout(page, path);
         });

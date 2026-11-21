@@ -11,6 +11,7 @@ import type { Database } from "@/libs/supabase/database.types";
 import { cn, formatCents, formatDuration } from "@/libs/utils";
 import { deleteService, moveService, saveService } from "./actions";
 import { QuestionsEditor, type SavedQuestion } from "./questions-editor";
+import { TakeHome, draftFromForm, draftFromService } from "./take-home";
 
 type Service = Database["public"]["Tables"]["services"]["Row"] & { service_questions?: SavedQuestion[] };
 
@@ -40,16 +41,20 @@ export function ServiceEditor({
   service,
   onDone,
   namePlaceholder = "e.g. Standard visit",
+  currency = "usd",
 }: {
   businessId: string;
   service?: Service;
   onDone?: () => void;
   /** An example from the business's own trade. */
   namePlaceholder?: string;
+  currency?: string;
 }) {
   const [formKey, setFormKey] = useState(0);
   const [depositType, setDepositType] = useState(service?.deposit_type ?? "none");
   const [byArea, setByArea] = useState(Boolean(service?.price_per_1000_sqft_cents));
+  // Price and deposit as typed, for the take-home estimate.
+  const [draft, setDraft] = useState(() => draftFromService(service));
   const [state, formAction] = useActionState(async (prev: FormState, formData: FormData) => {
     const result = await saveService(prev, formData);
     if (result.success) {
@@ -59,6 +64,7 @@ export function ServiceEditor({
         setFormKey((key) => key + 1);
         setDepositType("none");
         setByArea(false);
+        setDraft(draftFromService());
       }
     }
     return result;
@@ -67,7 +73,7 @@ export function ServiceEditor({
   const id = (name: string) => `${service?.id ?? "new"}-${name}`;
 
   return (
-    <form key={formKey} action={formAction} className="space-y-4" noValidate>
+    <form key={formKey} action={formAction} onChange={(event) => setDraft(draftFromForm(event.currentTarget))} className="space-y-4" noValidate>
       <input type="hidden" name="businessId" value={businessId} />
       {service ? <input type="hidden" name="serviceId" value={service.id} /> : null}
       {state.error && !state.fieldErrors ? <FormMessage>{state.error}</FormMessage> : null}
@@ -202,6 +208,8 @@ export function ServiceEditor({
         ) : null}
       </fieldset>
 
+      <TakeHome draft={draft} currency={currency} className="rounded-xl bg-brand-50 px-3 py-3" />
+
       <QuestionsEditor idPrefix={id("questions")} initial={service?.service_questions} error={errors.questions?.[0]} />
 
       <div className="space-y-2 rounded-xl bg-paper px-3 py-3 text-sm">
@@ -258,7 +266,7 @@ export function ServiceList({ businessId, services, currency }: { businessId: st
       {services.map((service, index) => (
         <li key={service.id} className="rounded-[1.25rem] border border-line bg-card p-4 sm:p-5" data-testid="service-row">
           {editing === service.id ? (
-            <ServiceEditor businessId={businessId} service={service} onDone={() => setEditing(null)} />
+            <ServiceEditor businessId={businessId} service={service} currency={currency} onDone={() => setEditing(null)} />
           ) : (
             <div className="flex flex-wrap items-start gap-4">
               <div className="min-w-0 flex-1">
@@ -280,6 +288,7 @@ export function ServiceList({ businessId, services, currency }: { businessId: st
                     ? ` · ${service.service_questions.length} ${service.service_questions.length === 1 ? "question" : "questions"}`
                     : null}
                 </p>
+                <TakeHome draft={draftFromService(service)} currency={currency} className="mt-1" compact />
               </div>
               <div className="flex items-center gap-1">
                 <IconButton label={`Move ${service.name} up`} disabled={index === 0 || pending} onClick={() => run(moveService, { serviceId: service.id, direction: "up" })}>

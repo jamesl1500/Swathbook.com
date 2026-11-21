@@ -12,26 +12,30 @@ import { PlanIncludesAside } from "@/components/marketing/hero-asides";
 export const metadata: Metadata = pageMetadata({
   title: "Pricing",
   description:
-    "Simple monthly plans for solo operators and growing crews, with booking link, deposits, card payments and AI routing included. Start free, no contracts.",
+    "No monthly fee. Swathbook takes 1.25% of the payments you take through your booking link, with deposits, card payments, AI routing and unlimited team members included.",
   path: routes.pricing,
 });
 
 const pricingFaqs = [
   {
-    question: "Is there a free trial?",
-    answer: "Yes. Every new business gets a 7-day free trial with everything turned on, and you don't need a credit card. Pick a plan any time; you won't be charged until the trial ends.",
+    question: "Is there a monthly fee?",
+    answer: "No. There's no subscription, no setup fee and no contract. Swathbook takes 1.25% of each deposit and balance your customers pay through your booking link, and that's all.",
+  },
+  {
+    question: "When is the 1.25% taken?",
+    answer: "Only when you're paid. It comes out of each card payment before it reaches your bank, so there's never a bill. Jobs paid in cash cost nothing, and tips go to you in full.",
   },
   {
     question: "Are there payment processing fees?",
-    answer: "Card payments carry a standard processing fee from our payment partner, shown clearly before you go live. Swathbook doesn't add a hidden markup.",
+    answer: "Yes, card payments carry Stripe's standard processing fee (2.9% + 30¢ on most US cards), paid to Stripe. Each service in your dashboard shows what you keep after both.",
   },
   {
-    question: "Can I switch plans later?",
-    answer: "Anytime. Upgrade when you add a crew member, or drop down in the off-season. Changes take effect on your next bill.",
+    question: "What if I refund a customer?",
+    answer: "Our fee is refunded with it. If you don't keep the money, we don't either.",
   },
   {
-    question: "What happens if I cancel?",
-    answer: "Your link stops taking new bookings at the end of your billing period. Your account, customers and job history stay put, so you can pick up where you left off.",
+    question: "Is anything limited?",
+    answer: "No. Every business gets every feature, unlimited bookings and as many team members as it needs. A solo operator and a ten-truck fleet pay the same rate.",
   },
 ];
 
@@ -41,19 +45,19 @@ export default function PricingPage() {
       <JsonLd data={[softwareJsonLd, faqJsonLd(pricingFaqs)]} />
       <PageHero
         eyebrow="Pricing"
-        title="Priced like a tool, not a tax."
-        description="Pick the plan that matches the size of your operation. Every plan includes your booking link, deposits, payments and AI routing."
+        title="You get paid. Then we do."
+        description="No monthly fee, no tiers, no contract. Swathbook takes 1.25% of the payments you take through it, and every feature comes with it."
         aside={<PlanIncludesAside />}
       />
 
       <section className="py-24" aria-labelledby="plans-heading">
         <Container>
           <h2 id="plans-heading" className="sr-only">
-            Plans
+            Price
           </h2>
           <PricingCards />
           <p className="mt-8 text-center text-sm text-ink-faint">
-            Prices in USD. Card processing fees apply to customer payments.
+            Prices in USD. Card processing is charged separately by Stripe.
           </p>
         </Container>
       </section>

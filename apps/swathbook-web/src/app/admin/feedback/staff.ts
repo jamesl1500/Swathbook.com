@@ -5,12 +5,13 @@ import { routes } from "@/libs/routes";
 import { hasAdminClient } from "@/libs/supabase/admin";
 
 /**
- * The feedback inbox is for Swathbook staff only (SWATHBOOK_STAFF_EMAILS).
- * Everyone else gets a plain 404, so the page doesn't advertise itself.
+ * The staff pages (feedback and investor inboxes) are for Swathbook staff
+ * only (SWATHBOOK_STAFF_EMAILS). Everyone else gets a plain 404, so the pages
+ * don't advertise themselves.
  */
-export async function requireStaff() {
+export async function requireStaff(returnTo: string = routes.feedbackInbox) {
     const user = await getCurrentUser();
-    if (!user) redirect(`${routes.login}?next=${encodeURIComponent(routes.feedbackInbox)}`);
+    if (!user) redirect(`${routes.login}?next=${encodeURIComponent(returnTo)}`);
     if (!isStaffEmail(user.email) || !hasAdminClient()) notFound();
     return user;
 }

@@ -38,12 +38,3 @@ export function getStripe() {
 export function resetStripeClient() {
     client = null;
 }
-
-/**
- * Swathbook's cut of a customer payment, in cents. Off by default
- * (STRIPE_PLATFORM_FEE_BPS=0); 100 bps = 1%.
- */
-export function platformFeeCents(amountCents: number, basisPoints = Number(process.env.STRIPE_PLATFORM_FEE_BPS ?? 0)) {
-    if (!Number.isFinite(basisPoints) || basisPoints <= 0) return 0;
-    return Math.min(amountCents, Math.round((amountCents * Math.min(basisPoints, 10_000)) / 10_000));
-}

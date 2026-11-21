@@ -35,7 +35,14 @@ export async function refundRemaining(supabase: Client, actor: Actor, paymentId:
 
     try {
         const refund = await getStripe().refunds.create(
-            { payment_intent: payment.stripe_payment_intent_id, amount: remaining, reason: "requested_by_customer", metadata: { refunded_by: actor.userId } },
+            // The business wasn't paid, so Swathbook's fee goes back too (Stripe returns it pro rata).
+            {
+                payment_intent: payment.stripe_payment_intent_id,
+                amount: remaining,
+                reason: "requested_by_customer",
+                refund_application_fee: true,
+                metadata: { refunded_by: actor.userId },
+            },
             { stripeAccount: payment.stripe_account_id, idempotencyKey: `refund:${payment.id}:${remaining}` },
         );
         await createAdminClient()

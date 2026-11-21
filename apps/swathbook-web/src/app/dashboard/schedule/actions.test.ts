@@ -99,7 +99,7 @@ describe("refundPayment", () => {
 
         expect(result.success).toMatch(/Refund started/);
         expect(state.refundsCreate).toHaveBeenCalledWith(
-            { payment_intent: "pi_1", amount: 7_500, reason: "requested_by_customer", metadata: { refunded_by: "u1" } },
+            { payment_intent: "pi_1", amount: 7_500, reason: "requested_by_customer", refund_application_fee: true, metadata: { refunded_by: "u1" } },
             { stripeAccount: "acct_1", idempotencyKey: "refund:pay_1:7500" },
         );
         expect(state.admin.callsTo("refunds", "upsert")[0].values).toMatchObject({ payment_id: "pay_1", amount_cents: 7_500, status: "succeeded", stripe_refund_id: "re_1" });

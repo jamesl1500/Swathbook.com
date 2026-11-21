@@ -66,12 +66,12 @@ export function TradeMosaicAside() {
   );
 }
 
-/** Pricing: what every plan includes. */
+/** Pricing: what every business gets. */
 export function PlanIncludesAside() {
-  const included = ["Your own booking link", "Deposits and card payments", "AI route planning", "Email confirmations & reminders", "Customer records"];
+  const included = ["Your own booking link", "Deposits and card payments", "AI route planning", "Unlimited team members", "Customer records"];
   return (
     <div className={cn(card, "-rotate-1")}>
-      <p className="label-tag text-ink-faint">Every plan includes</p>
+      <p className="label-tag text-ink-faint">Every business gets</p>
       <ul className="mt-4 space-y-2.5">
         {included.map((item) => (
           <li key={item} className="flex items-center gap-3">
@@ -84,8 +84,8 @@ export function PlanIncludesAside() {
       </ul>
       <div className="mt-6 flex items-center justify-between gap-3 rounded-2xl bg-paper px-4 py-3">
         <span className="text-sm">
-          <span className="block font-semibold">Start free</span>
-          <span className="text-ink-soft">No credit card needed</span>
+          <span className="block font-semibold">No monthly fee</span>
+          <span className="text-ink-soft">1.25% only when you&apos;re paid</span>
         </span>
         <Link
           href={routes.signup}

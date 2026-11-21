@@ -11,7 +11,8 @@
 import type { Metadata } from "next";
 import { siteConfig } from "./globals/site";
 import { businessPagePath } from "./routes";
-import { faqs, pricingTiers } from "./marketing/content";
+import { SWATHBOOK_FEE_LABEL } from "./billing/fees";
+import { faqs, pricingOffer } from "./marketing/content";
 
 export const ogImage = {
     url: "/opengraph-image",
@@ -88,16 +89,14 @@ export const softwareJsonLd = {
     description: siteConfig.description,
     url: siteConfig.url,
     publisher: { "@id": organizationId },
-    // Derived from the pricing table so the two never drift apart.
-    offers: pricingTiers
-        .filter((tier) => tier.price.startsWith("$"))
-        .map((tier) => ({
-            "@type": "Offer",
-            name: tier.name,
-            price: tier.price.replace(/[^0-9.]/g, ""),
-            priceCurrency: "USD",
-            description: tier.description,
-        })),
+    // No upfront price: Swathbook takes its fee from customer payments (libs/billing/fees.ts).
+    offers: {
+        "@type": "Offer",
+        name: pricingOffer.name,
+        price: "0",
+        priceCurrency: "USD",
+        description: `No monthly fee. ${SWATHBOOK_FEE_LABEL} of each customer payment taken through Swathbook.`,
+    },
 };
 
 export function faqJsonLd(items: Array<{ question: string; answer: string }> = faqs) {

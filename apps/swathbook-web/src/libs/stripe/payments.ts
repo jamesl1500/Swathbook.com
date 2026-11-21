@@ -12,7 +12,7 @@
 
 import type Stripe from "stripe";
 import type { createAdminClient } from "@/libs/supabase/admin";
-import { platformFeeCents } from "./server";
+import { swathbookFeeCents } from "@/libs/billing/fees";
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 
@@ -110,8 +110,8 @@ export async function createBookingPayment(
         }
     }
 
-    // Tips go to the business in full.
-    const applicationFee = kind === "tip" ? 0 : platformFeeCents(amountCents);
+    // Swathbook takes 1.25% of deposits and balances; tips go to the business in full.
+    const applicationFee = kind === "tip" ? 0 : swathbookFeeCents(amountCents);
     // A second tip of the same amount is a new payment, not a retry of the first.
     const { count: earlierTips } =
         kind === "tip"

@@ -6,7 +6,7 @@
  * across requests ('use cache') and dropped whenever the business changes
  * something it shows: every write path calls bookingPageChanged() (see
  * libs/booking-page-cache.ts). A few minutes' time-based refresh covers what
- * changes on its own, like a trial running out.
+ * changes on its own, like a payout account finishing verification.
  *
  * @module src/libs/booking-page
  * @since 1.0.0
@@ -83,11 +83,11 @@ async function cachedBookingPage(slug: string): Promise<BookingPageData | null> 
     if (page) {
         cacheTag(bookingPageTag(page.business.id));
         // Edits drop the entry straight away; this only bounds what changes
-        // by itself (a trial ending pauses the page).
+        // by itself (a payout account coming online, say).
         cacheLife({ stale: 60, revalidate: 300, expire: 3600 });
     } else {
-        // No page (unknown, or paused): kept briefly, since a plan starting
-        // again brings it back without anyone editing it.
+        // No page (unknown, or unpublished): kept briefly, so publishing
+        // again shows up quickly.
         cacheLife({ stale: 30, revalidate: 30, expire: 60 });
     }
     return page;
@@ -107,7 +107,7 @@ export const loadBookingPage = cache(async (slug: string): Promise<BookingPageDa
 
 /**
  * Name of a set-up business whose page is closed (bookings paused by the owner,
- * or no active trial or plan), for a friendlier notice than a 404. Only called
+ * or not published), for a friendlier notice than a 404. Only called
  * after get_booking_page found nothing.
  */
 export const loadPausedBusinessName = cache(async (slug: string) => {

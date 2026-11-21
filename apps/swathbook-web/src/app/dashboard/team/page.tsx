@@ -59,7 +59,7 @@ async function Team() {
           <CardTitle
             action={
               <span className={cn("rounded-full px-3 py-1 text-sm font-semibold", full ? "bg-sun-soft text-ink" : "bg-paper-deep text-ink-soft")} data-testid="seat-count">
-                {limit === null ? `${used} people` : `${used} of ${limit} seats`}
+                {limit === null ? `${used} ${used === 1 ? "person" : "people"}` : `${used} of ${limit} seats`}
               </span>
             }
           >

@@ -339,62 +339,24 @@ export const patchwork = [
     { before: "Guessing the order of your stops", after: "An AI-planned route that cuts the backtracking" },
 ];
 
-export type PricingTier = {
-    name: string;
-    price: string;
-    cadence: string;
-    description: string;
-    features: string[];
-    cta: string;
-    highlighted?: boolean;
+/**
+ * Swathbook's one price: a share of what the business is paid through it.
+ * The rate itself lives in libs/billing/fees.ts, which the charges use too.
+ */
+export const pricingOffer = {
+    name: "Pay as you get paid",
+    description: "One price for every business, from one truck to a fleet.",
+    features: [
+        "Your own booking link",
+        "Unlimited services, bookings and customers",
+        "Deposits and card payments",
+        "AI route planning for every driver",
+        "Unlimited team members",
+        "Email confirmations & reminders",
+        "Tips go to you in full",
+    ],
+    cta: "Get your link",
 };
-
-/** Placeholder pricing. Update before launch. */
-export const pricingTiers: PricingTier[] = [
-    {
-        name: "Solo",
-        price: "$29",
-        cadence: "per month",
-        description: "For owner-operators running one truck.",
-        features: [
-            "Your own booking link",
-            "Unlimited services & bookings",
-            "Deposits and card payments",
-            "AI route planning for 1 driver",
-            "Email confirmations & reminders",
-        ],
-        cta: "Start free trial",
-    },
-    {
-        name: "Crew",
-        price: "$79",
-        cadence: "per month",
-        description: "For growing teams with a few rigs on the road.",
-        features: [
-            "Everything in Solo",
-            "Routes for up to 5 drivers",
-            "Assign jobs to crew members",
-            "Team invites & roles",
-            "Priority support",
-        ],
-        cta: "Start free trial",
-        highlighted: true,
-    },
-    {
-        name: "Fleet",
-        price: "Let's talk",
-        cadence: "",
-        description: "For multi-crew operations and franchises.",
-        features: [
-            "Everything in Crew",
-            "Unlimited drivers",
-            "Multiple locations",
-            "Onboarding help & data import",
-            "Dedicated account manager",
-        ],
-        cta: "Contact sales",
-    },
-];
 
 export const faqs = [
     {
@@ -426,7 +388,7 @@ export const faqs = [
         answer: "Most businesses have a live booking link in about five minutes. Pick your trade, and we'll suggest starter services you can tweak.",
     },
     {
-        question: "Can I cancel anytime?",
-        answer: "Yes. No contracts, no setup fees. Cancel from your billing page and your link stops taking bookings at the end of the period you've paid for.",
+        question: "What does Swathbook cost?",
+        answer: "1.25% of the payments you take through your booking page, and nothing else: no monthly fee, no setup fee, no contract. If a job is paid in cash, or you're not taking bookings, you pay nothing.",
     },
 ];

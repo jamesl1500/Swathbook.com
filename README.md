@@ -29,7 +29,7 @@ E2E tests read real confirmation and password-reset emails from Mailpit. The ema
 
 Customers sign in on the website at `/my/sign-in` with the same emailed code as the app (the same Supabase account), then see and manage their jobs at `/my/jobs` and their details at `/my/profile`. Job pages check ownership with `my_booking` and then reuse the manage-booking panel from `/booking/<token>`, so both follow the same reschedule, cancel and payment rules.
 
-The free trial is 7 days (`private.start_trial()` and `TRIAL_DAYS` in `apps/swathbook-web/src/libs/billing/plans.ts`; change both together).
+Swathbook's only charge is 1.25% of each deposit and balance customers pay (tips are fee-free), taken as a Stripe application fee on the direct charge and returned on refunds. The rate is `SWATHBOOK_FEE_BPS` in `apps/swathbook-web/src/libs/billing/fees.ts`, which the charges, the billing page, the pricing page and the per-service take-home estimates all read. There are no plans, trials or seat limits (`20261121000100_fee_pricing.sql`).
 
 The business app answers cancellation requests through the web app's `/api/owner/*` routes (they can refund through Stripe); everything else goes straight to Supabase as the signed-in member.
 
