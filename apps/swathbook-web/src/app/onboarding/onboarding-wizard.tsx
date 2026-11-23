@@ -354,7 +354,7 @@ export function OnboardingWizard({ defaults }: { defaults: OnboardingDefaults })
                 </Button>
 
                 <p className="pt-2 text-sm text-ink-faint">
-                  Deposits are charged when a customer books and subtracted from the final bill.
+                  Once you set up payouts, deposits are charged when a customer books and subtracted from the final bill.
                 </p>
               </fieldset>
             ) : null}
@@ -364,7 +364,7 @@ export function OnboardingWizard({ defaults }: { defaults: OnboardingDefaults })
                 <Field
                   label="Where does your day start?"
                   htmlFor="baseAddress"
-                  hint="Your shop, garage or home. Only you see this; we use it to plan routes."
+                  hint="Your shop, garage or home. Customers never see it. We use it to plan routes and check your service area."
                   error={errors.baseAddress?.message}
                 >
                   <Input
@@ -451,7 +451,7 @@ export function OnboardingWizard({ defaults }: { defaults: OnboardingDefaults })
                     {siteConfig.bookingLinkPrefix}{preview.slug}
                   </span>
                 </ReviewRow>
-                <ReviewRow title={`${preview.services?.length ?? 0} services`} onEdit={() => goTo(2)}>
+                <ReviewRow title={`${preview.services?.length ?? 0} ${preview.services?.length === 1 ? "service" : "services"}`} onEdit={() => goTo(2)}>
                   <ul className="space-y-1">
                     {preview.services?.map((service, index) => (
                       <li key={index} className="flex justify-between gap-4">
@@ -474,13 +474,18 @@ export function OnboardingWizard({ defaults }: { defaults: OnboardingDefaults })
                 <div className="flex gap-4 rounded-2xl border border-sun/60 bg-sun-soft p-5">
                   <CreditCard className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
                   <div className="text-sm">
-                    <p className="font-semibold">Next up: connect payouts</p>
+                    <p className="font-semibold">Next up: set up payouts for {preview.businessName}</p>
                     <p className="mt-1 text-ink-soft">
-                      To collect deposits and payments, you&apos;ll connect a bank account from your dashboard. It
-                      takes about three minutes. Until then, customers can still book without paying online.
+                      Each business gets its own Stripe account, so its money and bank details stay separate. Setup
+                      takes about five minutes from your dashboard. Until then, customers can still book without
+                      paying online.
                     </p>
                   </div>
                 </div>
+
+                <p className="text-center text-sm text-ink-soft">
+                  Launching starts this business&apos;s 7-day free trial. No credit card needed.
+                </p>
               </div>
             ) : null}
           </div>

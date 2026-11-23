@@ -20,7 +20,7 @@ const fits = [
   { title: "You drive to your customers", body: "If your workday is a string of addresses, route planning pays for itself fast." },
   { title: "You're tired of phone tag", body: "Let customers pick an open slot instead of trading voicemails." },
   { title: "No-shows cost you real money", body: "A deposit at booking means people actually show up (or you're covered)." },
-  { title: "You'd rather not chase invoices", body: "Bill from your phone when the job's done and get paid on the spot." },
+  { title: "You'd rather not chase invoices", body: "Bill from your phone when the job's done and take payment right away." },
 ];
 
 export default function IndustriesPage() {

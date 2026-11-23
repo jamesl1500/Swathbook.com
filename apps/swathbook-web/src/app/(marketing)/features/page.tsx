@@ -10,9 +10,9 @@ import { Container, PageHero, SectionHeading } from "@/components/marketing/sect
 import { findTrade, pillars, standoutFeatures, supportingFeatures } from "@/libs/marketing/content";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Features: Booking, Deposits, AI Routes & Satellite Quotes",
+  title: "Features: Booking, Deposits, Routes & Satellite Quotes",
   description:
-    "Booking pages, deposits, payments, AI routes, satellite quotes, neighbor pricing, job reports and rain-day rescheduling, all built for field service businesses.",
+    "Booking pages, deposits, payments, smart routes, satellite quotes, neighbor pricing, job reports and rain-day rescheduling, all built for field service businesses.",
   path: routes.features,
 });
 
@@ -79,9 +79,9 @@ export default function FeaturesPage() {
       <section className="border-t border-line bg-card py-24">
         <Container>
           <SectionHeading
-            eyebrow="Only on Swathbook"
+            eyebrow="Made for field work"
             title="Built for the work outdoors"
-            description="The things general booking tools don't do: pricing a yard from above, filling your route, handling rain and keeping every crew member in the know."
+            description="The things field work actually calls for: pricing a yard from above, filling your route, handling rain and keeping every crew member in the know."
           />
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {standoutFeatures.map((feature) => {

@@ -9,7 +9,10 @@ const state = vi.hoisted(() => ({
     cookies: null as unknown as ReturnType<typeof import("@/test/next-mocks").createCookieJar>,
     user: null as { id: string } | null,
     draft: null as { id: string; name: string; slug: string; trade: string } | null,
+    geocodeAddress: vi.fn(),
 }));
+
+vi.mock("@/libs/google/maps", () => ({ geocodeAddress: state.geocodeAddress }));
 
 vi.mock("@/libs/supabase/server", () => ({ createClient: vi.fn(async () => state.supabase.client) }));
 vi.mock("next/navigation", async () => ({ redirect: (await import("@/test/next-mocks")).mockRedirect }));
@@ -44,6 +47,7 @@ beforeEach(() => {
     state.cookies = createCookieJar();
     state.user = { id: "u1" };
     state.draft = null;
+    state.geocodeAddress.mockReset().mockResolvedValue({ lat: 30.27, lng: -97.74, placeId: "place", formatted: "1 Main St, Austin, TX" });
     state.supabase.respond("businesses.insert", { data: { id: "new-biz" } });
     state.supabase.respond("businesses.update", { data: { id: "draft-biz" } });
 });
@@ -93,6 +97,14 @@ describe("completeOnboarding", () => {
         expect(state.supabase.calls).toHaveLength(0);
     });
 
+    it("still launches when the address can't be located", async () => {
+        state.geocodeAddress.mockRejectedValue(new Error("maps down"));
+        await expectRedirect(completeOnboarding(input), "/dashboard");
+
+        const [insert] = state.supabase.callsTo("businesses", "insert");
+        expect(insert.values).toMatchObject({ base_address: "1 Main St, Austin", base_lat: null, base_lng: null });
+    });
+
     it("creates a new business with services and hours, publishes it and makes it active", async () => {
         await expectRedirect(completeOnboarding(input), "/dashboard");
 
@@ -105,6 +117,8 @@ describe("completeOnboarding", () => {
             phone: "512-555-0100",
             timezone: "America/Chicago",
             base_address: "1 Main St, Austin",
+            base_lat: 30.27,
+            base_lng: -97.74,
             service_radius_miles: 15,
         });
 

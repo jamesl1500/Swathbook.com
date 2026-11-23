@@ -21,7 +21,7 @@ const thesis = [
   {
     icon: Users,
     title: "A huge, underserved market",
-    body: "Detailers, cleaners, lawn crews, plumbers, pool techs, groomers: millions of small businesses drive to their customers, and most still run on texts, a calendar app and a payment app.",
+    body: "Detailers, cleaners, lawn crews, plumbers, pool techs, groomers: these small businesses drive to their customers, and many still run on texts, a calendar app and a payment app.",
   },
   {
     icon: Link2,
@@ -38,12 +38,12 @@ const thesis = [
 const built = [
   { icon: Link2, title: "Booking link", body: "A public page with services, prices, photos and live availability." },
   { icon: Banknote, title: "Deposits & payments", body: "Card payments straight to the business through Stripe Connect." },
-  { icon: Route, title: "AI routes", body: "Each day's stops ordered to cut drive time, re-planned when jobs move." },
+  { icon: Route, title: "Route planning", body: "Each day's stops ordered to cut drive time, with one-tap re-planning when jobs move." },
   { icon: Ruler, title: "Satellite quotes", body: "Customers outline their yard or driveway and see a price before booking." },
   { icon: Map, title: "Neighbor pricing", body: "A discount on days the crew is already nearby, so customers fill the gaps in the route." },
   { icon: Camera, title: "Job reports", body: "Before-and-after photos, a link to pay the balance, tips and a review nudge after every job." },
-  { icon: CloudRain, title: "Rain days", body: "Forecast warnings and one-tap rescheduling for outdoor work." },
-  { icon: Smartphone, title: "Owner & customer apps", body: "iOS and Android apps for crews in the field and the people they serve." },
+  { icon: CloudRain, title: "Rain days", body: "Forecast warnings and quick rescheduling for outdoor work." },
+  { icon: Smartphone, title: "Owner & customer apps", body: "Apps built for iOS and Android, for crews in the field and the people they serve." },
 ];
 
 const investorFaqs = [

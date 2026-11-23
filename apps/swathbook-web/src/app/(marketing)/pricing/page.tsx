@@ -13,14 +13,14 @@ import { PlanIncludesAside } from "@/components/marketing/hero-asides";
 export const metadata: Metadata = pageMetadata({
   title: "Pricing",
   description:
-    "Simple monthly plans for solo operators and growing crews, plus 1.25% of customer payments. Booking link, deposits and AI routing included. 7-day free trial.",
+    "Simple monthly plans for solo operators and growing crews, plus 1.25% of customer payments. Booking link, deposits and route planning included. 7-day free trial.",
   path: routes.pricing,
 });
 
 const pricingFaqs = [
   {
     question: "Is there a free trial?",
-    answer: "Yes. Every new business gets a 7-day free trial with everything turned on, and you don't need a credit card. Pick a plan any time; you won't be charged until the trial ends.",
+    answer: "Yes. Every new business gets a 7-day free trial with everything turned on, and you don't need a credit card. Pick a plan any time; you won't be charged until the trial ends. If you don't pick one, your booking page pauses and your customers and history stay safe.",
   },
   {
     question: "Is there a fee on payments?",
@@ -32,7 +32,11 @@ const pricingFaqs = [
   },
   {
     question: "Can I switch plans later?",
-    answer: "Anytime. Upgrade when you add a crew member, or drop down in the off-season. Changes take effect on your next bill.",
+    answer: "Anytime, from your billing page. Upgrade when you add a crew member, or drop down in the off-season.",
+  },
+  {
+    question: "Do I pay per business?",
+    answer: "Yes. Each business you run has its own 7-day trial, plan and Stripe account, so its bookings and money stay separate.",
   },
   {
     question: "What happens if I cancel?",
@@ -46,8 +50,8 @@ export default function PricingPage() {
       <JsonLd data={[softwareJsonLd, faqJsonLd(pricingFaqs)]} />
       <PageHero
         eyebrow="Pricing"
-        title="Priced like a tool, not a tax."
-        description="Pick the plan that matches the size of your operation, plus 1.25% of the payments you take. Every plan includes your booking link, deposits, payments and AI routing."
+        title="Simple pricing that grows with you."
+        description="Pick the plan that matches the size of your operation, plus 1.25% of the payments you take. Every plan includes your booking link, deposits, payments and route planning."
         aside={<PlanIncludesAside />}
       />
 

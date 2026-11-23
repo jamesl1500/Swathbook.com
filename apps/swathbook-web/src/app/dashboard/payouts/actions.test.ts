@@ -54,16 +54,16 @@ describe("startPayoutsOnboarding", () => {
     it("creates the Stripe account on first use, records it, then sends the owner to Stripe", async () => {
         await expectRedirect(startPayoutsOnboarding(form()), "https://connect.stripe.test/onboarding");
 
-        expect(state.connect.createConnectedAccount).toHaveBeenCalledWith(expect.anything(), { businessId: BUSINESS_ID, businessName: "Green Acres", email: "olive@example.com" });
-        expect(state.connect.saveConnectStatus).toHaveBeenCalledWith(expect.anything(), BUSINESS_ID, expect.objectContaining({ stripeAccountId: "acct_new", chargesEnabled: false }));
-        expect(state.connect.createOnboardingLink).toHaveBeenCalledWith(expect.anything(), "acct_new", "https://swathbook.test");
+        expect(state.connect.createConnectedAccount).toHaveBeenCalledWith(expect.anything(), { businessId: BUSINESS_ID, businessName: "Green Acres", email: "olive@example.com", userId: "u1" });
+        expect(state.connect.saveConnectStatus).toHaveBeenCalledWith(expect.anything(), BUSINESS_ID, expect.objectContaining({ stripeAccountId: "acct_new", chargesEnabled: false }), "u1");
+        expect(state.connect.createOnboardingLink).toHaveBeenCalledWith(expect.anything(), "acct_new", BUSINESS_ID, "https://swathbook.test");
     });
 
     it("reuses an existing account instead of creating a second one", async () => {
         state.admin.respond("stripe_connect_accounts.select", { data: { stripe_account_id: "acct_1" } });
         await expectRedirect(startPayoutsOnboarding(form()), "https://connect.stripe.test/onboarding");
         expect(state.connect.createConnectedAccount).not.toHaveBeenCalled();
-        expect(state.connect.createOnboardingLink).toHaveBeenCalledWith(expect.anything(), "acct_1", "https://swathbook.test");
+        expect(state.connect.createOnboardingLink).toHaveBeenCalledWith(expect.anything(), "acct_1", BUSINESS_ID, "https://swathbook.test");
     });
 
     it("explains when Stripe is unreachable", async () => {

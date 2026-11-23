@@ -197,6 +197,10 @@ reset role;
 set role service_role;
 insert into public.stripe_connect_accounts (business_id, stripe_account_id, charges_enabled, payouts_enabled, details_submitted)
 values (:'biz_a', 'acct_123', true, true, true);
+select t.ok(
+    (select sca.created_by = b.owner_id from public.stripe_connect_accounts sca join public.businesses b on b.id = sca.business_id where sca.stripe_account_id = 'acct_123'),
+    'a connected account references the person who made it'
+);
 select slot_start as slot2 from public.get_available_slots('green-acres', array[:'svc_leaf']::uuid[]) order by 1 offset 20 limit 1 \gset
 
 select * from public.create_booking(:'biz_a', array[:'svc_leaf']::uuid[], :'slot2',

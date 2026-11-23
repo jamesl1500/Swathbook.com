@@ -13,7 +13,7 @@ const FEE_POINTS = [
   "Taken before the payout, never billed",
   "Same rate on every plan",
   "Tips go to you in full",
-  "Cash jobs cost nothing",
+  "No fee on cash jobs",
   "Refund a customer and our fee is refunded too",
 ];
 

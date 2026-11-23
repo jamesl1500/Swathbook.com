@@ -30,7 +30,7 @@ const ACCOUNT_INCLUDES: Stripe.V2.Core.AccountRetrieveParams.Include[] = ["confi
 
 export async function createConnectedAccount(
     stripe: Stripe,
-    { businessId, businessName, email }: { businessId: string; businessName: string; email: string },
+    { businessId, businessName, email, userId }: { businessId: string; businessName: string; email: string; userId: string },
 ) {
     return stripe.v2.core.accounts.create(
         {
@@ -47,22 +47,25 @@ export async function createConnectedAccount(
                 responsibilities: { fees_collector: "stripe", losses_collector: "stripe" },
             },
             include: ACCOUNT_INCLUDES,
-            metadata: { business_id: businessId },
+            metadata: { business_id: businessId, created_by_user_id: userId },
         },
         { idempotencyKey: `connect-account:${businessId}` },
     );
 }
 
-/** A single-use, short-lived link into Stripe-hosted onboarding. */
-export async function createOnboardingLink(stripe: Stripe, accountId: string, siteUrl: string) {
+/**
+ * A single-use, short-lived link into Stripe-hosted onboarding. The way back
+ * names the business, so switching businesses mid-setup can't cross accounts.
+ */
+export async function createOnboardingLink(stripe: Stripe, accountId: string, businessId: string, siteUrl: string) {
     const link = await stripe.v2.core.accountLinks.create({
         account: accountId,
         use_case: {
             type: "account_onboarding",
             account_onboarding: {
                 collection_options: { fields: "eventually_due" },
-                refresh_url: `${siteUrl}/dashboard/payouts/refresh`,
-                return_url: `${siteUrl}/dashboard/payouts/return`,
+                refresh_url: `${siteUrl}/dashboard/payouts/refresh?business=${businessId}`,
+                return_url: `${siteUrl}/dashboard/payouts/return?business=${businessId}`,
             },
         },
     });
@@ -91,11 +94,16 @@ export async function retrieveAccountStatus(stripe: Stripe, accountId: string) {
     return summarizeAccount(account);
 }
 
-/** Writes the account's status to stripe_connect_accounts (service role). */
-export async function saveConnectStatus(admin: AdminClient, businessId: string, status: ConnectStatus) {
+/**
+ * Writes the account's status to stripe_connect_accounts (service role).
+ * `createdBy` is passed only when the account is first made, so later status
+ * updates leave the original creator in place.
+ */
+export async function saveConnectStatus(admin: AdminClient, businessId: string, status: ConnectStatus, createdBy?: string) {
     const { error } = await admin.from("stripe_connect_accounts").upsert(
         {
             business_id: businessId,
+            ...(createdBy ? { created_by: createdBy } : {}),
             stripe_account_id: status.stripeAccountId,
             account_type: "express",
             country: "US",

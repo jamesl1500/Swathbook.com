@@ -253,14 +253,14 @@ export const pillars: Array<Feature & { kicker: string; points: string[] }> = [
         icon: CreditCard,
         title: "Get paid before you leave the driveway",
         body: "Send the final bill the moment the job's done. Customers pay by card from their phone, and the deposit is already subtracted.",
-        points: ["Card and wallet payments", "Automatic receipts", "See what's paid and what's owed"],
+        points: ["Secure card payments", "Automatic receipts", "See what's paid and what's owed"],
     },
     {
-        kicker: "AI routing",
+        kicker: "Smart routing",
         icon: Route,
         title: "A smarter route, every morning",
         body: "Swathbook looks at every stop, time window and drive time, then lines up your day in the order that wastes the least road.",
-        points: ["Re-plans when a job moves", "Respects customer time windows", "One tap to start navigation"],
+        points: ["Re-plan in one tap when a job moves", "Respects customer time windows", "One tap to start navigation"],
     },
 ];
 
@@ -268,7 +268,7 @@ export const supportingFeatures: Feature[] = [
     {
         icon: CalendarCheck,
         title: "Real availability",
-        body: "Set working days and hours once. Customers only see openings that fit your schedule and route.",
+        body: "Set working days and hours once. Customers only see openings that fit your schedule.",
     },
     {
         icon: Users,
@@ -336,7 +336,7 @@ export const patchwork = [
     { before: "Phone tag and texting back and forth to set a time", after: "Customers pick an open slot from your link" },
     { before: "Chasing no-shows that cost you the morning", after: "Deposits collected when the job is booked" },
     { before: "Paper invoices and \"I'll pay you next week\"", after: "Card payments the moment the job's done" },
-    { before: "Guessing the order of your stops", after: "An AI-planned route that cuts the backtracking" },
+    { before: "Guessing the order of your stops", after: "A planned route that cuts the backtracking" },
 ];
 
 export type PricingTier = {
@@ -360,7 +360,7 @@ export const pricingTiers: PricingTier[] = [
             "Your own booking link",
             "Unlimited services & bookings",
             "Deposits and card payments",
-            "AI route planning for 1 driver",
+            "Route planning for 1 driver",
             "Email confirmations & reminders",
         ],
         cta: "Start free trial",
@@ -403,11 +403,11 @@ export const faqs = [
     },
     {
         question: "How do I get paid?",
-        answer: "Deposits and payments go through our payment partner straight to your bank account. You connect your account once during setup, and payouts arrive on a regular schedule.",
+        answer: "Deposits and payments go through Stripe, our payment partner, straight to your bank account. Each business sets up its own Stripe account from its dashboard in about five minutes. Your first payout can take 7 to 14 days, and after that money usually lands in about 2 business days.",
     },
     {
-        question: "How does the AI route planning work?",
-        answer: "Each day, Swathbook looks at your booked jobs, their addresses, how long each takes, and any time windows customers picked, then orders your stops to minimize drive time. If a job moves, the route updates.",
+        question: "How does route planning work?",
+        answer: "Open your day and tap Plan route. Swathbook looks at your booked jobs, their addresses, how long each takes and their arrival windows, then orders your stops to cut drive time. If a job moves, Swathbook prompts you to re-plan.",
     },
     {
         question: "Can customers get a price without a site visit?",
@@ -428,6 +428,10 @@ export const faqs = [
     {
         question: "What does Swathbook cost?",
         answer: "A monthly plan after a 7-day free trial (Solo is $29, Crew is $79), plus 1.25% of the payments customers make through your booking page. Tips are yours in full, and jobs paid in cash carry no fee.",
+    },
+    {
+        question: "Can I run more than one business?",
+        answer: "Yes, up to 25 from one login. Each business has its own booking link, free trial, plan and Stripe account, so its bookings and money stay separate.",
     },
     {
         question: "Can I cancel anytime?",

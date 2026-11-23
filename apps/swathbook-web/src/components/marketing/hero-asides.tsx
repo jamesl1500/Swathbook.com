@@ -17,8 +17,8 @@ export function FourToolsAside() {
   const steps = [
     { icon: Link2, title: "Booking link", body: "Services, prices and open times" },
     { icon: HandCoins, title: "Deposits", body: "Collected the moment they book" },
-    { icon: Wallet, title: "Payments", body: "Card or wallet, right after the job" },
-    { icon: Route, title: "AI routing", body: "Tomorrow's stops in the best order" },
+    { icon: Wallet, title: "Payments", body: "By card, right after the job" },
+    { icon: Route, title: "Smart routing", body: "Your day's stops in the best order" },
   ];
   return (
     <div className={cn(card, "rotate-1")}>
@@ -68,7 +68,7 @@ export function TradeMosaicAside() {
 
 /** Pricing: what every plan includes. */
 export function PlanIncludesAside() {
-  const included = ["Your own booking link", "Deposits and card payments", "AI route planning", "Email confirmations & reminders", "Customer records"];
+  const included = ["Your own booking link", "Deposits and card payments", "Route planning", "Email confirmations & reminders", "Customer records"];
   return (
     <div className={cn(card, "-rotate-1")}>
       <p className="label-tag text-ink-faint">Every plan includes</p>
@@ -84,7 +84,7 @@ export function PlanIncludesAside() {
       </ul>
       <div className="mt-6 flex items-center justify-between gap-3 rounded-2xl bg-paper px-4 py-3">
         <span className="text-sm">
-          <span className="block font-semibold">Start free</span>
+          <span className="block font-semibold">7-day free trial</span>
           <span className="text-ink-soft">No credit card needed</span>
         </span>
         <Link

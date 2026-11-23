@@ -18,7 +18,7 @@ export const PLANS = {
         lookupKey: "swathbook_solo_monthly",
         seats: 1,
         summary: "One person running the business.",
-        features: ["Your booking link", "Unlimited services & bookings", "Deposits and card payments", "AI routes for 1 driver", "Email confirmations & reminders"],
+        features: ["Your booking link", "Unlimited services & bookings", "Deposits and card payments", "Routes for 1 driver", "Email confirmations & reminders"],
     },
     crew: {
         name: "Crew",

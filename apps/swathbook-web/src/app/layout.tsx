@@ -21,12 +21,14 @@ const mono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-jetbrains",
   display: "swap",
+  // Only small labels use it, so it shouldn't compete with the headline font.
+  preload: false,
 });
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {
-    default: `${siteConfig.name} · Booking, Payments & AI Routing for Field Services`,
+    default: `${siteConfig.name} · Booking, Payments & Route Planning for Field Services`,
     template: `%s · ${siteConfig.name}`,
   },
   description: siteConfig.description,

@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ACTIVE_BUSINESS_COOKIE, activeBusinessCookieOptions } from "@/libs/active-business";
 import { getCurrentUser, getDraftBusiness } from "@/libs/auth";
+import { geocodeAddress } from "@/libs/google/maps";
 import { routes } from "@/libs/routes";
 import { createClient } from "@/libs/supabase/server";
 import { onboardingSchema, slugField } from "./schema";
@@ -50,6 +51,10 @@ export async function completeOnboarding(input: unknown): Promise<OnboardingResu
     const values = parsed.data;
     const supabase = await createClient();
 
+    // The service-area check and rain forecasts need coordinates. Maps being
+    // down shouldn't stop a launch: routing fills them in later.
+    const base = await geocodeAddress(values.baseAddress).catch(() => null);
+
     const details = {
         name: values.businessName,
         slug: values.slug,
@@ -57,6 +62,8 @@ export async function completeOnboarding(input: unknown): Promise<OnboardingResu
         phone: values.phone || null,
         timezone: values.timezone || "UTC",
         base_address: values.baseAddress,
+        base_lat: base?.lat ?? null,
+        base_lng: base?.lng ?? null,
         service_radius_miles: values.serviceRadiusMiles,
     };
 

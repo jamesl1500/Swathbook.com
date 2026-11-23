@@ -24,7 +24,7 @@ export function RoutePreview({ className }: { className?: string }) {
         </div>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-sun-soft px-3 py-1 text-xs font-semibold text-ink">
           <Sparkles className="size-3.5" aria-hidden="true" />
-          AI-planned
+          Optimized
         </span>
       </div>
 

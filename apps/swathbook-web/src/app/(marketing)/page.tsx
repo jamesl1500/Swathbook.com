@@ -39,7 +39,7 @@ const steps = [
   {
     icon: Route,
     title: "Drive the smartest route",
-    body: "Each morning your stops are lined up in the order that saves the most road. Finish the job, send the bill, get paid on the spot.",
+    body: "Plan your day in one tap and your stops line up in the order that saves the most road. Finish the job, send the bill, and your customer can pay right away.",
   },
 ];
 
@@ -63,7 +63,7 @@ export default function HomePage() {
           <SectionHeading
             eyebrow="Pricing"
             title="Simple plans that pay for themselves"
-            description="One saved no-show a month covers the bill. Start with a 7-day free trial, then a monthly plan plus 1.25% of the payments you take."
+            description="A saved no-show or two can cover the month. Start with a 7-day free trial, then a monthly plan plus 1.25% of the payments you take."
             align="center"
           />
           <div className="mt-14">
@@ -116,13 +116,13 @@ function Hero() {
           <p className="mt-7 max-w-xl text-lg leading-relaxed text-ink-soft sm:text-xl">
             Detailers, cleaners, landscapers, plumbers, groomers: if you drive to your customers, {siteConfig.name}{" "}
             gives you one link that shows off your services, books customers, takes deposits and collects payment.
-            Then AI plans the smartest route through your day.
+            Then it plans the smartest route through your day.
           </p>
 
           <ClaimLinkForm className="mt-9" />
 
           <ul className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm text-ink-soft">
-            {["Free to start", "Live in about 5 minutes", "No contracts"].map((item) => (
+            {["7-day free trial", "Live in about 5 minutes", "No contracts"].map((item) => (
               <li key={item} className="inline-flex items-center gap-1.5">
                 <Check className="size-4 text-brand-500" aria-hidden="true" />
                 {item}
@@ -303,8 +303,8 @@ function SupportingFeatures() {
             );
           })}
         </div>
-        <nav aria-label="Only on Swathbook" className="mt-8 flex flex-wrap items-center gap-2 text-sm">
-          <span className="font-semibold text-ink-soft">Only on {siteConfig.name}:</span>
+        <nav aria-label="Built for field work" className="mt-8 flex flex-wrap items-center gap-2 text-sm">
+          <span className="font-semibold text-ink-soft">Built for field work:</span>
           {standoutFeatures.map((feature) => (
             <Link
               key={feature.id}

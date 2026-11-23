@@ -81,10 +81,10 @@ export default function BusinessesPage({ searchParams }: PageProps<"/businesses"
         <div className="mx-auto flex max-w-6xl flex-col items-start gap-4 px-4 py-10 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div>
             <h2 className="text-xl font-extrabold">Run a business that comes to customers?</h2>
-            <p className="mt-1 text-ink-soft">Get a booking page, take deposits and show up here. Free to start.</p>
+            <p className="mt-1 text-ink-soft">Get a booking page, take deposits and show up here. Try it free for 7 days.</p>
           </div>
           <Link href={routes.signup} className={buttonStyles({ variant: "primary" })}>
-            Get your free link
+            Start your free trial
           </Link>
         </div>
       </section>

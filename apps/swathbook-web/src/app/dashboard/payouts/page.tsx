@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
-import { BadgeCheck, Banknote, CircleAlert, Landmark, ShieldCheck } from "lucide-react";
+import { BadgeCheck, Banknote, CircleAlert, Landmark, ShieldCheck, Store } from "lucide-react";
 import { Card, CardTitle, ManagersOnly, PageHeader, Stat } from "@/components/app/ui";
 import { requireBusinessContext } from "@/libs/dashboard";
 import { routes } from "@/libs/routes";
@@ -60,7 +61,7 @@ async function Payouts({ searchParams }: { searchParams: PageProps<"/dashboard/p
     <>
       <PageHeader
         title="Payouts"
-        description="Deposits and payments go straight to your bank through Stripe. Swathbook never holds your money."
+        description={`Deposits and payments for ${business.name} go straight to its bank account through Stripe. Swathbook never holds your money.`}
       />
 
       {onboarding === "returned" && account && !account.charges_enabled ? (
@@ -86,7 +87,7 @@ async function Payouts({ searchParams }: { searchParams: PageProps<"/dashboard/p
               <Landmark className="size-7" aria-hidden="true" />
             </span>
             <div className="min-w-0 flex-1">
-              <h2 className="text-xl font-bold">Get paid when customers book</h2>
+              <h2 className="text-xl font-bold">Set up payouts for {business.name}</h2>
               <ul className="mt-3 space-y-2 text-ink-soft">
                 <li className="flex gap-2">
                   <BadgeCheck className="mt-0.5 size-4 shrink-0 text-brand-500" aria-hidden="true" />
@@ -94,7 +95,11 @@ async function Payouts({ searchParams }: { searchParams: PageProps<"/dashboard/p
                 </li>
                 <li className="flex gap-2">
                   <Banknote className="mt-0.5 size-4 shrink-0 text-brand-500" aria-hidden="true" />
-                  Money lands in your bank on a rolling schedule, usually in 2 business days.
+                  Your first payout can take 7 to 14 days. After that, money usually lands in about 2 business days.
+                </li>
+                <li className="flex gap-2">
+                  <Store className="mt-0.5 size-4 shrink-0 text-brand-500" aria-hidden="true" />
+                  This business gets its own Stripe account and bank connection, separate from any others you run.
                 </li>
                 <li className="flex gap-2">
                   <ShieldCheck className="mt-0.5 size-4 shrink-0 text-brand-500" aria-hidden="true" />
@@ -103,7 +108,25 @@ async function Payouts({ searchParams }: { searchParams: PageProps<"/dashboard/p
               </ul>
               <div className="mt-5">
                 {isOwner ? (
-                  <PayoutActions businessId={business.id} mode="start" />
+                  <>
+                    <PayoutActions businessId={business.id} mode="start" />
+                    <p className="mt-3 text-sm text-ink-faint">
+                      By setting up payouts, you agree to our{" "}
+                      <Link href={routes.terms} className="underline underline-offset-2 hover:text-ink">
+                        Terms of Service
+                      </Link>{" "}
+                      and the{" "}
+                      <a
+                        href="https://stripe.com/connect-account/legal/full"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline underline-offset-2 hover:text-ink"
+                      >
+                        Stripe Connected Account Agreement
+                      </a>
+                      .
+                    </p>
+                  </>
                 ) : (
                   <p className="text-sm text-ink-faint">Only the business owner can connect a bank account.</p>
                 )}
