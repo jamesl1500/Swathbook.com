@@ -44,14 +44,14 @@ export function SiteFooter() {
           <div className="max-w-sm">
             <Logo tone="paper" />
             <p className="mt-4 leading-relaxed text-paper/80">
-              Booking, deposits, payments and AI-planned routes for every trade that drives to its customers:
+              Booking, deposits, payments and optimized routes for every trade that drives to its customers:
               detailers, cleaners, landscapers, plumbers and more.
             </p>
             <Link
               href={routes.signup}
               className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-full bg-sun px-5 text-sm font-semibold text-ink transition-colors hover:bg-[#f2621a]"
             >
-              Claim your free link
+              Start your free trial
               <ArrowRight className="size-4" aria-hidden="true" />
             </Link>
             <a

@@ -8,6 +8,45 @@ import { Container, Eyebrow } from "./section";
 
 export type LegalSection = { title: string; body: ReactNode };
 
+export function LegalList({ items }: { items: string[] }) {
+  return (
+    <ul className="list-disc space-y-2 pl-6">
+      {items.map((item) => (
+        <li key={item}>{item}</li>
+      ))}
+    </ul>
+  );
+}
+
+/** A link to another company's terms or policy. */
+export function LegalLink({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer" className="font-semibold text-brand-600 underline underline-offset-4 hover:text-brand-700">
+      {children}
+    </a>
+  );
+}
+
+/** Who to write to, as it should appear in a legal notice. */
+export function LegalContact() {
+  return (
+    <address className="not-italic">
+      {siteConfig.legalName}
+      <br />
+      {siteConfig.legalAddress.street}
+      <br />
+      {siteConfig.legalAddress.cityStateZip}
+      <br />
+      <a
+        href={`mailto:${siteConfig.supportEmail}`}
+        className="inline-flex min-h-11 items-center font-semibold text-brand-600 underline underline-offset-4 hover:text-brand-700"
+      >
+        {siteConfig.supportEmail}
+      </a>
+    </address>
+  );
+}
+
 /**
  * Shared shell for long-form legal pages: a readable text column, plus an
  * "On this page" list and a contact card that stay in view on wide screens.
@@ -37,9 +76,6 @@ export function LegalPage({
 
       <Container className="grid grid-cols-[minmax(0,1fr)] gap-12 py-16 lg:grid-cols-[minmax(0,1fr)_18rem] lg:py-20">
         <div className="min-w-0 max-w-[68ch]">
-          <p className="mb-10 rounded-xl border border-sun/50 bg-sun-soft px-4 py-3 text-sm text-ink">
-            Placeholder copy. Replace with reviewed legal text before launch.
-          </p>
           <div className="space-y-12">
             {withIds.map((section, index) => (
               <section key={section.id} id={section.id} aria-labelledby={`${section.id}-heading`} className="scroll-mt-24">

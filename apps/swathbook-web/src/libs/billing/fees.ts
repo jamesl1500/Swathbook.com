@@ -2,8 +2,8 @@
  * fees.ts
  *
  * How Swathbook makes money: 1.25% of each customer payment a business takes
- * through Swathbook (deposits and balances; tips go to the business in full).
- * No monthly plan, no seat limits. The fee is a Stripe application fee on the
+ * through Swathbook (deposits and balances; tips go to the business in full),
+ * on top of the monthly plan. The fee is a Stripe application fee on the
  * direct charge, so it comes out before the payout and is returned when a
  * payment is refunded.
  *

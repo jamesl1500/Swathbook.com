@@ -55,7 +55,7 @@ export function renderOgImage() {
                         <span style={{ color: "#ff7a33" }}>Drive less.</span>
                     </div>
                     <div style={{ marginTop: 28, fontSize: 30, color: "rgba(247, 242, 232, 0.85)", maxWidth: 900 }}>
-                        Booking, deposits, payments and AI-planned routes for detailers, landscapers, cleaners, plumbers and every trade on the road.
+                        Booking, deposits, payments and optimized routes for detailers, landscapers, cleaners, plumbers and every trade on the road.
                     </div>
                 </div>
             </div>

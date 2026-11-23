@@ -12,10 +12,11 @@ export const siteConfig = {
     // Basic App Information
     name: "Swathbook",
     legalName: "Swathbook LLC",
+    legalAddress: { street: "228 Mariners Circle, Apt H", cityStateZip: "Sheffield Lake, Ohio 44054" },
     supportEmail: "hello@swathbook.com",
 
     // SEO and Metadata
-    description: "One link for field service businesses to show off their services, take bookings and deposits, get paid, and drive an AI-optimized route every day.",
+    description: "One link for field service businesses to show off their services, take bookings and deposits, get paid, and drive an optimized route every day.",
     tagline: "Book the job. Get paid. Drive less.",
     keywords: ["scheduling", "booking page", "routes", "route optimization", "deposits", "payments", "customer management", "mobile detailing", "house cleaning", "landscaping", "lawn care", "plumbing", "pressure washing", "pool service", "mobile pet grooming", "handyman", "field services"],
     author: "Swathbook LLC",

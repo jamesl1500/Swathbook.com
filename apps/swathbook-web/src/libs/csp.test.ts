@@ -22,6 +22,12 @@ describe("buildContentSecurityPolicy", () => {
         expect(production["img-src"]).toEqual(expect.arrayContaining(["https://abc.supabase.co", "data:", "https://maps.gstatic.com"]));
     });
 
+    it("allows the Google tag to load and report", () => {
+        expect(production["script-src"]).toContain("https://*.googletagmanager.com");
+        expect(production["connect-src"]).toEqual(expect.arrayContaining(["https://*.google-analytics.com", "https://*.analytics.google.com"]));
+        expect(production["img-src"]).toContain("https://*.google-analytics.com");
+    });
+
     it("locks down plugins, base URLs, form posts and framing", () => {
         expect(production["object-src"]).toEqual(["'none'"]);
         expect(production["base-uri"]).toEqual(["'self'"]);

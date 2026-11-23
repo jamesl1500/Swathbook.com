@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { GoogleTag } from "@/components/marketing/google-tag";
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { SiteHeader } from "@/components/marketing/site-header";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -19,6 +20,7 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
         {children}
       </main>
       <SiteFooter />
+      <GoogleTag />
     </div>
   );
 }

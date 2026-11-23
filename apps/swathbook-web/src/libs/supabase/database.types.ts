@@ -643,14 +643,14 @@ isOneToOne: false
                   ]
                 },"stripe_connect_accounts": {
                   Row: {
-                    "account_type": string,"business_id": string,"charges_enabled": boolean,"country": string | null,"created_at": string,"default_currency": string | null,"details_submitted": boolean,"disabled_reason": string | null,"payouts_enabled": boolean,"requirements_due": (string)[],"stripe_account_id": string,"updated_at": string
+                    "account_type": string,"business_id": string,"charges_enabled": boolean,"country": string | null,"created_at": string,"created_by": string | null,"default_currency": string | null,"details_submitted": boolean,"disabled_reason": string | null,"payouts_enabled": boolean,"requirements_due": (string)[],"stripe_account_id": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_type"?: string,"business_id": string,"charges_enabled"?: boolean,"country"?: string | null,"created_at"?: string,"default_currency"?: string | null,"details_submitted"?: boolean,"disabled_reason"?: string | null,"payouts_enabled"?: boolean,"requirements_due"?: (string)[],"stripe_account_id": string,"updated_at"?: string
+                    "account_type"?: string,"business_id": string,"charges_enabled"?: boolean,"country"?: string | null,"created_at"?: string,"created_by"?: string | null,"default_currency"?: string | null,"details_submitted"?: boolean,"disabled_reason"?: string | null,"payouts_enabled"?: boolean,"requirements_due"?: (string)[],"stripe_account_id": string,"updated_at"?: string
                   }
                   Update: {
-                    "account_type"?: string,"business_id"?: string,"charges_enabled"?: boolean,"country"?: string | null,"created_at"?: string,"default_currency"?: string | null,"details_submitted"?: boolean,"disabled_reason"?: string | null,"payouts_enabled"?: boolean,"requirements_due"?: (string)[],"stripe_account_id"?: string,"updated_at"?: string
+                    "account_type"?: string,"business_id"?: string,"charges_enabled"?: boolean,"country"?: string | null,"created_at"?: string,"created_by"?: string | null,"default_currency"?: string | null,"details_submitted"?: boolean,"disabled_reason"?: string | null,"payouts_enabled"?: boolean,"requirements_due"?: (string)[],"stripe_account_id"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {

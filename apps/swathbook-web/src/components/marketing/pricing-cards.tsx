@@ -18,7 +18,7 @@ export function PricingCards() {
         >
           {tier.highlighted ? (
             <span className="label-tag absolute -top-3 left-7 rounded-full bg-sun px-3 py-1 text-ink">
-              Most popular
+              Best for teams
             </span>
           ) : null}
           <h3 className="font-display text-xl font-bold">{tier.name}</h3>

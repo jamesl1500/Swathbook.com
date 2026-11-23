@@ -9,7 +9,7 @@ import { routes } from "@/libs/routes";
 const perks = [
   { icon: CalendarCheck, text: "Customers book open times from your link" },
   { icon: HandCoins, text: "Deposits collected at booking" },
-  { icon: Route, text: "An AI-planned route every morning" },
+  { icon: Route, text: "A planned route for every workday" },
 ];
 
 const todaysJobs = [
@@ -48,7 +48,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         <div className="relative mt-24 w-full max-w-sm -rotate-1 rounded-[1.5rem] bg-card p-5 text-ink shadow-lift" aria-hidden="true">
           <div className="flex items-center justify-between">
             <p className="font-display text-lg font-bold">Today</p>
-            <span className="rounded-full bg-sun-soft px-2.5 py-1 text-xs font-semibold">3 stops · AI-planned</span>
+            <span className="rounded-full bg-sun-soft px-2.5 py-1 text-xs font-semibold">3 stops · Route planned</span>
           </div>
           <ol className="mt-4 space-y-2">
             {todaysJobs.map((job, index) => (

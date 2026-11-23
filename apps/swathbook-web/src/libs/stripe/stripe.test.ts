@@ -36,7 +36,7 @@ beforeEach(() => {
 
 describe("connected accounts", () => {
     it("creates an Express account with Stripe-managed fees and risk, idempotent per business", async () => {
-        await createConnectedAccount(asStripe(stripe), { businessId: "b1", businessName: "Green Acres", email: "o@example.com" });
+        await createConnectedAccount(asStripe(stripe), { businessId: "b1", businessName: "Green Acres", email: "o@example.com", userId: "u1" });
         const [params, options] = stripe.v2.core.accounts.create.mock.calls[0] as unknown as [Record<string, unknown>, Record<string, unknown>];
         expect(params).toMatchObject({
             contact_email: "o@example.com",
@@ -44,13 +44,13 @@ describe("connected accounts", () => {
             dashboard: "express",
             configuration: { merchant: { capabilities: { card_payments: { requested: true } } } },
             defaults: { responsibilities: { fees_collector: "stripe", losses_collector: "stripe" } },
-            metadata: { business_id: "b1" },
+            metadata: { business_id: "b1", created_by_user_id: "u1" },
         });
         expect(options).toEqual({ idempotencyKey: "connect-account:b1" });
     });
 
-    it("builds hosted onboarding links that come back to the payouts page", async () => {
-        const url = await createOnboardingLink(asStripe(stripe), "acct_1", "https://app.example.com");
+    it("builds hosted onboarding links that come back to the same business", async () => {
+        const url = await createOnboardingLink(asStripe(stripe), "acct_1", "b1", "https://app.example.com");
         expect(url).toBe("https://connect.stripe.com/setup/abc");
         expect(stripe.v2.core.accountLinks.create).toHaveBeenCalledWith({
             account: "acct_1",
@@ -58,8 +58,8 @@ describe("connected accounts", () => {
                 type: "account_onboarding",
                 account_onboarding: {
                     collection_options: { fields: "eventually_due" },
-                    refresh_url: "https://app.example.com/dashboard/payouts/refresh",
-                    return_url: "https://app.example.com/dashboard/payouts/return",
+                    refresh_url: "https://app.example.com/dashboard/payouts/refresh?business=b1",
+                    return_url: "https://app.example.com/dashboard/payouts/return?business=b1",
                 },
             },
         });

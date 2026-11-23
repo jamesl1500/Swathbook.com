@@ -74,7 +74,7 @@ export default function AboutPage() {
             </p>
             <p>
               {siteConfig.name} puts all of it behind one link: customers book themselves and put down a deposit,
-              you get paid when the job&apos;s done, and AI lines up your day so you spend it working, not driving.
+              you get paid when the job&apos;s done, and your stops get lined up so you spend the day working, not driving.
             </p>
           </div>
         </Container>

@@ -42,18 +42,24 @@ export async function startPayoutsOnboarding(formData: FormData): Promise<FormSt
                 businessId: auth.businessId,
                 businessName: auth.business.name,
                 email: auth.user.email,
+                userId: auth.user.id,
             });
             accountId = account.id;
-            await saveConnectStatus(admin, auth.businessId, {
-                stripeAccountId: account.id,
-                chargesEnabled: false,
-                payoutsEnabled: false,
-                detailsSubmitted: false,
-                requirementsDue: [],
-                disabledReason: null,
-            });
+            await saveConnectStatus(
+                admin,
+                auth.businessId,
+                {
+                    stripeAccountId: account.id,
+                    chargesEnabled: false,
+                    payoutsEnabled: false,
+                    detailsSubmitted: false,
+                    requirementsDue: [],
+                    disabledReason: null,
+                },
+                auth.user.id,
+            );
         }
-        linkUrl = await createOnboardingLink(stripe, accountId, await getSiteUrl());
+        linkUrl = await createOnboardingLink(stripe, accountId, auth.businessId, await getSiteUrl());
     } catch (error) {
         console.error("[payouts] onboarding failed", error);
         return { error: "We couldn't reach Stripe. Please try again in a moment." };

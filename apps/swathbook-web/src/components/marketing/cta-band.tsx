@@ -22,7 +22,7 @@ export function CtaBand({
             <p className="mt-4 text-lg text-paper/80">{description}</p>
             <ClaimLinkForm tone="dark" id="cta-claim-slug" className="mt-8" />
             <ul className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm text-paper/85">
-              {["Free to start", "No credit card", "Cancel anytime"].map((item) => (
+              {["7-day free trial", "No credit card", "Cancel anytime"].map((item) => (
                 <li key={item} className="inline-flex items-center gap-1.5">
                   <Check className="size-4 text-sky" aria-hidden="true" />
                   {item}
