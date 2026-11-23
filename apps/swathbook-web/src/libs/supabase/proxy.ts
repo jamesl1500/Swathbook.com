@@ -12,7 +12,15 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseEnv } from "./env";
 
+/** Supabase keeps a session in sb-<project>-auth-token cookies (split into .0, .1… when large). */
+function hasAuthCookie(request: NextRequest) {
+    return request.cookies.getAll().some(({ name }) => name.startsWith("sb-") && name.includes("-auth-token"));
+}
+
 export async function updateSession(request: NextRequest) {
+    // Most traffic is signed-out visitors: with no session there's nothing to refresh.
+    if (!hasAuthCookie(request)) return { response: NextResponse.next({ request }), userId: null };
+
     const { url, publishableKey } = getSupabaseEnv();
     let response = NextResponse.next({ request });
 

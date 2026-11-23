@@ -5,7 +5,10 @@
  * The Content-Security-Policy (src/libs/csp.ts) forbids eval, so the probe
  * fails, harmlessly but with a CSP violation report on every page. Our forms
  * are small, so plain validation costs nothing noticeable.
+ *
+ * This file loads on every page, so it imports only Zod's settings, not the
+ * whole library.
  */
-import { z } from "zod";
+import { config } from "zod/v4/core";
 
-z.config({ jitless: true });
+config({ jitless: true });

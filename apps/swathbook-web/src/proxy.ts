@@ -51,9 +51,9 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Everything except static assets, image optimization, Stripe webhooks
-    // (signed server-to-server calls) and the customer app API (bearer
-    // tokens). Neither of the last two has a cookie session to refresh.
-    "/((?!_next/static|_next/image|api/stripe|api/app|api/owner|favicon.ico|icon.svg|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico)$).*)",
+    // Everything except static assets, generated metadata files, image
+    // optimization, and the APIs called with a signature or bearer token
+    // (Stripe webhooks, cron, the mobile apps), which have no cookie session.
+    "/((?!_next/static|_next/image|api/stripe|api/app|api/owner|api/cron|favicon.ico|icon.svg|apple-icon|robots.txt|sitemap.xml|manifest.webmanifest|.*opengraph-image$|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico)$).*)",
   ],
 };
